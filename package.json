@@ -1,0 +1,21 @@
+{
+  "name": "sistema-gestion-local-app",
+  "version": "1.0.0",
+  "private": true,
+  "main": "electron/main.js",
+"scripts": {
+  "dev": "concurrently \"npm:dev:front\" \"npm:dev:back\"",
+
+  "dev:front": "cd frontend && npm run dev",
+  "dev:back": "cd backend && npm run dev",
+
+  "dev:electron": "cd electron && npm run dev",       
+  "build": "cd frontend && npm run build",
+  "build:electron": "cd electron && npm run build",   
+  "dist": "npm run build && cd electron && npm run dist"
+}
+,
+  "devDependencies": {
+    "concurrently": "^9.0.0"
+  }
+}
