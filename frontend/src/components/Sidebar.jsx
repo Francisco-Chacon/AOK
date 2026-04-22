@@ -14,7 +14,7 @@ const items = [
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
-        <span className="sidebar-logo">●</span>
+        <img src="/logo.jpg" alt="Logo" className="sidebar-logo-img" />
         <div>
           <h1 className="sidebar-title">Sistema de Gestión</h1>
           <p className="sidebar-subtitle">Versión 1.0</p>

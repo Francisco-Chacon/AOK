@@ -13,6 +13,7 @@ function getAllEstimados(req, res) {
         e.monto,
         e.moneda,
         e.descripcion_trabajo,
+        e.notas_adicionales,
         e.estado,
         e.created_at,
         e.updated_at
@@ -39,6 +40,7 @@ function createEstimado(req, res) {
       monto,
       moneda,
       descripcion_trabajo,
+      notas_adicionales,
       estado,
     } = req.body;
 
@@ -57,10 +59,11 @@ function createEstimado(req, res) {
         monto,
         moneda,
         descripcion_trabajo,
+        notas_adicionales,
         estado,
         created_at,
         updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const result = stmt.run(
@@ -70,6 +73,7 @@ function createEstimado(req, res) {
       Number(monto),
       moneda || "USD",
       descripcion_trabajo || "",
+      notas_adicionales || "",
       estado || "borrador",
       now,
       now
@@ -86,6 +90,7 @@ function createEstimado(req, res) {
           e.monto,
           e.moneda,
           e.descripcion_trabajo,
+          e.notas_adicionales,
           e.estado,
           e.created_at,
           e.updated_at
@@ -96,7 +101,7 @@ function createEstimado(req, res) {
       .get(result.lastInsertRowid);
 
     res.status(201).json(estimado);
-  } catch (err) {
+} catch (err) {
     console.error("Error createEstimado", err);
     res.status(500).json({ message: "Error al crear estimado" });
   }
@@ -113,6 +118,7 @@ function updateEstimado(req, res) {
       monto,
       moneda,
       descripcion_trabajo,
+      notas_adicionales,
       estado,
     } = req.body;
 
@@ -132,6 +138,7 @@ function updateEstimado(req, res) {
         monto              = ?,
         moneda             = ?,
         descripcion_trabajo= ?,
+        notas_adicionales = ?,
         estado             = ?,
         updated_at         = ?
       WHERE id = ?
@@ -144,6 +151,7 @@ function updateEstimado(req, res) {
       Number(monto),
       moneda || "USD",
       descripcion_trabajo || "",
+      notas_adicionales || "",
       estado || "borrador",
       now,
       id
@@ -164,6 +172,7 @@ function updateEstimado(req, res) {
           e.monto,
           e.moneda,
           e.descripcion_trabajo,
+          e.notas_adicionales,
           e.estado,
           e.created_at,
           e.updated_at

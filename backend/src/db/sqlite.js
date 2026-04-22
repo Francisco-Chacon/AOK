@@ -88,10 +88,11 @@ CREATE TABLE IF NOT EXISTS visitas (
     monto               REAL    NOT NULL,        -- 35950.00
     moneda              TEXT    NOT NULL DEFAULT 'USD',
     descripcion_trabajo TEXT,                    -- texto largo: pavers, pvc, gas line, etc.
+    notas_adicionales   TEXT,                    -- notas adicionales del trabajo
     estado              TEXT    NOT NULL DEFAULT 'borrador', 
     -- 'borrador' | 'enviado' | 'aceptado' | 'rechazado'
     created_at          TEXT    NOT NULL,
-    updated_at          TEXT    NOT NULL,
+    updated_at         TEXT    NOT NULL,
     FOREIGN KEY (cliente_id) REFERENCES clientes(id)
   );
 `);

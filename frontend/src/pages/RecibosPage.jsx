@@ -2,12 +2,20 @@
 import React, { useEffect, useState } from "react";
 import api from "../api/apiClient";
 import Modal from "../components/Modal";
+import SearchableSelect from "../components/SearchableSelect";
 
 const RecibosPage = () => {
   const [recibos, setRecibos] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [filter, setFilter] = useState("todos");
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(searchQuery), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingRecibo, setEditingRecibo] = useState(null);
@@ -55,9 +63,17 @@ const RecibosPage = () => {
     .filter((r) => r.estado === "pendiente")
     .reduce((acc, r) => acc + (r.monto || 0), 0);
 
-  const filtrados = recibos.filter((r) =>
-    filter === "todos" ? true : r.estado === filter
-  );
+  const filtrados = recibos.filter((r) => {
+    if (filter !== "todos" && r.estado !== filter) return false;
+    if (!debouncedQuery) return true;
+    const q = debouncedQuery.toLowerCase();
+    return (
+      (r.cliente_nombre || "").toLowerCase().includes(q) ||
+      (r.descripcion || "").toLowerCase().includes(q) ||
+      (r.estado || "").toLowerCase().includes(q) ||
+      String(r.monto || "").toLowerCase().includes(q)
+    );
+  });
 
   const openNewModal = () => {
     setEditingRecibo(null);
@@ -178,6 +194,12 @@ const RecibosPage = () => {
       </section>
 
       <div className="page-toolbar">
+        <input
+          className="input search-bar"
+          placeholder="Buscar recibos..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
         <div className="pill-group">
           {[
             { id: "todos", label: "Todos" },
@@ -279,20 +301,12 @@ const RecibosPage = () => {
         <form className="form-grid" onSubmit={handleSubmit}>
           <label className="form-field">
             <span>Cliente</span>
-            <select
-              className="input"
-              name="cliente_id"
-              value={form.cliente_id}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Seleccione un cliente</option>
-              {clientes.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nombre}
-                </option>
-              ))}
-            </select>
+            <SearchableSelect
+                value={form.cliente_id}
+                onChange={handleChange}
+                options={clientes.map(c => ({ value: c.id, label: c.nombre }))}
+                placeholder="Seleccione un cliente"
+              />
           </label>
           <label className="form-field">
             <span>Fecha</span>

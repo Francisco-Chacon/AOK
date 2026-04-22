@@ -7,7 +7,13 @@ const ClientesPage = () => {
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterEstado, setFilterEstado] = useState("todos");
-  const [search, setSearch] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(searchQuery), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingCliente, setEditingCliente] = useState(null);
 
@@ -138,12 +144,13 @@ const ClientesPage = () => {
   // Filtros
   const filtrados = clientes.filter((c) => {
     if (filterEstado !== "todos" && c.estado !== filterEstado) return false;
-    if (!search) return true;
-    const s = search.toLowerCase();
+    if (!debouncedQuery) return true;
+    const s = debouncedQuery.toLowerCase();
     return (
-      c.nombre?.toLowerCase().includes(s) ||
-      c.direccion?.toLowerCase().includes(s) ||
-      c.telefono?.toLowerCase().includes(s)
+      (c.nombre || "").toLowerCase().includes(s) ||
+      (c.direccion || "").toLowerCase().includes(s) ||
+      (c.telefono || "").toLowerCase().includes(s) ||
+      (c.servicio_principal || "").toLowerCase().includes(s)
     );
   });
 
@@ -187,10 +194,10 @@ const ClientesPage = () => {
 
       <div className="page-toolbar">
         <input
-          className="input"
+          className="input search-bar"
           placeholder="Buscar por nombre, dirección o teléfono"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
         />
         <div className="pill-group">
           {[

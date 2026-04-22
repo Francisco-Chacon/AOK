@@ -10,6 +10,13 @@ const BackupsPage = () => {
   const [loadingList, setLoadingList] = useState(false);
   const [loadingRestore, setLoadingRestore] = useState(false);
   const [loadingDelete, setLoadingDelete] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(searchQuery), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // Subir backup
   const [backupFile, setBackupFile] = useState(null);
@@ -178,6 +185,11 @@ const BackupsPage = () => {
     }
   };
 
+  const backupsFiltrados = backups.filter((f) => {
+    if (!debouncedQuery) return true;
+    return f.toLowerCase().includes(debouncedQuery.toLowerCase());
+  });
+
   // ---------- SUBIR BACKUP ----------
 
   const handleFileChange = (e) => {
@@ -294,9 +306,18 @@ const BackupsPage = () => {
         </div>
       </section>
 
+      <div className="page-toolbar">
+        <input
+          className="input search-bar"
+          placeholder="Buscar archivos..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+      </div>
+
       {/* Lista de backups */}
       <div className="list" style={{ marginTop: "1rem" }}>
-        {backups.length === 0 ? (
+        {backupsFiltrados.length === 0 ? (
           <div className="card">
             <div className="card-main">
               <p className="card-title">No hay backups registrados.</p>
@@ -316,7 +337,7 @@ const BackupsPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {backups.map((file) => (
+                {backupsFiltrados.map((file) => (
                   <tr key={file}>
                     <td>{file}</td>
                     <td className="table-actions">

@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import api from "../api/apiClient";
 import Modal from "../components/Modal";
+import SearchableSelect from "../components/SearchableSelect";
 
 const DIAS = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"];
 const DIAS_FILTRO = ["todos", ...DIAS];
@@ -11,6 +12,13 @@ const RutasPage = () => {
   const [clientes, setClientes] = useState([]);
   const [diaActivo, setDiaActivo] = useState("todos");
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(searchQuery), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingVisita, setEditingVisita] = useState(null);
@@ -56,8 +64,20 @@ const RutasPage = () => {
       return raw === dia;
     });
 
-  const visitasFiltradas =
-    diaActivo === "todos" ? visitas : visitasPorDia(diaActivo);
+  const visitasFiltradas = visitas.filter((v) => {
+    if (diaActivo !== "todos") {
+      const raw = (v.dia_semana ?? "").toString().toLowerCase().trim();
+      if (raw !== diaActivo) return false;
+    }
+    if (!debouncedQuery) return true;
+    const q = debouncedQuery.toLowerCase();
+    return (
+      (v.cliente_nombre || "").toLowerCase().includes(q) ||
+      (v.direccion || "").toLowerCase().includes(q) ||
+      (v.tipo_servicio || "").toLowerCase().includes(q) ||
+      (v.hora || "").toLowerCase().includes(q)
+    );
+  });
 
   const openNewModal = () => {
     setEditingVisita(null);
@@ -183,6 +203,12 @@ const RutasPage = () => {
       </section>
 
       <div className="page-toolbar">
+        <input
+          className="input search-bar"
+          placeholder="Buscar visitas..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
         <div className="pill-group">
           {DIAS_FILTRO.map((diaKey) => (
             <button
@@ -272,20 +298,12 @@ const RutasPage = () => {
         <form className="form-grid" onSubmit={handleSubmit}>
           <label className="form-field">
             <span>Cliente</span>
-            <select
-              className="input"
-              name="cliente_id"
-              value={form.cliente_id}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Seleccione un cliente</option>
-              {clientes.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nombre}
-                </option>
-              ))}
-            </select>
+            <SearchableSelect
+                value={form.cliente_id}
+                onChange={handleChange}
+                options={clientes.map(c => ({ value: c.id, label: c.nombre }))}
+                placeholder="Seleccione un cliente"
+              />
           </label>
 
           <label className="form-field">
