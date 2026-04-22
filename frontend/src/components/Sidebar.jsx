@@ -1,15 +1,30 @@
 // src/components/Sidebar.jsx
-import React from "react";
+import React, { useState, useEffect } from "react";
 
 const Sidebar = ({ activePage, onChangePage }) => {
-const items = [
-  { id: "clientes", label: "Clientes" },
-  { id: "recibos", label: "Recibos" },
-  { id: "rutas", label: "Rutas" },
-  { id: "estimados", label: "Estimados" },
-  { id: "backups", label: "Backups" }, // 👈 este
-];
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem("theme");
+    if (saved) return saved === "dark";
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  });
 
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.setAttribute("data-theme", "dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.setAttribute("data-theme", "light");
+      localStorage.setItem("theme", "light");
+    }
+  }, [darkMode]);
+
+  const items = [
+    { id: "clientes", label: "Clientes" },
+    { id: "recibos", label: "Recibos" },
+    { id: "rutas", label: "Rutas" },
+    { id: "estimados", label: "Estimados" },
+    { id: "backups", label: "Backups" },
+  ];
 
   return (
     <aside className="sidebar">
@@ -35,6 +50,16 @@ const items = [
           </button>
         ))}
       </nav>
+
+      <div className="sidebar-footer">
+        <button
+          className="sidebar-theme-toggle"
+          onClick={() => setDarkMode((d) => !d)}
+          title={darkMode ? "Modo claro" : "Modo oscuro"}
+        >
+          {darkMode ? "☀️" : "🌙"}
+        </button>
+      </div>
     </aside>
   );
 };

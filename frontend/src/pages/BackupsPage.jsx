@@ -290,14 +290,20 @@ const BackupsPage = () => {
         </p>
 
         <div className="upload-row">
-          <input
-            type="file"
-            accept=".db"
-            onChange={handleFileChange}
-          />
+          <label className="file-input-label">
+            <input
+              type="file"
+              accept=".db"
+              onChange={handleFileChange}
+              className="file-input-hidden"
+            />
+            <span className="file-input-btn">
+              {backupFile ? backupFile.name : "Seleccionar archivo .db"}
+            </span>
+          </label>
           <button
             type="button"
-            className="btn btn-outline"
+            className="btn btn-primary"
             onClick={handleUploadBackup}
             disabled={uploading || !backupFile}
           >
