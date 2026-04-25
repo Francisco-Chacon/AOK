@@ -103,14 +103,22 @@ body {
 
 .sidebar-logo {
   display: inline-flex;
-  width: 48px;
-  height: 32px;
+  width: 56px;
+  height: 38px;
   border-radius: 6px;
   background: var(--accent-strong);
   align-items: center;
   justify-content: center;
-  color: white;
+  color: #020617;
   font-size: 18px;
+  box-shadow: 0 0 25px rgba(56, 189, 248, 0.65);
+}
+
+.sidebar-logo-img {
+  width: 56px;
+  height: 38px;
+  border-radius: 6px;
+  object-fit: cover;
   box-shadow: 0 0 25px rgba(56, 189, 248, 0.65);
 }
 
@@ -136,17 +144,18 @@ body {
 .sidebar-footer {
   margin-top: auto;
   display: flex;
-  justify-content: flex-start;
+  flex-direction: column;
+  gap: 0.5rem;
   padding-top: 1rem;
   border-top: 1px solid rgba(255,255,255,0.08);
 }
 
-.sidebar-theme-toggle {
+.sidebar-toggle-btn {
   background: rgba(255,255,255,0.08);
   border: 1px solid rgba(255,255,255,0.12);
   border-radius: 999px;
   padding: 0.5rem 0.9rem;
-  font-size: 1.1rem;
+  font-size: 1rem;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -155,8 +164,12 @@ body {
   transition: background 0.15s;
 }
 
-.sidebar-theme-toggle:hover {
+.sidebar-toggle-btn:hover {
   background: rgba(255,255,255,0.15);
+}
+
+.sidebar-toggle-btn span {
+  font-size: 0.8rem;
 }
 
 .sidebar-nav {
@@ -849,6 +862,32 @@ textarea.input {
   gap: 1rem;
 }
 
+.statement-brand {
+  display: flex;
+  flex-direction: column;
+}
+
+.statement-title {
+  font-size: 1.25rem;
+  font-weight: 650;
+}
+
+.statement-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.statement-date {
+  text-align: right;
+  font-size: 0.9rem;
+}
+
+.statement-logo-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
 .statement-logo {
   width: 80px;
   height: 48px;
@@ -1004,11 +1043,42 @@ textarea.input {
   body, html, .app-shell, .sidebar, .app-main, .page, .page-header, .page-toolbar {
     display: none !important;
   }
-  
+
   .form-actions,
   .btn-ghost,
   .btn-primary {
     display: none !important;
+  }
+
+  .statement-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  .statement-logo-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .statement-logo-img {
+    width: 120px;
+    height: 72px;
+  }
+
+  .statement-brand {
+    align-items: center;
+    text-align: center;
+  }
+
+  .print-date {
+    display: flex !important;
+    align-items: flex-start;
+  }
+
+  .statement-date {
+    text-align: right;
   }
 }
 

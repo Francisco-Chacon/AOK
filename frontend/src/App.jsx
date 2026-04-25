@@ -1,12 +1,13 @@
 // src/App.jsx
 import React, { useState } from "react";
+import { LanguageProvider } from "./i18n/LanguageContext";
 import Sidebar from "./components/Sidebar";
 
 import ClientesPage from "./pages/ClientesPage";
 import RecibosPage from "./pages/RecibosPage";
 import RutasPage from "./pages/RutasPage";
 import EstimadosPage from "./pages/EstimadosPage";
-import BackupsPage from "./pages/BackupsPage"; // 👈 IMPORT
+import BackupsPage from "./pages/BackupsPage";
 
 const App = () => {
   const [activePage, setActivePage] = useState("clientes");
@@ -21,7 +22,7 @@ const App = () => {
         return <RutasPage />;
       case "estimados":
         return <EstimadosPage />;
-      case "backups":                  // 👈 tiene que ser EXACTAMENTE esto
+      case "backups":
         return <BackupsPage />;
       default:
         return <ClientesPage />;
@@ -29,10 +30,12 @@ const App = () => {
   };
 
   return (
-    <div className="app-shell">
-      <Sidebar activePage={activePage} onChangePage={setActivePage} />
-      <main className="app-main">{renderPage()}</main>
-    </div>
+    <LanguageProvider>
+      <div className="app-shell">
+        <Sidebar activePage={activePage} onChangePage={setActivePage} />
+        <main className="app-main">{renderPage()}</main>
+      </div>
+    </LanguageProvider>
   );
 };
 

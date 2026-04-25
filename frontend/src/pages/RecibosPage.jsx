@@ -3,8 +3,11 @@ import React, { useEffect, useState } from "react";
 import api from "../api/apiClient";
 import Modal from "../components/Modal";
 import SearchableSelect from "../components/SearchableSelect";
+import { useLanguage } from "../i18n/LanguageContext";
+import { t } from "../i18n/translations";
 
 const RecibosPage = () => {
+  const { lang } = useLanguage();
   const [recibos, setRecibos] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [filter, setFilter] = useState("todos");
@@ -164,31 +167,31 @@ const RecibosPage = () => {
     <div className="page">
       <header className="page-header">
         <div className="page-header-main">
-          <h2 className="page-title">Recibos</h2>
+          <h2 className="page-title">{t(lang, "recibos")}</h2>
           <p className="page-subtitle">
-            Seguimiento de cobros, pagos y montos pendientes.
+            {t(lang, "recibos_page_subtitle")}
           </p>
         </div>
         <button className="btn-primary" onClick={openNewModal}>
-          + Nuevo recibo
+          + {t(lang, "nuevo_recibo")}
         </button>
       </header>
 
       <section className="stats-grid">
         <div className="stat-card stat-card--accent">
-          <span className="stat-label">Total pagado</span>
+          <span className="stat-label">{t(lang, "total_pagado")}</span>
           <span className="stat-value">
             ${totalPagado.toFixed(2)}
           </span>
         </div>
         <div className="stat-card stat-card--warning">
-          <span className="stat-label">Total pendiente</span>
+          <span className="stat-label">{t(lang, "total_pendiente")}</span>
           <span className="stat-value">
             ${totalPendiente.toFixed(2)}
           </span>
         </div>
         <div className="stat-card">
-          <span className="stat-label">Cantidad de recibos</span>
+          <span className="stat-label">{t(lang, "cantidad_recibos")}</span>
           <span className="stat-value">{recibos.length}</span>
         </div>
       </section>
@@ -196,16 +199,16 @@ const RecibosPage = () => {
       <div className="page-toolbar">
         <input
           className="input search-bar"
-          placeholder="Buscar recibos..."
+          placeholder={t(lang, "busqueda")}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
         <div className="pill-group">
           {[
-            { id: "todos", label: "Todos" },
-            { id: "pendiente", label: "Pendientes" },
-            { id: "pagado", label: "Pagados" },
-            { id: "cancelado", label: "Cancelados" },
+            { id: "todos", label: t(lang, "todos") },
+            { id: "pendiente", label: t(lang, "pendiente") },
+            { id: "pagado", label: t(lang, "pagado") },
+            { id: "cancelado", label: t(lang, "cancelado") },
           ].map((opt) => (
             <button
               key={opt.id}
@@ -219,9 +222,9 @@ const RecibosPage = () => {
       </div>
 
       {loading ? (
-        <p className="muted">Cargando recibos…</p>
+        <p className="muted">{t(lang, "cargando")}</p>
       ) : filtrados.length === 0 ? (
-        <p className="muted">No hay recibos con ese filtro.</p>
+        <p className="muted">{t(lang, "sin_resultados")}</p>
       ) : (
         <div className="list">
           {filtrados.map((r) => (
@@ -249,41 +252,41 @@ const RecibosPage = () => {
                   </span>
                 </div>
                 <h3 className="card-title">
-                  {r.cliente_nombre || "Cliente sin nombre"}
+                  {r.cliente_nombre || t(lang, "cliente_sin_nombre")}
                 </h3>
                 <p className="card-text muted">
                   {r.descripcion
                     ? `${r.descripcion.slice(0, 120)}${
                         r.descripcion.length > 120 ? "…" : ""
                       }`
-                    : "Sin descripción."}
+                    : t(lang, "sin_descripcion")}
                 </p>
               </div>
               <div className="card-meta">
                 <p className="card-text">
-                  <strong>Fecha:</strong> {r.fecha?.slice(0, 10)}
+                  <strong>{t(lang, "fecha")}:</strong> {r.fecha?.slice(0, 10)}
                 </p>
                 <p className="card-text">
-                  <strong>Monto:</strong> ${Number(r.monto || 0).toFixed(2)}
+                  <strong>{t(lang, "monto")}:</strong> ${Number(r.monto || 0).toFixed(2)}
                 </p>
                 <div className="card-actions">
                   <button
                     className="btn-ghost"
                     onClick={(e) => {
-                      e.stopPropagation(); // no abrir detalle
+                      e.stopPropagation();
                       openEditModal(r);
                     }}
                   >
-                    Editar
+                    {t(lang, "editar")}
                   </button>
                   <button
                     className="btn-danger-ghost"
                     onClick={(e) => {
-                      e.stopPropagation(); // no abrir detalle
+                      e.stopPropagation();
                       askDelete(r);
                     }}
                   >
-                    Eliminar
+                    {t(lang, "eliminar")}
                   </button>
                 </div>
               </div>
@@ -295,21 +298,21 @@ const RecibosPage = () => {
       {/* Modal crear / editar */}
       <Modal
         open={modalOpen}
-        title={editingRecibo ? "Editar recibo" : "Nuevo recibo"}
+        title={editingRecibo ? t(lang, "editar_recibo_title") : t(lang, "nuevo_recibo_title")}
         onClose={() => setModalOpen(false)}
       >
         <form className="form-grid" onSubmit={handleSubmit}>
           <label className="form-field">
-            <span>Cliente</span>
+            <span>{t(lang, "cliente")}</span>
             <SearchableSelect
                 value={form.cliente_id}
                 onChange={handleChange}
                 options={clientes.map(c => ({ value: c.id, label: c.nombre }))}
-                placeholder="Seleccione un cliente"
+                placeholder={t(lang, "seleccionar_cliente")}
               />
           </label>
           <label className="form-field">
-            <span>Fecha</span>
+            <span>{t(lang, "fecha")}</span>
             <input
               className="input"
               type="date"
@@ -320,7 +323,7 @@ const RecibosPage = () => {
             />
           </label>
           <label className="form-field">
-            <span>Monto</span>
+            <span>{t(lang, "monto")}</span>
             <input
               className="input"
               type="number"
@@ -332,20 +335,20 @@ const RecibosPage = () => {
             />
           </label>
           <label className="form-field">
-            <span>Estado</span>
+            <span>{t(lang, "estado")}</span>
             <select
               className="input"
               name="estado"
               value={form.estado}
               onChange={handleChange}
             >
-              <option value="pendiente">Pendiente</option>
-              <option value="pagado">Pagado</option>
-              <option value="cancelado">Cancelado</option>
+              <option value="pendiente">{t(lang, "pendiente")}</option>
+              <option value="pagado">{t(lang, "pagado")}</option>
+              <option value="cancelado">{t(lang, "cancelado")}</option>
             </select>
           </label>
           <label className="form-field form-field--full">
-            <span>Descripción</span>
+            <span>{t(lang, "descripcion")}</span>
             <textarea
               className="input"
               name="descripcion"
@@ -361,10 +364,10 @@ const RecibosPage = () => {
               className="btn-ghost"
               onClick={() => setModalOpen(false)}
             >
-              Cancelar
+              {t(lang, "cancelar")}
             </button>
             <button type="submit" className="btn-primary">
-              Guardar
+              {t(lang, "guardar")}
             </button>
           </div>
         </form>
@@ -373,11 +376,11 @@ const RecibosPage = () => {
       {/* Modal confirmación eliminar recibo */}
       <Modal
         open={confirmDeleteOpen}
-        title="Confirmar eliminación"
+        title={t(lang, "confirmar_eliminar")}
         onClose={cancelDelete}
       >
         <p>
-          ¿Seguro que deseas eliminar el recibo{" "}
+          {t(lang, "seguro_eliminar_recibo")}
           {reciboToDelete?.codigo || (reciboToDelete && `REC-${reciboToDelete.id}`)}
           {reciboToDelete?.cliente_nombre
             ? ` de "${reciboToDelete.cliente_nombre}"`
@@ -390,14 +393,14 @@ const RecibosPage = () => {
             className="btn-ghost"
             onClick={cancelDelete}
           >
-            Cancelar
+            {t(lang, "cancelar")}
           </button>
           <button
             type="button"
             className="btn btn-danger"
             onClick={confirmDelete}
           >
-            Sí, eliminar
+            {t(lang, "si_eliminar")}
           </button>
         </div>
       </Modal>
@@ -405,47 +408,47 @@ const RecibosPage = () => {
       {/* Modal detalle de recibo (click en la card) */}
       <Modal
         open={detailsOpen}
-        title="Detalle del recibo"
+        title={t(lang, "detalle_recibo")}
         onClose={closeDetails}
       >
         {reciboDetalle && (
           <div className="detalle-grid">
             <div>
-              <p className="detalle-label">Código</p>
+              <p className="detalle-label">{t(lang, "codigo")}</p>
               <p className="detalle-value">
                 {reciboDetalle.codigo || `REC-${reciboDetalle.id}`}
               </p>
             </div>
             <div>
-              <p className="detalle-label">Cliente</p>
+              <p className="detalle-label">{t(lang, "cliente")}</p>
               <p className="detalle-value">
-                {reciboDetalle.cliente_nombre || "Cliente sin nombre"}
+                {reciboDetalle.cliente_nombre || t(lang, "cliente_sin_nombre")}
               </p>
             </div>
             <div>
-              <p className="detalle-label">Fecha</p>
+              <p className="detalle-label">{t(lang, "fecha")}</p>
               <p className="detalle-value">
                 {reciboDetalle.fecha?.slice(0, 10) || "—"}
               </p>
             </div>
             <div>
-              <p className="detalle-label">Estado</p>
+              <p className="detalle-label">{t(lang, "estado")}</p>
               <p className="detalle-value">
                 {reciboDetalle.estado || "—"}
               </p>
             </div>
             <div>
-              <p className="detalle-label">Monto</p>
+              <p className="detalle-label">{t(lang, "monto")}</p>
               <p className="detalle-value">
                 ${Number(reciboDetalle.monto || 0).toFixed(2)}
               </p>
             </div>
             <div className="detalle-full">
-              <p className="detalle-label">Descripción</p>
+              <p className="detalle-label">{t(lang, "descripcion")}</p>
               <p className="detalle-value detalle-value--multiline">
                 {reciboDetalle.descripcion?.trim()
                   ? reciboDetalle.descripcion
-                  : "Sin descripción registrada."}
+                  : t(lang, "sin_descripcion")}
               </p>
             </div>
           </div>

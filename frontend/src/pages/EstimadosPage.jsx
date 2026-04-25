@@ -3,8 +3,11 @@ import React, { useEffect, useState } from "react";
 import api from "../api/apiClient";
 import Modal from "../components/Modal";
 import SearchableSelect from "../components/SearchableSelect";
+import { useLanguage } from "../i18n/LanguageContext";
+import { t } from "../i18n/translations";
 
 const EstimadosPage = () => {
+  const { lang } = useLanguage();
   const [estimados, setEstimados] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [filterEstado, setFilterEstado] = useState("todos");
@@ -373,6 +376,9 @@ const renderStatementView = () => {
                     <p className="statement-subtitle">Statement</p>
                   </div>
                 </div>
+                <div className="statement-date print-date" style={{ display: 'none' }}>
+                  <span>Fecha:</span> {e.fecha?.slice(0, 10)}
+                </div>
                 <button
                   className="btn-primary print-btn"
                   onClick={() => printStatement(e)}
@@ -460,11 +466,11 @@ const renderStatementView = () => {
       <>
         <section className="stats-grid">
           <div className="stat-card">
-            <span className="stat-label">Total estimado</span>
+            <span className="stat-label">{t(lang, "total_estimado")}</span>
             <span className="stat-value">${totalEstimado.toFixed(2)}</span>
           </div>
           <div className="stat-card">
-            <span className="stat-label">Cantidad de estimados</span>
+            <span className="stat-label">{t(lang, "cantidad_estimados")}</span>
             <span className="stat-value">{estimados.length}</span>
           </div>
         </section>
@@ -472,7 +478,7 @@ const renderStatementView = () => {
         <div className="page-toolbar">
           <input
             className="input search-bar"
-            placeholder="Buscar estimados..."
+            placeholder={t(lang, "busqueda")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -481,11 +487,11 @@ const renderStatementView = () => {
         <div className="page-toolbar">
           <div className="pill-group">
             {[
-              { id: "todos", label: "Todos" },
-              { id: "borrador", label: "Borrador" },
-              { id: "enviado", label: "Enviados" },
-              { id: "aceptado", label: "Aceptados" },
-              { id: "rechazado", label: "Rechazados" },
+              { id: "todos", label: t(lang, "todos") },
+              { id: "borrador", label: t(lang, "borrador") },
+              { id: "enviado", label: t(lang, "enviado") },
+              { id: "aceptado", label: t(lang, "aceptado") },
+              { id: "rechazado", label: t(lang, "rechazado") },
             ].map((opt) => (
               <button
                 key={opt.id}
@@ -499,9 +505,9 @@ const renderStatementView = () => {
         </div>
 
         {loading ? (
-          <p className="muted">Cargando estimados…</p>
+          <p className="muted">{t(lang, "cargando")}</p>
         ) : filtrados.length === 0 ? (
-          <p className="muted">No hay estimados con ese filtro.</p>
+          <p className="muted">{t(lang, "sin_resultados")}</p>
         ) : (
           <div className="list">
             {filtrados.map((e) => (
@@ -517,7 +523,7 @@ const renderStatementView = () => {
                     <span className="badge badge-soft">{e.moneda}</span>
                   </div>
                   <h3 className="card-title">
-                    {e.cliente_nombre || "Cliente sin nombre"}
+                    {e.cliente_nombre || t(lang, "cliente_sin_nombre")}
                   </h3>
                   <p className="card-text">{e.direccion_trabajo}</p>
                   <p className="card-text muted">
@@ -547,7 +553,7 @@ const renderStatementView = () => {
                         openStatement(e);
                       }}
                     >
-                      Statement
+                      {t(lang, "statement")}
                     </button>
                     <button
                       className="btn-ghost"
@@ -556,7 +562,7 @@ const renderStatementView = () => {
                         openEditModal(e);
                       }}
                     >
-                      Editar
+                      {t(lang, "editar")}
                     </button>
                     <button
                       className="btn-danger-ghost"
@@ -565,7 +571,7 @@ const renderStatementView = () => {
                         askDelete(e);
                       }}
                     >
-                      Eliminar
+                      {t(lang, "eliminar")}
                     </button>
                   </div>
                 </div>
@@ -581,9 +587,9 @@ const renderStatementView = () => {
     <div className="page">
       <header className="page-header">
         <div className="page-header-main">
-          <h2 className="page-title">Estimados</h2>
+          <h2 className="page-title">{t(lang, "estimados")}</h2>
           <p className="page-subtitle">
-            Gestión de estimados para trabajos de pavers y otros.
+            {t(lang, "estimados_page_subtitle")}
           </p>
         </div>
         <div style={{ display: "flex", gap: "0.5rem" }}>
@@ -591,16 +597,16 @@ const renderStatementView = () => {
             className={`pill ${viewMode === "list" ? "pill--active" : ""}`}
             onClick={() => setViewMode("list")}
           >
-            Lista
+            {t(lang, "lista")}
           </button>
           <button
             className={`pill ${viewMode === "statement" ? "pill--active" : ""}`}
             onClick={() => setViewMode("statement")}
           >
-            Statement
+            {t(lang, "statement")}
           </button>
           <button className="btn-primary" onClick={openNewModal}>
-            + Nuevo estimado
+            + {t(lang, "nuevo_estimado")}
           </button>
         </div>
       </header>
@@ -610,25 +616,25 @@ const renderStatementView = () => {
       {/* Modal crear / editar */}
       <Modal
         open={modalOpen}
-        title={editingEstimado ? "Editar estimado" : "Nuevo estimado"}
+        title={editingEstimado ? t(lang, "editar_estimado_title") : t(lang, "nuevo_estimado_title")}
         onClose={() => setModalOpen(false)}
         wide
       >
         <form className="items-form" onSubmit={handleSubmit}>
           <div className="items-form-section">
-            <h3 className="items-form-title">Datos del Cliente</h3>
+            <h3 className="items-form-title">{t(lang, "datos_cliente")}</h3>
             <div className="items-form-grid">
               <label className="form-field">
-                <span>Cliente</span>
+                <span>{t(lang, "cliente")}</span>
                 <SearchableSelect
                   value={form.cliente_id}
                   onChange={handleChange}
                   options={clientes.map(c => ({ value: c.id, label: c.nombre }))}
-                  placeholder="Seleccione un cliente"
+                  placeholder={t(lang, "seleccionar_cliente")}
                 />
               </label>
               <label className="form-field">
-                <span>Dirección del trabajo</span>
+                <span>{t(lang, "direccion_trabajo")}</span>
                 <input
                   className="input"
                   name="direccion_trabajo"
@@ -638,7 +644,7 @@ const renderStatementView = () => {
                 />
               </label>
               <label className="form-field">
-                <span>Fecha</span>
+                <span>{t(lang, "fecha")}</span>
                 <input
                   className="input"
                   type="date"
@@ -652,20 +658,20 @@ const renderStatementView = () => {
           </div>
 
           <div className="items-form-section">
-            <h3 className="items-form-title">Agregar Materials</h3>
+            <h3 className="items-form-title">{t(lang, "agregar_materials")}</h3>
             <div className="items-input-row">
               <div className="items-input-field items-input-desc">
-                <span>Descripción</span>
+                <span>{t(lang, "descripcion")}</span>
                 <input
                   className="input"
                   name="descripcion"
                   value={newItem.descripcion}
                   onChange={handleNewItemChange}
-                  placeholder="ej. Marco de puerta"
+                  placeholder={t(lang, "ejemplo_material")}
                 />
               </div>
               <div className="items-input-field">
-                <span>Cantidad</span>
+                <span>{t(lang, "cantidad")}</span>
                 <input
                   className="input"
                   type="number"
@@ -676,7 +682,7 @@ const renderStatementView = () => {
                 />
               </div>
               <div className="items-input-field">
-                <span>Precio Unit.</span>
+                <span>{t(lang, "precio_unit")}</span>
                 <input
                   className="input"
                   type="number"
@@ -698,18 +704,18 @@ const renderStatementView = () => {
           </div>
 
           <div className="items-form-section">
-            <h3 className="items-form-title">Materials Agregados</h3>
+            <h3 className="items-form-title">{t(lang, "materials_agregados")}</h3>
             {items.length === 0 ? (
-              <p className="muted">No hay materials agregados aún.</p>
+              <p className="muted">{t(lang, "sin_materials")}</p>
             ) : (
               <table className="items-table">
                 <thead>
                   <tr>
                     <th>#</th>
-                    <th>Descripción</th>
-                    <th>Cantidad</th>
-                    <th>P. Unit.</th>
-                    <th>Total</th>
+                    <th>{t(lang, "descripcion")}</th>
+                    <th>{t(lang, "cantidad")}</th>
+                    <th>{t(lang, "precio_unit")}</th>
+                    <th>{t(lang, "total")}</th>
                     <th></th>
                   </tr>
                 </thead>
@@ -736,7 +742,7 @@ const renderStatementView = () => {
                 <tfoot>
                   <tr>
                     <td colSpan={4} className="items-total-label">
-                      Total Estimado
+                      {t(lang, "total_estimado")}
                     </td>
                     <td className="items-total-value">
                       ${calculateTotal().toFixed(2)}
@@ -749,17 +755,17 @@ const renderStatementView = () => {
           </div>
 
           <div className="items-form-section">
-            <h3 className="items-form-title">Notas Adicionales</h3>
+            <h3 className="items-form-title">{t(lang, "notas_adicionales_trabajo")}</h3>
             <div className="items-form-grid">
               <label className="form-field form-field--full">
-                <span>Descripción del trabajo</span>
+                <span>{t(lang, "descripcion_trabajo")}</span>
                 <textarea
                   className="input"
                   name="descripcion_trabajo"
                   value={form.descripcion_trabajo}
                   onChange={handleChange}
                   rows={3}
-                  placeholder="Notas adicionales sobre el trabajo..."
+                  placeholder={t(lang, "descripcion_trabajo_placeholder")}
                 />
               </label>
             </div>
@@ -768,21 +774,21 @@ const renderStatementView = () => {
           <div className="items-form-footer">
             <div className="items-form-footer-left">
               <label className="form-field">
-                <span>Estado</span>
+                <span>{t(lang, "estado")}</span>
                 <select
                   className="input"
                   name="estado"
                   value={form.estado}
                   onChange={handleChange}
                 >
-                  <option value="borrador">Borrador</option>
-                  <option value="enviado">Enviado</option>
-                  <option value="aceptado">Aceptado</option>
-                  <option value="rechazado">Rechazado</option>
+                  <option value="borrador">{t(lang, "borrador")}</option>
+                  <option value="enviado">{t(lang, "enviado")}</option>
+                  <option value="aceptado">{t(lang, "aceptado")}</option>
+                  <option value="rechazado">{t(lang, "rechazado")}</option>
                 </select>
               </label>
               <label className="form-field">
-                <span>Moneda</span>
+                <span>{t(lang, "moneda")}</span>
                 <input
                   className="input"
                   name="moneda"
@@ -793,7 +799,7 @@ const renderStatementView = () => {
             </div>
             <div className="items-form-footer-right">
               <span className="items-grand-total">
-                Total: ${calculateTotal().toFixed(2)} {form.moneda}
+                {t(lang, "total")}: ${calculateTotal().toFixed(2)} {form.moneda}
               </span>
             </div>
           </div>
@@ -804,10 +810,10 @@ const renderStatementView = () => {
               className="btn-ghost"
               onClick={() => setModalOpen(false)}
             >
-              Cancelar
+              {t(lang, "cancelar")}
             </button>
             <button type="submit" className="btn-primary">
-              Guardar
+              {t(lang, "guardar")}
             </button>
           </div>
         </form>
@@ -816,11 +822,11 @@ const renderStatementView = () => {
       {/* Modal confirmación eliminar */}
       <Modal
         open={confirmDeleteOpen}
-        title="Confirmar eliminación"
+        title={t(lang, "confirmar_eliminar")}
         onClose={cancelDelete}
       >
         <p>
-          ¿Seguro que deseas eliminar este estimado
+          {t(lang, "seguro_eliminar_estimado")}
           {estimadoToDelete?.cliente_nombre
             ? ` de "${estimadoToDelete.cliente_nombre}" `
             : ""}
@@ -832,14 +838,14 @@ const renderStatementView = () => {
             className="btn-ghost"
             onClick={cancelDelete}
           >
-            Cancelar
+            {t(lang, "cancelar")}
           </button>
           <button
             type="button"
             className="btn btn-danger"
             onClick={confirmDelete}
           >
-            Sí, eliminar
+            {t(lang, "si_eliminar")}
           </button>
         </div>
       </Modal>
@@ -853,13 +859,16 @@ const renderStatementView = () => {
       >
         {estimadoDetalle && (
           <div className="detalle-statement">
-<div className="statement-header-modal">
+            <div className="statement-header-modal">
               <div className="statement-logo-section">
                 <img src="/logo.jpg" alt="Logo" className="statement-logo-img" />
                 <div className="statement-brand">
                   <h1 className="statement-title">Sistema de Gestión</h1>
                   <p className="statement-subtitle">Detalle</p>
                 </div>
+              </div>
+              <div className="statement-date print-date" style={{ display: 'none' }}>
+                <span>Fecha:</span> {estimadoDetalle.fecha?.slice(0, 10)}
               </div>
               <button
                 type="button"
@@ -956,13 +965,16 @@ const renderStatementView = () => {
       >
         {estimadoStatement && (
           <div className="statement-modal">
-<div className="statement-header-modal">
+            <div className="statement-header-modal">
               <div className="statement-logo-section">
                 <img src="/logo.jpg" alt="Logo" className="statement-logo-img" />
                 <div className="statement-brand">
                   <h1 className="statement-title">Sistema de Gestión</h1>
                   <p className="statement-subtitle">Statement</p>
                 </div>
+              </div>
+              <div className="statement-date print-date" style={{ display: 'none' }}>
+                <span>Fecha:</span> {estimadoStatement.fecha?.slice(0, 10)}
               </div>
               <button
                 type="button"

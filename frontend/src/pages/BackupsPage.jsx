@@ -1,10 +1,13 @@
 // frontend/src/pages/BackupsPage.jsx
 import React, { useEffect, useState } from "react";
 import Modal from "../components/Modal";
+import { useLanguage } from "../i18n/LanguageContext";
+import { t } from "../i18n/translations";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
 
 const BackupsPage = () => {
+  const { lang } = useLanguage();
   const [backups, setBackups] = useState([]);
   const [loadingCreate, setLoadingCreate] = useState(false);
   const [loadingList, setLoadingList] = useState(false);
@@ -235,10 +238,9 @@ const BackupsPage = () => {
     <div className="page">
       <header className="page-header">
         <div className="page-header-main">
-          <h1 className="page-title">Gestión de Backups</h1>
+          <h1 className="page-title">{t(lang, "backups")}</h1>
           <p className="page-subtitle">
-            Crea copias de seguridad de la base de datos y restaura estados
-            anteriores cuando sea necesario.
+            {t(lang, "backups_page_subtitle")}
           </p>
         </div>
 
@@ -248,7 +250,7 @@ const BackupsPage = () => {
             onClick={openCreateConfirm}
             disabled={loadingCreate}
           >
-            {loadingCreate ? "Creando backup..." : "Crear backup ahora"}
+            {loadingCreate ? t(lang, "creando_backup") : t(lang, "crear_backup")}
           </button>
 
           <button
@@ -256,7 +258,7 @@ const BackupsPage = () => {
             onClick={fetchBackups}
             disabled={loadingList}
           >
-            {loadingList ? "Actualizando lista..." : "Actualizar lista"}
+            {loadingList ? t(lang, "actualizando_lista") : t(lang, "actualizar_lista")}
           </button>
         </div>
       </header>
@@ -282,11 +284,9 @@ const BackupsPage = () => {
 
       {/* Sección para subir backup */}
       <section className="card" style={{ marginTop: "1rem" }}>
-        <h2>Subir backup desde archivo</h2>
+        <h2>{t(lang, "subir_desde_archivo")}</h2>
         <p className="muted">
-          Puedes cargar un archivo <code>.db</code> que tengas en un USB o que
-          venga de otra computadora. Luego podrás restaurarlo desde la tabla de
-          backups.
+          {t(lang, "subir_backup_desc")}
         </p>
 
         <div className="upload-row">
@@ -298,7 +298,7 @@ const BackupsPage = () => {
               className="file-input-hidden"
             />
             <span className="file-input-btn">
-              {backupFile ? backupFile.name : "Seleccionar archivo .db"}
+              {backupFile ? backupFile.name : t(lang, "seleccionar_archivo")}
             </span>
           </label>
           <button
@@ -307,7 +307,7 @@ const BackupsPage = () => {
             onClick={handleUploadBackup}
             disabled={uploading || !backupFile}
           >
-            {uploading ? "Subiendo..." : "Subir backup"}
+            {uploading ? t(lang, "subiendo") : t(lang, "subir_backup_btn")}
           </button>
         </div>
       </section>
@@ -315,7 +315,7 @@ const BackupsPage = () => {
       <div className="page-toolbar">
         <input
           className="input search-bar"
-          placeholder="Buscar archivos..."
+          placeholder={t(lang, "busqueda")}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
@@ -326,10 +326,9 @@ const BackupsPage = () => {
         {backupsFiltrados.length === 0 ? (
           <div className="card">
             <div className="card-main">
-              <p className="card-title">No hay backups registrados.</p>
+              <p className="card-title">{t(lang, "sin_backups")}</p>
               <p className="card-text muted">
-                Crea tu primer backup para mantener segura la información de tus
-                clientes, visitas y recibos.
+                {t(lang, "sin_backups_desc")}
               </p>
             </div>
           </div>
@@ -338,8 +337,8 @@ const BackupsPage = () => {
             <table className="table">
               <thead>
                 <tr>
-                  <th>Archivo</th>
-                  <th style={{ width: "320px" }}>Acciones</th>
+                  <th>{t(lang, "archivo")}</th>
+                  <th style={{ width: "320px" }}>{t(lang, "acciones")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -352,21 +351,21 @@ const BackupsPage = () => {
                         className="btn btn-outline"
                         onClick={() => handleDownload(file)}
                       >
-                        Descargar
+                        {t(lang, "descargar")}
                       </button>
                       <button
                         type="button"
                         className="btn btn-primary"
                         onClick={() => askRestore(file)}
                       >
-                        Restaurar
+                        {t(lang, "restaurar")}
                       </button>
                       <button
                         type="button"
                         className="btn btn-danger"
                         onClick={() => askDelete(file)}
                       >
-                        Eliminar
+                        {t(lang, "eliminar")}
                       </button>
                     </td>
                   </tr>
@@ -377,25 +376,21 @@ const BackupsPage = () => {
         )}
 
         <p className="muted" style={{ marginTop: "0.4rem" }}>
-          ⚠️ Antes de restaurar un backup, cierra el sistema; después de
-          restaurar, reinicia el backend.
+          ⚠️ {t(lang, "advertencia_restaurar")}
         </p>
       </div>
 
       {/* Modal CREAR backup */}
       <Modal
         open={confirmCreateOpen}
-        title="Crear nuevo backup"
+        title={t(lang, "crear_backup_title")}
         onClose={cancelCreate}
       >
         <p>
-          Se creará una copia de la base de datos actual (clientes, visitas,
-          recibos, estimados, etc.). Podrás descargarla o restaurarla más
-          adelante.
+          {t(lang, "crear_backup_desc")}
         </p>
         <p className="muted" style={{ marginTop: "0.4rem" }}>
-          Es recomendable realizar el backup en un momento donde no se estén
-          registrando muchos cambios.
+          {t(lang, "crear_backup_recomendacion")}
         </p>
         <div className="form-actions" style={{ marginTop: "1rem" }}>
           <button
@@ -404,7 +399,7 @@ const BackupsPage = () => {
             onClick={cancelCreate}
             disabled={loadingCreate}
           >
-            Cancelar
+            {t(lang, "cancelar")}
           </button>
           <button
             type="button"
@@ -412,7 +407,7 @@ const BackupsPage = () => {
             onClick={handleCreateBackup}
             disabled={loadingCreate}
           >
-            {loadingCreate ? "Creando backup..." : "Sí, crear backup"}
+            {loadingCreate ? t(lang, "creando_backup") : t(lang, "si_crear_backup")}
           </button>
         </div>
       </Modal>
@@ -420,16 +415,14 @@ const BackupsPage = () => {
       {/* Modal RESTAURAR backup */}
       <Modal
         open={confirmRestoreOpen}
-        title="Restaurar backup"
+        title={t(lang, "restaurar_backup_title")}
         onClose={cancelRestore}
       >
         <p>
-          Vas a restaurar el backup <strong>{backupToRestore}</strong>.
+          {t(lang, "restaurar_backup_text")} <strong>{backupToRestore}</strong>.
         </p>
         <p className="muted" style={{ marginTop: "0.4rem" }}>
-          Esto <strong>sobrescribirá la base de datos actual</strong> con el
-          estado que tenía cuando se creó este backup. Asegúrate de que nadie
-          esté usando el sistema.
+          {t(lang, "restaurar_backup_advertencia")}
         </p>
         <div className="form-actions" style={{ marginTop: "1rem" }}>
           <button
@@ -438,7 +431,7 @@ const BackupsPage = () => {
             onClick={cancelRestore}
             disabled={loadingRestore}
           >
-            Cancelar
+            {t(lang, "cancelar")}
           </button>
           <button
             type="button"
@@ -446,7 +439,7 @@ const BackupsPage = () => {
             onClick={confirmRestore}
             disabled={loadingRestore}
           >
-            {loadingRestore ? "Restaurando..." : "Sí, restaurar backup"}
+            {loadingRestore ? t(lang, "restaurando") : t(lang, "si_restaurar_backup")}
           </button>
         </div>
       </Modal>
@@ -454,14 +447,12 @@ const BackupsPage = () => {
       {/* Modal ELIMINAR backup */}
       <Modal
         open={confirmDeleteOpen}
-        title="Confirmar eliminación de backup"
+        title={t(lang, "confirmar_eliminar_backup")}
         onClose={cancelDelete}
       >
         <p>
-          ¿Seguro que deseas eliminar el backup{" "}
-          <strong>{backupToDelete}</strong>? Esta acción no se puede
-          deshacer, pero no afecta la base de datos actual, solo elimina el
-          archivo de copia.
+          {t(lang, "seguro_eliminar_backup")}
+          <strong>{backupToDelete}</strong>. {t(lang, "seguro_eliminar_backup_desc")}
         </p>
         <div className="form-actions" style={{ marginTop: "1rem" }}>
           <button
@@ -470,7 +461,7 @@ const BackupsPage = () => {
             onClick={cancelDelete}
             disabled={loadingDelete}
           >
-            Cancelar
+            {t(lang, "cancelar")}
           </button>
           <button
             type="button"
@@ -478,7 +469,7 @@ const BackupsPage = () => {
             onClick={confirmDelete}
             disabled={loadingDelete}
           >
-            {loadingDelete ? "Eliminando..." : "Sí, eliminar"}
+            {loadingDelete ? t(lang, "eliminando") : t(lang, "si_eliminar")}
           </button>
         </div>
       </Modal>

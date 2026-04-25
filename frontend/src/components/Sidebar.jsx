@@ -1,7 +1,10 @@
 // src/components/Sidebar.jsx
 import React, { useState, useEffect } from "react";
+import { useLanguage } from "../i18n/LanguageContext";
+import { t } from "../i18n/translations";
 
 const Sidebar = ({ activePage, onChangePage }) => {
+  const { lang, setLang } = useLanguage();
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem("theme");
     if (saved) return saved === "dark";
@@ -19,11 +22,11 @@ const Sidebar = ({ activePage, onChangePage }) => {
   }, [darkMode]);
 
   const items = [
-    { id: "clientes", label: "Clientes" },
-    { id: "recibos", label: "Recibos" },
-    { id: "rutas", label: "Rutas" },
-    { id: "estimados", label: "Estimados" },
-    { id: "backups", label: "Backups" },
+    { id: "clientes", label: t(lang, "clientes") },
+    { id: "recibos", label: t(lang, "recibos") },
+    { id: "rutas", label: t(lang, "rutas") },
+    { id: "estimados", label: t(lang, "estimados") },
+    { id: "backups", label: t(lang, "backups") },
   ];
 
   return (
@@ -31,8 +34,8 @@ const Sidebar = ({ activePage, onChangePage }) => {
       <div className="sidebar-header">
         <img src="/logo.jpg" alt="Logo" className="sidebar-logo-img" />
         <div>
-          <h1 className="sidebar-title">Sistema de Gestión</h1>
-          <p className="sidebar-subtitle">Versión 1.0</p>
+          <h1 className="sidebar-title">{t(lang, "appName")}</h1>
+          <p className="sidebar-subtitle">{t(lang, "version")}</p>
         </div>
       </div>
 
@@ -53,11 +56,20 @@ const Sidebar = ({ activePage, onChangePage }) => {
 
       <div className="sidebar-footer">
         <button
-          className="sidebar-theme-toggle"
+          className="sidebar-toggle-btn"
           onClick={() => setDarkMode((d) => !d)}
-          title={darkMode ? "Modo claro" : "Modo oscuro"}
+          title={darkMode ? t(lang, "light") : t(lang, "dark")}
         >
           {darkMode ? "☀️" : "🌙"}
+          <span>{darkMode ? t(lang, "light") : t(lang, "dark")}</span>
+        </button>
+        <button
+          className="sidebar-toggle-btn"
+          onClick={() => setLang(lang === "es" ? "en" : "es")}
+          title={lang === "es" ? "Switch to English" : "Cambiar a Español"}
+        >
+          {lang === "es" ? "🇺🇸 EN" : "🇪🇸 ES"}
+          <span>{lang === "es" ? "EN" : "ES"}</span>
         </button>
       </div>
     </aside>

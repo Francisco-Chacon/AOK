@@ -3,11 +3,14 @@ import React, { useEffect, useState } from "react";
 import api from "../api/apiClient";
 import Modal from "../components/Modal";
 import SearchableSelect from "../components/SearchableSelect";
+import { useLanguage } from "../i18n/LanguageContext";
+import { t } from "../i18n/translations";
 
 const DIAS = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"];
 const DIAS_FILTRO = ["todos", ...DIAS];
 
 const RutasPage = () => {
+  const { lang } = useLanguage();
   const [visitas, setVisitas] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [diaActivo, setDiaActivo] = useState("todos");
@@ -177,18 +180,18 @@ const RutasPage = () => {
     <div className="page">
       <header className="page-header">
         <div className="page-header-main">
-          <h2 className="page-title">Rutas y visitas</h2>
+          <h2 className="page-title">{t(lang, "rutas")}</h2>
           <p className="page-subtitle">
-            Agenda semanal de visitas programadas a clientes.
+            {t(lang, "rutas_page_subtitle")}
           </p>
         </div>
         <button className="btn-primary" onClick={openNewModal}>
-          + Nueva visita
+          + {t(lang, "nueva_visita")}
         </button>
       </header>
 
       <p className="muted" style={{ marginBottom: "0.5rem" }}>
-        Total visitas en el sistema: {visitas.length}
+        {t(lang, "total_visitas")} {visitas.length}
       </p>
 
       <section className="stats-grid stats-grid--scroll">
@@ -196,7 +199,7 @@ const RutasPage = () => {
           <div key={dia} className="stat-card">
             <span className="stat-label">{capitalizar(dia)}</span>
             <span className="stat-value">
-              {visitasPorDia(dia).length} visitas
+              {visitasPorDia(dia).length} {t(lang, "visitas")}
             </span>
           </div>
         ))}
@@ -205,7 +208,7 @@ const RutasPage = () => {
       <div className="page-toolbar">
         <input
           className="input search-bar"
-          placeholder="Buscar visitas..."
+          placeholder={t(lang, "busqueda")}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
@@ -216,26 +219,26 @@ const RutasPage = () => {
               className={"pill" + (diaActivo === diaKey ? " pill--active" : "")}
               onClick={() => setDiaActivo(diaKey)}
             >
-              {diaKey === "todos" ? "Todos" : capitalizar(diaKey)}
+              {diaKey === "todos" ? t(lang, "todos") : capitalizar(diaKey)}
             </button>
           ))}
         </div>
         <span className="muted">
           {diaActivo === "todos"
-            ? `${visitas.length} visita(s) en total`
-            : `${visitasFiltradas.length} visita(s) para ${capitalizar(
+            ? `${visitas.length} ${t(lang, "visitas_total")}`
+            : `${visitasFiltradas.length} ${t(lang, "visitas_para")} ${capitalizar(
                 diaActivo
               )}`}
         </span>
       </div>
 
       {loading ? (
-        <p className="muted">Cargando visitas…</p>
+        <p className="muted">{t(lang, "cargando")}</p>
       ) : visitasFiltradas.length === 0 ? (
         <p className="muted">
           {diaActivo === "todos"
-            ? "No hay visitas registradas."
-            : "No hay visitas programadas para este día."}
+            ? t(lang, "sin_visitas")
+            : t(lang, "sin_visitas_dia")}
         </p>
       ) : (
         <div className="list">
@@ -248,21 +251,21 @@ const RutasPage = () => {
               <div className="card-main">
                 <div className="badge-row">
                   <span className="pill pill--soft">
-                    {v.fecha ? v.fecha.slice(0, 10) : "Sin fecha"}
+                    {v.fecha ? v.fecha.slice(0, 10) : t(lang, "sin_fecha")}
                   </span>
                   <span className="pill pill--soft">{v.hora}</span>
                   <span className="pill pill--soft">
-                    {v.duracion_minutos} min
+                    {v.duracion_minutos} {t(lang, "minutos")}
                   </span>
                 </div>
                 <h3 className="card-title">
-                  {v.cliente_nombre || "Cliente sin nombre"}
+                  {v.cliente_nombre || t(lang, "cliente_sin_nombre")}
                 </h3>
                 <p className="card-text">{v.direccion}</p>
               </div>
               <div className="card-meta">
                 <span className="badge badge-soft">
-                  {v.tipo_servicio || "Servicio"}
+                  {v.tipo_servicio || t(lang, "servicio")}
                 </span>
                 <div className="card-actions">
                   <button
@@ -272,7 +275,7 @@ const RutasPage = () => {
                       openEditModal(v);
                     }}
                   >
-                    Editar
+                    {t(lang, "editar")}
                   </button>
                   <button
                     className="btn-danger-ghost"
@@ -281,7 +284,7 @@ const RutasPage = () => {
                       askDelete(v);
                     }}
                   >
-                    Eliminar
+                    {t(lang, "eliminar")}
                   </button>
                 </div>
               </div>
@@ -292,22 +295,22 @@ const RutasPage = () => {
 
       <Modal
         open={modalOpen}
-        title={editingVisita ? "Editar visita" : "Nueva visita"}
+        title={editingVisita ? t(lang, "editar_visita_title") : t(lang, "nueva_visita_title")}
         onClose={() => setModalOpen(false)}
       >
         <form className="form-grid" onSubmit={handleSubmit}>
           <label className="form-field">
-            <span>Cliente</span>
+            <span>{t(lang, "cliente")}</span>
             <SearchableSelect
                 value={form.cliente_id}
                 onChange={handleChange}
                 options={clientes.map(c => ({ value: c.id, label: c.nombre }))}
-                placeholder="Seleccione un cliente"
+                placeholder={t(lang, "seleccionar_cliente")}
               />
           </label>
 
           <label className="form-field">
-            <span>Fecha</span>
+            <span>{t(lang, "fecha")}</span>
             <input
               className="input"
               type="date"
@@ -319,7 +322,7 @@ const RutasPage = () => {
           </label>
 
           <label className="form-field">
-            <span>Hora</span>
+            <span>{t(lang, "hora")}</span>
             <input
               className="input"
               name="hora"
@@ -330,7 +333,7 @@ const RutasPage = () => {
           </label>
 
           <label className="form-field">
-            <span>Duración (minutos)</span>
+            <span>{t(lang, "duracion")}</span>
             <input
               className="input"
               name="duracion_minutos"
@@ -343,7 +346,7 @@ const RutasPage = () => {
           </label>
 
           <label className="form-field form-field--full">
-            <span>Dirección</span>
+            <span>{t(lang, "direccion")}</span>
             <input
               className="input"
               name="direccion"
@@ -354,7 +357,7 @@ const RutasPage = () => {
           </label>
 
           <label className="form-field form-field--full">
-            <span>Tipo de servicio</span>
+            <span>{t(lang, "tipo_servicio")}</span>
             <input
               className="input"
               name="tipo_servicio"
@@ -369,10 +372,10 @@ const RutasPage = () => {
               className="btn-ghost"
               onClick={() => setModalOpen(false)}
             >
-              Cancelar
+              {t(lang, "cancelar")}
             </button>
             <button type="submit" className="btn-primary">
-              Guardar
+              {t(lang, "guardar")}
             </button>
           </div>
         </form>
@@ -380,11 +383,11 @@ const RutasPage = () => {
 
       <Modal
         open={confirmDeleteOpen}
-        title="Confirmar eliminación"
+        title={t(lang, "confirmar_eliminar")}
         onClose={cancelDelete}
       >
         <p>
-          ¿Seguro que quieres eliminar esta visita
+          {t(lang, "seguro_eliminar_visita")}
           {visitaToDelete?.cliente_nombre
             ? ` de "${visitaToDelete.cliente_nombre}"`
             : ""}?
@@ -395,39 +398,39 @@ const RutasPage = () => {
             className="btn-ghost"
             onClick={cancelDelete}
           >
-            Cancelar
+            {t(lang, "cancelar")}
           </button>
           <button
             type="button"
             className="btn btn-danger"
             onClick={confirmDelete}
           >
-            Sí, eliminar
+            {t(lang, "si_eliminar")}
           </button>
         </div>
       </Modal>
 
       <Modal
         open={detailsOpen}
-        title="Detalle de la visita"
+        title={t(lang, "detalle_visita")}
         onClose={closeDetails}
       >
         {visitaDetalle && (
           <div className="detalle-grid">
             <div>
-              <p className="detalle-label">Cliente</p>
+              <p className="detalle-label">{t(lang, "cliente")}</p>
               <p className="detalle-value">
-                {visitaDetalle.cliente_nombre || "Cliente sin nombre"}
+                {visitaDetalle.cliente_nombre || t(lang, "cliente_sin_nombre")}
               </p>
             </div>
             <div>
-              <p className="detalle-label">Fecha</p>
+              <p className="detalle-label">{t(lang, "fecha")}</p>
               <p className="detalle-value">
                 {visitaDetalle.fecha?.slice(0, 10) || "—"}
               </p>
             </div>
             <div>
-              <p className="detalle-label">Día</p>
+              <p className="detalle-label">{t(lang, "dia")}</p>
               <p className="detalle-value">
                 {capitalizar(
                   (visitaDetalle.dia_semana || "").toString().toLowerCase()
@@ -435,27 +438,27 @@ const RutasPage = () => {
               </p>
             </div>
             <div>
-              <p className="detalle-label">Hora</p>
+              <p className="detalle-label">{t(lang, "hora")}</p>
               <p className="detalle-value">
                 {visitaDetalle.hora || "—"}
               </p>
             </div>
             <div>
-              <p className="detalle-label">Duración</p>
+              <p className="detalle-label">{t(lang, "duracion")}</p>
               <p className="detalle-value">
-                {visitaDetalle.duracion_minutos || 0} min
+                {visitaDetalle.duracion_minutos || 0} {t(lang, "minutos")}
               </p>
             </div>
             <div className="detalle-full">
-              <p className="detalle-label">Dirección</p>
+              <p className="detalle-label">{t(lang, "direccion")}</p>
               <p className="detalle-value detalle-value--multiline">
-                {visitaDetalle.direccion || "Sin dirección registrada."}
+                {visitaDetalle.direccion || t(lang, "sin_direccion")}
               </p>
             </div>
             <div className="detalle-full">
-              <p className="detalle-label">Tipo de servicio</p>
+              <p className="detalle-label">{t(lang, "tipo_servicio")}</p>
               <p className="detalle-value">
-                {visitaDetalle.tipo_servicio || "Sin tipo de servicio."}
+                {visitaDetalle.tipo_servicio || t(lang, "sin_tipo_servicio")}
               </p>
             </div>
           </div>
