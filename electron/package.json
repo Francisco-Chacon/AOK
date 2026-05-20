@@ -1,10 +1,28 @@
 {
-  "name": "backend-sistema-gestion",
+  "name": "sistema-gestion-electron",
   "version": "1.0.0",
   "private": true,
-  "main": "src/server.js",
+  "main": "main.js",
   "scripts": {
-    "dev": "node src/server.js",
-    "start": "node src/server.js"
+    "dev": "electron .",
+    "build": "electron-builder --win",
+    "dist": "npm run build"
+  },
+  "dependencies": {
+    "electron": "^33.0.0"
+  },
+  "devDependencies": {
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "com.sistema.gestion",
+    "productName": "Sistema Gestion",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "portable",
+      "icon": "build/icon.ico"
+    }
   }
 }

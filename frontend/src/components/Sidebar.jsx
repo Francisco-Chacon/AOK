@@ -21,11 +21,14 @@ const Sidebar = ({ activePage, onChangePage }) => {
     }
   }, [darkMode]);
 
-  const items = [
+const items = [
     { id: "clientes", label: t(lang, "clientes") },
     { id: "recibos", label: t(lang, "recibos") },
     { id: "rutas", label: t(lang, "rutas") },
+    { id: "facturas", label: t(lang, "facturas") },
+    { id: "rutas-hojas", label: t(lang, "rutas_hojas") },
     { id: "estimados", label: t(lang, "estimados") },
+    { id: "proposals", label: t(lang, "proposals") },
     { id: "backups", label: t(lang, "backups") },
   ];
 

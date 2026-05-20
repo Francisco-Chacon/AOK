@@ -3,67 +3,51 @@ const Database = require("better-sqlite3");
 const path = require("path");
 const fs = require("fs");
 
-// Ruta al archivo de la base
 const dbPath = path.join(__dirname, "../../data/gestion_local.db");
 
-// Asegurarse de que exista la carpeta /data
 fs.mkdirSync(path.dirname(dbPath), { recursive: true });
 
-// Abrir / crear la BD
 const db = new Database(dbPath);
 
-// Activar claves foráneas
 db.pragma("foreign_keys = ON");
 
-// Crear tablas si no existen
 db.exec(`
-  -- =========================
-  -- CLIENTES
-  -- =========================
   CREATE TABLE IF NOT EXISTS clientes (
     id            INTEGER PRIMARY KEY AUTOINCREMENT,
     nombre        TEXT NOT NULL,
     direccion     TEXT,
     telefono      TEXT,
+    email         TEXT,
     tipo_servicio TEXT NOT NULL,
     estado        TEXT NOT NULL DEFAULT 'activo',
     created_at    TEXT NOT NULL,
     updated_at    TEXT NOT NULL
   );
 
--- =========================
--- RUTAS
--- =========================
-CREATE TABLE IF NOT EXISTS rutas (
-  id            INTEGER PRIMARY KEY AUTOINCREMENT,
-  nombre        TEXT NOT NULL,
-  dia           TEXT NOT NULL,      -- lunes, martes, ..., domingo
-  tipo_servicio TEXT,               -- plomería, electricidad, etc.
-  descripcion   TEXT,
-  created_at    TEXT NOT NULL,
-  updated_at    TEXT NOT NULL
-);
+  CREATE TABLE IF NOT EXISTS rutas (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    nombre        TEXT NOT NULL,
+    dia           TEXT NOT NULL,
+    tipo_servicio TEXT,
+    descripcion   TEXT,
+    created_at    TEXT NOT NULL,
+    updated_at    TEXT NOT NULL
+  );
 
--- =========================
--- VISITAS
--- =========================
-CREATE TABLE IF NOT EXISTS visitas (
-  id               INTEGER PRIMARY KEY AUTOINCREMENT,
-  cliente_id       INTEGER NOT NULL,
-  fecha            TEXT    NOT NULL,   -- 👈 NUEVO: fecha completa YYYY-MM-DD
-  dia_semana       TEXT    NOT NULL,   -- lunes, martes, ...
-  direccion        TEXT    NOT NULL,
-  hora             TEXT    NOT NULL,
-  duracion_minutos INTEGER NOT NULL DEFAULT 60,
-  tipo_servicio    TEXT    DEFAULT '',
-  created_at       TEXT    NOT NULL,
-  updated_at       TEXT    NOT NULL,
-  FOREIGN KEY (cliente_id) REFERENCES clientes(id)
-);
+  CREATE TABLE IF NOT EXISTS visitas (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    cliente_id       INTEGER NOT NULL,
+    fecha            TEXT    NOT NULL,
+    dia_semana       TEXT    NOT NULL,
+    direccion        TEXT    NOT NULL,
+    hora             TEXT    NOT NULL,
+    duracion_minutos INTEGER NOT NULL DEFAULT 60,
+    tipo_servicio    TEXT    DEFAULT '',
+    created_at       TEXT    NOT NULL,
+    updated_at       TEXT    NOT NULL,
+    FOREIGN KEY (cliente_id) REFERENCES clientes(id)
+  );
 
-  -- =========================
-  -- RECIBOS
-  -- =========================
   CREATE TABLE IF NOT EXISTS recibos (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     cliente_id  INTEGER NOT NULL,
@@ -77,24 +61,80 @@ CREATE TABLE IF NOT EXISTS visitas (
     FOREIGN KEY (cliente_id) REFERENCES clientes(id) ON DELETE CASCADE
   );
 
-  -- =========================
-  -- ESTIMADOS
-  -- =========================
   CREATE TABLE IF NOT EXISTS estimados (
     id                  INTEGER PRIMARY KEY AUTOINCREMENT,
     cliente_id          INTEGER NOT NULL,
     direccion_trabajo   TEXT    NOT NULL,
-    fecha               TEXT    NOT NULL,        -- ISO: "2025-11-26"
-    monto               REAL    NOT NULL,        -- 35950.00
+    fecha               TEXT    NOT NULL,
+    monto               REAL    NOT NULL,
     moneda              TEXT    NOT NULL DEFAULT 'USD',
-    descripcion_trabajo TEXT,                    -- texto largo: pavers, pvc, gas line, etc.
-    notas_adicionales   TEXT,                    -- notas adicionales del trabajo
-    estado              TEXT    NOT NULL DEFAULT 'borrador', 
-    -- 'borrador' | 'enviado' | 'aceptado' | 'rechazado'
+    descripcion_trabajo TEXT,
+    notas_adicionales   TEXT,
+    estado              TEXT    NOT NULL DEFAULT 'borrador',
     created_at          TEXT    NOT NULL,
-    updated_at         TEXT    NOT NULL,
+    updated_at          TEXT    NOT NULL,
     FOREIGN KEY (cliente_id) REFERENCES clientes(id)
   );
+
+  CREATE TABLE IF NOT EXISTS facturas (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    cliente_id  INTEGER NOT NULL,
+    fecha       TEXT NOT NULL,
+    estado      TEXT NOT NULL DEFAULT 'pendiente',
+    nota        TEXT,
+    created_at  TEXT NOT NULL,
+    updated_at  TEXT NOT NULL,
+    FOREIGN KEY (cliente_id) REFERENCES clientes(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS facturas_items (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    factura_id  INTEGER NOT NULL,
+    fecha       TEXT NOT NULL,
+    descripcion TEXT NOT NULL,
+    cantidad    INTEGER NOT NULL DEFAULT 1,
+    precio      REAL NOT NULL DEFAULT 0,
+    created_at  TEXT NOT NULL,
+    updated_at  TEXT NOT NULL,
+    FOREIGN KEY (factura_id) REFERENCES facturas(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS rutas_hojas (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    fecha        TEXT NOT NULL,
+    conductor    TEXT,
+    camion       TEXT,
+    created_at   TEXT NOT NULL,
+    updated_at   TEXT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS rutas_hojas_clientes (
+    id                 INTEGER PRIMARY KEY AUTOINCREMENT,
+    hoja_id            INTEGER NOT NULL,
+    cliente_id         INTEGER,
+    cliente_nombre     TEXT,
+    cliente_direccion  TEXT,
+    hora_entrada       TEXT,
+    hora_salida        TEXT,
+    descripcion        TEXT,
+    created_at         TEXT NOT NULL,
+    updated_at         TEXT NOT NULL,
+    FOREIGN KEY (hoja_id) REFERENCES rutas_hojas(id) ON DELETE CASCADE
+  );
 `);
+
+const alterTableIfNeeded = (table, column, definition) => {
+  try {
+    const result = db.prepare(`PRAGMA table_info(${table})`).all();
+    const exists = result.some((col) => col.name === column);
+    if (!exists) {
+      db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+    }
+  } catch (e) {
+    // ignore
+  }
+};
+
+alterTableIfNeeded("clientes", "email", "TEXT");
 
 module.exports = db;

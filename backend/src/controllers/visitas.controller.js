@@ -1,5 +1,18 @@
 // backend/src/controllers/visitas.controller.js
 const db = require("../db/sqlite");
+const { validateNumber, validateString, validateDate } = require("../utils/validation");
+const logger = require("../utils/logger");
+
+// ============================
+// Validar ID
+// ============================
+function validateId(id, res) {
+  if (!id || isNaN(Number(id)) || Number(id) <= 0) {
+    res.status(400).json({ message: "ID inválido" });
+    return null;
+  }
+  return Number(id);
+}
 
 // Utilidad para calcular el día de la semana en texto
 function diaSemanaDesdeFecha(fechaStr) {
@@ -73,10 +86,10 @@ function getAllVisitas(req, res) {
       updated_at: v.updated_at,
     }));
 
-    console.log(">>> getAllVisitas devolviendo", visitas.length, "visitas");
+    logger.debug("getAllVisitas", { count: visitas.length });
     res.json(visitas);
   } catch (err) {
-    console.error("Error getAllVisitas", err);
+    logger.error("Error getAllVisitas", { error: err.message });
     res.status(500).json({ message: "Error al obtener visitas" });
   }
 }
@@ -86,7 +99,7 @@ function getAllVisitas(req, res) {
 // ============================
 function createVisita(req, res) {
   try {
-    console.log("Body recibido en createVisita:", req.body);
+    logger.debug("createVisita requested", { cliente_id, fecha, hora });
 
     const {
       cliente_id,
@@ -97,11 +110,21 @@ function createVisita(req, res) {
       tipo_servicio,
     } = req.body;
 
-    if (!cliente_id || !fecha || !hora || !direccion) {
-      return res.status(400).json({
-        message:
-          "Faltan campos obligatorios (cliente_id, fecha, hora, direccion)",
-      });
+    let validClienteId, validDuracion;
+    try {
+      validClienteId = validateNumber(cliente_id, "cliente_id", false);
+      validateDate(fecha, "fecha", true);
+      validateString(hora, "hora", 5, true);
+      validDuracion = validateNumber(duracion_minutos, "duracion_minutos", false);
+      validateString(direccion, "direccion", 300, true);
+      validateString(tipo_servicio, "tipo_servicio", 100, false);
+    } catch (err) {
+      return res.status(400).json({ message: err.message });
+    }
+
+    const clienteExists = db.prepare("SELECT id FROM clientes WHERE id = ?").get(validClienteId);
+    if (!clienteExists) {
+      return res.status(400).json({ message: "El cliente no existe" });
     }
 
     const dia_semana_calc = diaSemanaDesdeFecha(fecha);
@@ -110,7 +133,7 @@ function createVisita(req, res) {
     }
 
     const now = new Date().toISOString();
-    const duracion = Number(duracion_minutos) || 60;
+    const duracion = validDuracion || 60;
 
     const stmt = db.prepare(`
       INSERT INTO visitas (
@@ -128,7 +151,7 @@ function createVisita(req, res) {
     `);
 
     const result = stmt.run(
-      cliente_id,
+      validClienteId,
       fecha,
       dia_semana_calc,
       hora,
@@ -161,7 +184,7 @@ function createVisita(req, res) {
 
     res.status(201).json(visita);
   } catch (err) {
-    console.error("Error createVisita", err);
+    logger.error("Error createVisita", { error: err.message });
     res.status(500).json({ message: "Error al crear visita" });
   }
 }
@@ -172,6 +195,8 @@ function createVisita(req, res) {
 function updateVisita(req, res) {
   try {
     const { id } = req.params;
+    const validId = validateId(id, res);
+    if (!validId) return;
 
     const {
       cliente_id,
@@ -182,11 +207,16 @@ function updateVisita(req, res) {
       tipo_servicio,
     } = req.body;
 
-    if (!cliente_id || !fecha || !hora || !direccion) {
-      return res.status(400).json({
-        message:
-          "Faltan campos obligatorios (cliente_id, fecha, hora, direccion)",
-      });
+    let validClienteId, validDuracion;
+    try {
+      validClienteId = validateNumber(cliente_id, "cliente_id", false);
+      validateDate(fecha, "fecha", true);
+      validateString(hora, "hora", 5, true);
+      validDuracion = validateNumber(duracion_minutos, "duracion_minutos", false);
+      validateString(direccion, "direccion", 300, true);
+      validateString(tipo_servicio, "tipo_servicio", 100, false);
+    } catch (err) {
+      return res.status(400).json({ message: err.message });
     }
 
     const dia_semana_calc = diaSemanaDesdeFecha(fecha);
@@ -195,7 +225,7 @@ function updateVisita(req, res) {
     }
 
     const now = new Date().toISOString();
-    const duracion = Number(duracion_minutos) || 60;
+    const duracion = validDuracion || 60;
 
     const stmt = db.prepare(`
       UPDATE visitas
@@ -212,7 +242,7 @@ function updateVisita(req, res) {
     `);
 
     const result = stmt.run(
-      cliente_id,
+      validClienteId,
       fecha,
       dia_semana_calc,
       hora,
@@ -220,7 +250,7 @@ function updateVisita(req, res) {
       direccion,
       tipo_servicio || "",
       now,
-      id
+      validId
     );
 
     if (result.changes === 0) {
@@ -245,11 +275,11 @@ function updateVisita(req, res) {
         LEFT JOIN clientes c ON c.id = v.cliente_id
         WHERE v.id = ?
       `)
-      .get(id);
+      .get(validId);
 
     res.json(visita);
   } catch (err) {
-    console.error("Error updateVisita", err);
+    logger.error("Error updateVisita", { error: err.message });
     res.status(500).json({ message: "Error al actualizar visita" });
   }
 }
@@ -260,9 +290,11 @@ function updateVisita(req, res) {
 function deleteVisita(req, res) {
   try {
     const { id } = req.params;
+    const validId = validateId(id, res);
+    if (!validId) return;
 
     const stmt = db.prepare("DELETE FROM visitas WHERE id = ?");
-    const result = stmt.run(id);
+    const result = stmt.run(validId);
 
     if (result.changes === 0) {
       return res.status(404).json({ message: "Visita no encontrada" });
@@ -270,7 +302,7 @@ function deleteVisita(req, res) {
 
     res.status(204).send();
   } catch (err) {
-    console.error("Error deleteVisita", err);
+    logger.error("Error deleteVisita", { error: err.message });
     res.status(500).json({ message: "Error al eliminar visita" });
   }
 }

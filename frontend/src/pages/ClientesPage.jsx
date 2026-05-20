@@ -25,6 +25,7 @@ const ClientesPage = () => {
     nombre: "",
     direccion: "",
     telefono: "",
+    email: "",
     servicio_principal: "",
     estado: "activo",
   });
@@ -120,7 +121,16 @@ const ClientesPage = () => {
   };
 
   // 🔴 Flujo de borrado con modal propio
-  const askDelete = (cliente) => {
+  const [recibosCount, setRecibosCount] = useState(0);
+
+  const askDelete = async (cliente) => {
+    try {
+      const res = await api.get(`/clientes/${cliente.id}/recibos-count`);
+      const count = res.data.count || 0;
+      setRecibosCount(count);
+    } catch (err) {
+      setRecibosCount(0);
+    }
     setClienteToDelete(cliente);
     setConfirmDeleteOpen(true);
   };
@@ -128,6 +138,7 @@ const ClientesPage = () => {
   const cancelDelete = () => {
     setConfirmDeleteOpen(false);
     setClienteToDelete(null);
+    setRecibosCount(0);
   };
 
   const confirmDelete = async () => {
@@ -141,6 +152,7 @@ const ClientesPage = () => {
     } finally {
       setConfirmDeleteOpen(false);
       setClienteToDelete(null);
+      setRecibosCount(0);
     }
   };
 
@@ -322,6 +334,16 @@ const ClientesPage = () => {
             />
           </label>
           <label className="form-field">
+            <span>{t(lang, "email")}</span>
+            <input
+              className="input"
+              type="email"
+              name="email"
+              value={form.email}
+              onChange={handleChange}
+            />
+          </label>
+          <label className="form-field">
             <span>{t(lang, "servicio_principal")}</span>
             <input
               className="input"
@@ -369,6 +391,12 @@ const ClientesPage = () => {
           {t(lang, "seguro_eliminar_cliente")}
           {clienteToDelete?.nombre ? ` "${clienteToDelete.nombre}"` : ""}?
         </p>
+        {recibosCount > 0 && (
+          <p style={{ color: "var(--accent-warning)", marginTop: "0.5rem" }}>
+            ⚠️ Este cliente tiene {recibosCount} recibo(s) asociado(s). 
+            Al eliminarlo también se eliminarán todos sus recibos.
+          </p>
+        )}
         <div className="form-actions" style={{ marginTop: "1rem" }}>
           <button
             type="button"

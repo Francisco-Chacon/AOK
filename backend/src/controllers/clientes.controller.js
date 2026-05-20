@@ -1,5 +1,18 @@
 // backend/src/controllers/clientes.controller.js
 const db = require("../db/sqlite");
+const { validateString, validateEnum } = require("../utils/validation");
+const logger = require("../utils/logger");
+
+// ============================
+// Validar ID
+// ============================
+function validateId(id, res) {
+  if (!id || isNaN(Number(id)) || Number(id) <= 0) {
+    res.status(400).json({ message: "ID inválido" });
+    return null;
+  }
+  return Number(id);
+}
 
 // ============================
 // GET /api/clientes
@@ -12,7 +25,8 @@ function getAllClientes(req, res) {
         nombre,
         direccion,
         telefono,
-        tipo_servicio AS servicio,  -- alias para el frontend
+        email,
+        tipo_servicio AS servicio,
         estado,
         created_at,
         updated_at
@@ -23,7 +37,7 @@ function getAllClientes(req, res) {
     const clientes = stmt.all();
     res.json(clientes);
   } catch (err) {
-    console.error("Error getAllClientes", err);
+    logger.error("Error getAllClientes", { error: err.message });
     res.status(500).json({ message: "Error al obtener clientes" });
   }
 }
@@ -33,40 +47,44 @@ function getAllClientes(req, res) {
 // ============================
 function createCliente(req, res) {
   try {
-    console.log("Body recibido en createCliente:", req.body);
+    logger.info("createCliente requested", { cliente_nombre: nombre });
 
     const {
       nombre,
       direccion,
       telefono,
+      email,
       servicio,
       servicio_principal,
       tipo_servicio: bodyTipoServicio,
-      estado, // activo | pendiente | inactivo
+      estado,
     } = req.body;
 
-    // Resolver el servicio venga como venga
-    const tipoServicioFinal =
-      servicio ?? servicio_principal ?? bodyTipoServicio ?? null;
-
-    if (!nombre || !tipoServicioFinal || !estado) {
-      return res.status(400).json({
-        message:
-          "Faltan campos obligatorios (nombre, servicio, estado)",
-      });
+    let tipoServicioFinal;
+    try {
+      validateString(nombre, "nombre", 200, true);
+      tipoServicioFinal =
+        validateString(servicio ?? servicio_principal ?? bodyTipoServicio, "servicio", 100, true);
+      validateEnum(estado, "estado", ["activo", "pendiente", "inactivo"], true);
+      validateString(direccion, "direccion", 300, false);
+      validateString(telefono, "telefono", 20, false);
+      validateString(email, "email", 150, false);
+    } catch (err) {
+      return res.status(400).json({ message: err.message });
     }
 
     const now = new Date().toISOString();
 
     const stmt = db.prepare(`
-      INSERT INTO clientes (nombre, direccion, telefono, tipo_servicio, estado, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO clientes (nombre, direccion, telefono, email, tipo_servicio, estado, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const result = stmt.run(
       nombre,
       direccion ?? "",
       telefono ?? "",
+      email ?? "",
       tipoServicioFinal,
       estado,
       now,
@@ -91,9 +109,20 @@ function createCliente(req, res) {
 
     res.status(201).json(cliente);
   } catch (err) {
-    console.error("Error createCliente", err);
+    logger.error("Error createCliente", { error: err.message });
     res.status(500).json({ message: "Error al crear cliente" });
   }
+}
+
+// ============================
+// Validar ID
+// ============================
+function validateId(id, res) {
+  if (!id || isNaN(Number(id)) || Number(id) <= 0) {
+    res.status(400).json({ message: "ID inválido" });
+    return null;
+  }
+  return Number(id);
 }
 
 // ============================
@@ -102,25 +131,31 @@ function createCliente(req, res) {
 function updateCliente(req, res) {
   try {
     const { id } = req.params;
+    const validId = validateId(id, res);
+    if (!validId) return;
 
     const {
       nombre,
       direccion,
       telefono,
+      email,
       servicio,
       servicio_principal,
       tipo_servicio: bodyTipoServicio,
       estado,
     } = req.body;
 
-    const tipoServicioFinal =
-      servicio ?? servicio_principal ?? bodyTipoServicio ?? null;
-
-    if (!nombre || !tipoServicioFinal || !estado) {
-      return res.status(400).json({
-        message:
-          "Faltan campos obligatorios (nombre, servicio, estado)",
-      });
+    let tipoServicioFinal;
+    try {
+      validateString(nombre, "nombre", 200, true);
+      tipoServicioFinal =
+        validateString(servicio ?? servicio_principal ?? bodyTipoServicio, "servicio", 100, true);
+      validateEnum(estado, "estado", ["activo", "pendiente", "inactivo"], true);
+      validateString(direccion, "direccion", 300, false);
+      validateString(telefono, "telefono", 20, false);
+      validateString(email, "email", 150, false);
+    } catch (err) {
+      return res.status(400).json({ message: err.message });
     }
 
     const now = new Date().toISOString();
@@ -131,6 +166,7 @@ function updateCliente(req, res) {
         nombre        = ?,
         direccion     = ?,
         telefono      = ?,
+        email         = ?,
         tipo_servicio = ?,
         estado        = ?,
         updated_at    = ?
@@ -141,10 +177,11 @@ function updateCliente(req, res) {
       nombre,
       direccion ?? "",
       telefono ?? "",
+      email ?? "",
       tipoServicioFinal,
       estado,
       now,
-      id
+      validId
     );
 
     if (result.changes === 0) {
@@ -165,11 +202,11 @@ function updateCliente(req, res) {
         FROM clientes
         WHERE id = ?
       `)
-      .get(id);
+      .get(validId);
 
     res.json(cliente);
   } catch (err) {
-    console.error("Error updateCliente", err);
+    logger.error("Error updateCliente", { error: err.message });
     res.status(500).json({ message: "Error al actualizar cliente" });
   }
 }
@@ -180,9 +217,11 @@ function updateCliente(req, res) {
 function deleteCliente(req, res) {
   try {
     const { id } = req.params;
+    const validId = validateId(id, res);
+    if (!validId) return;
 
     const stmt = db.prepare("DELETE FROM clientes WHERE id = ?");
-    const result = stmt.run(id);
+    const result = stmt.run(validId);
 
     if (result.changes === 0) {
       return res.status(404).json({ message: "Cliente no encontrado" });
@@ -190,8 +229,27 @@ function deleteCliente(req, res) {
 
     res.status(204).send();
   } catch (err) {
-    console.error("Error deleteCliente", err);
+    logger.error("Error deleteCliente", { error: err.message });
     res.status(500).json({ message: "Error al eliminar cliente" });
+  }
+}
+
+// ============================
+// GET /api/clientes/:id/recibos-count
+// ============================
+function getRecibosCount(req, res) {
+  try {
+    const { id } = req.params;
+    const validId = validateId(id, res);
+    if (!validId) return;
+
+    const stmt = db.prepare("SELECT COUNT(*) as count FROM recibos WHERE cliente_id = ?");
+    const result = stmt.get(validId);
+
+    res.json({ count: result.count });
+  } catch (err) {
+    logger.error("Error getRecibosCount", { error: err.message });
+    res.status(500).json({ message: "Error al verificar recibos" });
   }
 }
 
@@ -200,4 +258,5 @@ module.exports = {
   createCliente,
   updateCliente,
   deleteCliente,
+  getRecibosCount,
 };

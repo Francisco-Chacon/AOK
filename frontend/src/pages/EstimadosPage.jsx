@@ -5,6 +5,9 @@ import Modal from "../components/Modal";
 import SearchableSelect from "../components/SearchableSelect";
 import { useLanguage } from "../i18n/LanguageContext";
 import { t } from "../i18n/translations";
+import { sanitizeHtml } from "../utils/sanitize";
+
+const MONEDAS = ["USD", "EUR", "MXN", "PAB", "COP"];
 
 const EstimadosPage = () => {
   const { lang } = useLanguage();
@@ -134,86 +137,131 @@ const EstimadosPage = () => {
     const items = getItemsFromDescripcion(estimado.descripcion_trabajo, estimado.monto, estimado.moneda);
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
+    
+    const s = sanitizeHtml;
+    const empresaNombre = t(lang, "empresa_nombre") || "Empresa";
+    const empresaTelefono = t(lang, "empresa_telefono") || "";
+    const empresaEmail = t(lang, "empresa_email") || "";
+    const empresaDireccion = t(lang, "empresa_direccion") || "";
+    const ivaLabel = t(lang, "impuesto_nombre") || "ITBMS (7%)";
+    
     printWindow.document.write(`<!DOCTYPE html>
 <html>
 <head>
-  <title>Statement - ${estimado.cliente_nombre || "Cliente"}</title>
+  <title>${t(lang, "estimado")} - ${s(estimado.cliente_nombre) || t(lang, "cliente_sin_nombre")}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: Arial, sans-serif; padding: 40px; color: #333; }
-    .header { display: flex; align-items: center; gap: 20px; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 30px; }
-    .logo { width: 80px; height: auto; }
-    .brand h1 { font-size: 24px; margin-bottom: 4px; }
-    .brand p { font-size: 14px; color: #666; }
-    .cliente-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
-    .cliente-name { font-size: 18px; font-weight: bold; margin-bottom: 4px; }
-    .cliente-dir { font-size: 14px; color: #666; }
-    .badge { display: inline-block; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; }
-    .badge-success { background: #d1fae5; color: #065f46; }
-    .badge-warning { background: #fef3c7; color: #92400e; }
-    .badge-soft { background: #f3f4f6; color: #374151; }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
-    th, td { border: 1px solid #ddd; padding: 10px 12px; text-align: left; }
-    th { background: #f9fafb; font-weight: 600; }
-    .total-row td { font-weight: bold; text-align: right; }
-    .notas { margin-top: 20px; }
-    .notas-label { font-weight: bold; margin-bottom: 4px; }
-    .footer { margin-top: 40px; border-top: 2px solid #333; padding-top: 20px; display: flex; justify-content: flex-end; }
-    .grand-total { font-size: 18px; }
-    .grand-total strong { margin-left: 8px; }
+    body { font-family: Arial, sans-serif; padding: 40px; color: #333; max-width: 800px; margin: 0 auto; }
+    .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 2px solid #333; }
+    .logo-section { flex-shrink: 0; }
+    .logo { width: 140px; height: 140px; object-fit: contain; }
+    .company-info { flex-grow: 1; padding-left: 30px; text-align: right; }
+    .company-info h2 { font-size: 20px; margin-bottom: 8px; }
+    .company-info p { font-size: 13px; color: #555; margin-bottom: 2px; }
+    .title-section { text-align: center; margin: 30px 0; }
+    .title-section h1 { font-size: 28px; font-weight: bold; }
+    .client-info { display: flex; justify-content: space-between; margin-bottom: 30px; }
+    .client-info-left { width: 45%; }
+    .client-info-right { width: 45%; text-align: right; }
+    .info-label { font-size: 11px; color: #777; text-transform: uppercase; margin-bottom: 2px; }
+    .info-value { font-size: 14px; font-weight: bold; margin-bottom: 8px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th { border: 1px solid #333; padding: 10px 12px; text-align: left; background: #f5f5f5; font-size: 12px; }
+    td { border: 1px solid #333; padding: 10px 12px; text-align: left; font-size: 13px; }
+    .col-cantidad, .col-pu, .col-importe { text-align: right; width: 80px; }
+    .totals { display: flex; justify-content: flex-end; margin-top: 20px; }
+    .totals-table { width: 200px; border-collapse: collapse; }
+    .totals-table td { border: none; padding: 6px 10px; text-align: right; }
+    .totals-table .label { font-weight: bold; }
+    .totals-table .total-row { font-size: 16px; font-weight: bold; border-top: 2px solid #333; }
+    .notas { margin-top: 20px; padding: 12px; background: #f9f9f9; border-radius: 4px; }
+    .notas-label { font-weight: bold; margin-bottom: 4px; font-size: 12px; }
+    .notas p { font-size: 12px; margin: 0; }
+    .footer-message { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ccc; }
+    .footer-message p { font-size: 12px; color: #666; text-align: center; }
+    @media print { body { padding: 20px; } }
   </style>
 </head>
 <body>
   <div class="header">
-    <img src="${window.location.origin}/logo.jpg" alt="Logo" class="logo" />
-    <div class="brand">
-      <h1>Sistema de Gestión</h1>
-      <p>Statement</p>
+    <div class="logo-section">
+      <img src="${window.location.origin}/logo.jpg" alt="Logo" class="logo" />
+    </div>
+    <div class="company-info">
+      <h2>${s(empresaNombre)}</h2>
+      ${empresaTelefono ? `<p>${s(empresaTelefono)}</p>` : ""}
+      ${empresaEmail ? `<p>${s(empresaEmail)}</p>` : ""}
+      ${empresaDireccion ? `<p>${s(empresaDireccion)}</p>` : ""}
     </div>
   </div>
 
-  <div class="cliente-header">
-    <div>
-      <div class="cliente-name">${estimado.cliente_nombre || "Cliente sin nombre"}</div>
-      <div class="cliente-dir">${estimado.direccion_trabajo || "Sin dirección"}</div>
+  <div class="title-section">
+    <h1>${t(lang, "estimado").toUpperCase()}</h1>
+  </div>
+
+  <div class="client-info">
+    <div class="client-info-left">
+      <div class="info-label">${s(t(lang, "cliente"))}</div>
+      <div class="info-value">${s(estimado.cliente_nombre) || t(lang, "cliente_sin_nombre")}</div>
+      <div class="info-label">${s(t(lang, "direccion"))}</div>
+      <div class="info-value">${s(estimado.direccion_trabajo) || t(lang, "sin_direccion")}</div>
     </div>
-    <span class="badge ${estimado.estado === "aceptado" ? "badge-success" : estimado.estado === "rechazado" ? "badge-warning" : "badge-soft"}">${estimado.estado}</span>
+    <div class="client-info-right">
+      <div class="info-label">${t(lang, "numero_estimado")}</div>
+      <div class="info-value">#${estimado.id || "N/A"}</div>
+      <div class="info-label">${s(t(lang, "fecha"))}</div>
+      <div class="info-value">${estimado.fecha?.slice(0, 10) || new Date().toISOString().slice(0, 10)}</div>
+      <div class="info-label">${t(lang, "valido_hasta")}</div>
+      <div class="info-value">${new Date(Date.now() + 30*24*60*60*1000).toISOString().slice(0, 10)}</div>
+    </div>
   </div>
 
   <table>
     <thead>
       <tr>
-        <th>Descripción</th>
-        <th>Cantidad</th>
-        <th>Precio Unit.</th>
-        <th>Total</th>
+        <th>${s(t(lang, "descripcion"))}</th>
+        <th class="col-cantidad">${s(t(lang, "cantidad"))}</th>
+        <th class="col-pu">${s(t(lang, "precio_unit"))}</th>
+        <th class="col-importe">${s(t(lang, "total"))}</th>
       </tr>
     </thead>
     <tbody>
-      ${items.length === 0 ? `<tr><td colspan="4" style="color:#999">Sin materiales.</td></tr>` : items.map(item => `
+      ${items.length === 0 ? `<tr><td colspan="4" style="color:#999;text-align:center">${t(lang, "sin_materials")}</td></tr>` : items.map(item => `
       <tr>
-        <td>${item.descripcion}</td>
-        <td>${item.cantidad}</td>
-        <td>${estimado.moneda} ${Number(item.precio_unitario).toFixed(2)}</td>
-        <td>${estimado.moneda} ${Number(item.cantidad * item.precio_unitario).toFixed(2)}</td>
+        <td>${s(item.descripcion)}</td>
+        <td class="col-cantidad">${item.cantidad}</td>
+        <td class="col-pu">${s(estimado.moneda)} ${Number(item.precio_unitario).toFixed(2)}</td>
+        <td class="col-importe">${s(estimado.moneda)} ${Number(item.cantidad * item.precio_unitario).toFixed(2)}</td>
       </tr>`).join("")}
     </tbody>
-    <tfoot>
-      <tr class="total-row">
-        <td colspan="3">Total</td>
-        <td>${estimado.moneda} ${Number(estimado.monto || 0).toFixed(2)}</td>
-      </tr>
-    </tfoot>
   </table>
+
+  <div class="totals">
+    <table class="totals-table">
+      <tr>
+        <td class="label">${t(lang, "subtotal")}:</td>
+        <td>${s(estimado.moneda)} ${Number(estimado.monto || 0).toFixed(2)}</td>
+      </tr>
+      <tr>
+        <td class="label">${ivaLabel}:</td>
+        <td>${s(estimado.moneda)} ${Number((estimado.monto || 0) * 0.07).toFixed(2)}</td>
+      </tr>
+      <tr class="total-row">
+        <td class="label">${t(lang, "total")}:</td>
+        <td>${s(estimado.moneda)} ${Number((estimado.monto || 0) * 1.07).toFixed(2)}</td>
+      </tr>
+    </table>
+  </div>
 
   ${estimado.notas_adicionales?.trim() ? `
   <div class="notas">
-    <div class="notas-label">Notas Adicionales</div>
-    <p>${estimado.notas_adicionales}</p>
+    <div class="notas-label">${t(lang, "notas_adicionales")}</div>
+    <p>${s(estimado.notas_adicionales)}</p>
   </div>` : ""}
 
-  <div class="footer">
-    <div class="grand-total">Total:<strong>${estimado.moneda} ${Number(estimado.monto || 0).toFixed(2)}</strong></div>
+  <div class="footer-message">
+    <p>${t(lang, "footer_mensaje_1")}</p>
+    <p>${t(lang, "footer_mensaje_2")}</p>
   </div>
 
   <script>
@@ -253,12 +301,19 @@ const EstimadosPage = () => {
     setItems((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const calculateTotal = () => {
+  const calculateSubtotal = () => {
     return items.reduce((acc, item) => acc + (item.total || 0), 0);
+  };
+
+  const calculateTotal = () => {
+    const subtotal = calculateSubtotal();
+    const itbms = subtotal * 0.07;
+    return subtotal + itbms;
   };
 
   const handleSubmit = async (ev) => {
     ev.preventDefault();
+    const subtotal = calculateSubtotal();
     const total = calculateTotal();
     const descripcionItems = items.map((i) => `${i.cantidad}x ${i.descripcion} ($${i.precio_unitario} c/u)`).join("\n");
     const notasAdicionales = form.descripcion_trabajo || "";
@@ -741,8 +796,26 @@ const renderStatementView = () => {
                 </tbody>
                 <tfoot>
                   <tr>
-                    <td colSpan={4} className="items-total-label">
-                      {t(lang, "total_estimado")}
+                    <td colSpan={3} className="items-total-label">
+                      {t(lang, "subtotal")}
+                    </td>
+                    <td className="items-total-value">
+                      ${calculateSubtotal().toFixed(2)}
+                    </td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td colSpan={3} className="items-total-label">
+                      {t(lang, "impuesto")} (7%)
+                    </td>
+                    <td className="items-total-value">
+                      ${(calculateSubtotal() * 0.07).toFixed(2)}
+                    </td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td colSpan={3} className="items-total-label">
+                      {t(lang, "total")}
                     </td>
                     <td className="items-total-value">
                       ${calculateTotal().toFixed(2)}
@@ -789,18 +862,30 @@ const renderStatementView = () => {
               </label>
               <label className="form-field">
                 <span>{t(lang, "moneda")}</span>
-                <input
+                <select
                   className="input"
                   name="moneda"
                   value={form.moneda}
                   onChange={handleChange}
-                />
+                >
+                  {MONEDAS.map((m) => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
               </label>
             </div>
             <div className="items-form-footer-right">
-              <span className="items-grand-total">
-                {t(lang, "total")}: ${calculateTotal().toFixed(2)} {form.moneda}
-              </span>
+              <div style={{ textAlign: "right" }}>
+                <div className="muted" style={{ fontSize: "0.8rem" }}>
+                  {t(lang, "subtotal")}: ${calculateSubtotal().toFixed(2)} {form.moneda}
+                </div>
+                <div className="muted" style={{ fontSize: "0.8rem" }}>
+                  {t(lang, "impuesto")} (7%): ${(calculateSubtotal() * 0.07).toFixed(2)} {form.moneda}
+                </div>
+                <span className="items-grand-total">
+                  {t(lang, "total")}: ${calculateTotal().toFixed(2)} {form.moneda}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -1095,6 +1180,7 @@ const renderStatementView = () => {
           </div>
         )}
       </Modal>
+
     </div>
   );
 };

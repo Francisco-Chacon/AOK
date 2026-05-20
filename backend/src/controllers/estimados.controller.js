@@ -1,4 +1,17 @@
 const db = require("../db/sqlite");
+const { validateNumber, validateString, validateDate, validateEnum } = require("../utils/validation");
+const logger = require("../utils/logger");
+
+// ============================
+// Validar ID
+// ============================
+function validateId(id, res) {
+  if (!id || isNaN(Number(id)) || Number(id) <= 0) {
+    res.status(400).json({ message: "ID inválido" });
+    return null;
+  }
+  return Number(id);
+}
 
 // GET /api/estimados
 function getAllEstimados(req, res) {
@@ -25,7 +38,7 @@ function getAllEstimados(req, res) {
     const rows = stmt.all();
     res.json(rows);
   } catch (err) {
-    console.error("Error getAllEstimados", err);
+    logger.error("Error getAllEstimados", { error: err.message });
     res.status(500).json({ message: "Error al obtener estimados" });
   }
 }
@@ -44,10 +57,23 @@ function createEstimado(req, res) {
       estado,
     } = req.body;
 
-    if (!cliente_id || !direccion_trabajo || !fecha || !monto) {
-      return res
-        .status(400)
-        .json({ message: "Faltan campos obligatorios." });
+    let validClienteId, validMonto;
+    try {
+      validClienteId = validateNumber(cliente_id, "cliente_id", false);
+      validateString(direccion_trabajo, "direccion_trabajo", 300, true);
+      validateDate(fecha, "fecha", true);
+      validMonto = validateNumber(monto, "monto", false);
+      if (moneda) validateEnum(moneda, "moneda", ["USD", "EUR", "MXN"], false);
+      if (estado) validateEnum(estado, "estado", ["borrador", "enviado", "aceptado", "rechazado"], false);
+      validateString(descripcion_trabajo, "descripcion_trabajo", 2000, false);
+      validateString(notas_adicionales, "notas_adicionales", 2000, false);
+    } catch (err) {
+      return res.status(400).json({ message: err.message });
+    }
+
+    const clienteExists = db.prepare("SELECT id FROM clientes WHERE id = ?").get(validClienteId);
+    if (!clienteExists) {
+      return res.status(400).json({ message: "El cliente no existe" });
     }
 
     const now = new Date().toISOString();
@@ -67,10 +93,10 @@ function createEstimado(req, res) {
     `);
 
     const result = stmt.run(
-      cliente_id,
+      validClienteId,
       direccion_trabajo,
       fecha,
-      Number(monto),
+      validMonto,
       moneda || "USD",
       descripcion_trabajo || "",
       notas_adicionales || "",
@@ -102,7 +128,7 @@ function createEstimado(req, res) {
 
     res.status(201).json(estimado);
 } catch (err) {
-    console.error("Error createEstimado", err);
+    logger.error("Error createEstimado", { error: err.message });
     res.status(500).json({ message: "Error al crear estimado" });
   }
 }
@@ -111,7 +137,10 @@ function createEstimado(req, res) {
 function updateEstimado(req, res) {
   try {
     const { id } = req.params;
-    const {
+    const validId = validateId(id, res);
+    if (!validId) return;
+
+const {
       cliente_id,
       direccion_trabajo,
       fecha,
@@ -122,10 +151,18 @@ function updateEstimado(req, res) {
       estado,
     } = req.body;
 
-    if (!cliente_id || !direccion_trabajo || !fecha || !monto) {
-      return res
-        .status(400)
-        .json({ message: "Faltan campos obligatorios." });
+    let validClienteId, validMonto;
+    try {
+      validClienteId = validateNumber(cliente_id, "cliente_id", false);
+      validateString(direccion_trabajo, "direccion_trabajo", 300, true);
+      validateDate(fecha, "fecha", true);
+      validMonto = validateNumber(monto, "monto", false);
+      if (moneda) validateEnum(moneda, "moneda", ["USD", "EUR", "MXN"], false);
+      if (estado) validateEnum(estado, "estado", ["borrador", "enviado", "aceptado", "rechazado"], false);
+      validateString(descripcion_trabajo, "descripcion_trabajo", 2000, false);
+      validateString(notas_adicionales, "notas_adicionales", 2000, false);
+    } catch (err) {
+      return res.status(400).json({ message: err.message });
     }
 
     const now = new Date().toISOString();
@@ -145,16 +182,16 @@ function updateEstimado(req, res) {
     `);
 
     const result = stmt.run(
-      cliente_id,
+      validClienteId,
       direccion_trabajo,
       fecha,
-      Number(monto),
+      validMonto,
       moneda || "USD",
       descripcion_trabajo || "",
       notas_adicionales || "",
       estado || "borrador",
       now,
-      id
+      validId
     );
 
     if (result.changes === 0) {
@@ -180,11 +217,11 @@ function updateEstimado(req, res) {
         LEFT JOIN clientes c ON c.id = e.cliente_id
         WHERE e.id = ?
       `)
-      .get(id);
+      .get(validId);
 
     res.json(estimado);
   } catch (err) {
-    console.error("Error updateEstimado", err);
+    logger.error("Error updateEstimado", { error: err.message });
     res.status(500).json({ message: "Error al actualizar estimado" });
   }
 }
@@ -193,8 +230,11 @@ function updateEstimado(req, res) {
 function deleteEstimado(req, res) {
   try {
     const { id } = req.params;
+    const validId = validateId(id, res);
+    if (!validId) return;
+
     const stmt = db.prepare("DELETE FROM estimados WHERE id = ?");
-    const result = stmt.run(id);
+    const result = stmt.run(validId);
 
     if (result.changes === 0) {
       return res.status(404).json({ message: "Estimado no encontrado" });
@@ -202,7 +242,7 @@ function deleteEstimado(req, res) {
 
     res.status(204).send();
   } catch (err) {
-    console.error("Error deleteEstimado", err);
+    logger.error("Error deleteEstimado", { error: err.message });
     res.status(500).json({ message: "Error al eliminar estimado" });
   }
 }

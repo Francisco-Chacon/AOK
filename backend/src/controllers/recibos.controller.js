@@ -1,5 +1,18 @@
 // backend/src/controllers/recibos.controller.js
 const db = require("../db/sqlite");
+const { validateNumber, validateString, validateEnum, validateDate } = require("../utils/validation");
+const logger = require("../utils/logger");
+
+// ============================
+// Validar ID
+// ============================
+function validateId(id, res) {
+  if (!id || isNaN(Number(id)) || Number(id) <= 0) {
+    res.status(400).json({ message: "ID inválido" });
+    return null;
+  }
+  return Number(id);
+}
 
 // ============================
 // GET /api/recibos
@@ -26,7 +39,7 @@ function getAllRecibos(req, res) {
     const recibos = stmt.all();
     res.json(recibos);
   } catch (err) {
-    console.error("Error getAllRecibos", err);
+    logger.error("Error getAllRecibos", { error: err.message });
     res.status(500).json({ message: "Error al obtener recibos" });
   }
 }
@@ -36,25 +49,36 @@ function getAllRecibos(req, res) {
 // ============================
 function createRecibo(req, res) {
   try {
-    console.log("Body recibido en createRecibo:", req.body);
+    logger.debug("createRecibo requested", { cliente_id, monto });
 
     const {
       cliente_id,
       fecha,
       monto,
-      estado,        // pendiente | pagado | cancelado
-      descripcion,   // 👈 texto libre del recibo
+      estado,
+      descripcion,
     } = req.body;
 
-    if (!cliente_id || !fecha || monto == null) {
-      return res.status(400).json({
-        message: "Faltan campos obligatorios (cliente_id, fecha, monto)",
-      });
+    let validClienteId, validMonto;
+    try {
+      validClienteId = validateNumber(cliente_id, "cliente_id", false);
+      validateDate(fecha, "fecha", true);
+      validMonto = validateNumber(monto, "monto", false);
+      if (estado) validateEnum(estado, "estado", ["pendiente", "pagado", "cancelado"], false);
+      validateString(descripcion, "descripcion", 1000, false);
+    } catch (err) {
+      return res.status(400).json({ message: err.message });
+    }
+
+    const clienteExists = db.prepare("SELECT id FROM clientes WHERE id = ?").get(validClienteId);
+    if (!clienteExists) {
+      return res.status(400).json({ message: "El cliente no existe" });
     }
 
     const now = new Date().toISOString();
-    const codigoGenerado =
-      "REC-" + Math.random().toString(36).substring(2, 8).toUpperCase();
+    const timestamp = Date.now().toString(36).toUpperCase();
+    const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const codigoGenerado = `REC-${timestamp}-${random}`;
 
     const stmt = db.prepare(`
       INSERT INTO recibos (cliente_id, fecha, monto, estado, descripcion, codigo, created_at, updated_at)
@@ -62,9 +86,9 @@ function createRecibo(req, res) {
     `);
 
     const result = stmt.run(
-      cliente_id,
+      validClienteId,
       fecha,
-      Number(monto) || 0,
+      validMonto,
       estado || "pendiente",
       descripcion || "",
       codigoGenerado,
@@ -93,7 +117,7 @@ function createRecibo(req, res) {
 
     res.status(201).json(recibo);
   } catch (err) {
-    console.error("Error createRecibo", err);
+    logger.error("Error createRecibo", { error: err.message });
     res.status(500).json({ message: "Error al crear recibo" });
   }
 }
@@ -104,6 +128,9 @@ function createRecibo(req, res) {
 function updateRecibo(req, res) {
   try {
     const { id } = req.params;
+    const validId = validateId(id, res);
+    if (!validId) return;
+
     const {
       cliente_id,
       fecha,
@@ -112,10 +139,15 @@ function updateRecibo(req, res) {
       descripcion,
     } = req.body;
 
-    if (!cliente_id || !fecha || monto == null) {
-      return res.status(400).json({
-        message: "Faltan campos obligatorios (cliente_id, fecha, monto)",
-      });
+    let validClienteId, validMonto;
+    try {
+      validClienteId = validateNumber(cliente_id, "cliente_id", false);
+      validateDate(fecha, "fecha", true);
+      validMonto = validateNumber(monto, "monto", false);
+      if (estado) validateEnum(estado, "estado", ["pendiente", "pagado", "cancelado"], false);
+      validateString(descripcion, "descripcion", 1000, false);
+    } catch (err) {
+      return res.status(400).json({ message: err.message });
     }
 
     const now = new Date().toISOString();
@@ -133,13 +165,13 @@ function updateRecibo(req, res) {
     `);
 
     const result = stmt.run(
-      cliente_id,
+      validClienteId,
       fecha,
-      Number(monto) || 0,
+      validMonto,
       estado || "pendiente",
       descripcion || "",
       now,
-      id
+      validId
     );
 
     if (result.changes === 0) {
@@ -163,11 +195,11 @@ function updateRecibo(req, res) {
         LEFT JOIN clientes c ON c.id = r.cliente_id
         WHERE r.id = ?
       `)
-      .get(id);
+      .get(validId);
 
     res.json(recibo);
   } catch (err) {
-    console.error("Error updateRecibo", err);
+    logger.error("Error updateRecibo", { error: err.message });
     res.status(500).json({ message: "Error al actualizar recibo" });
   }
 }
@@ -178,9 +210,11 @@ function updateRecibo(req, res) {
 function deleteRecibo(req, res) {
   try {
     const { id } = req.params;
+    const validId = validateId(id, res);
+    if (!validId) return;
 
     const stmt = db.prepare("DELETE FROM recibos WHERE id = ?");
-    const result = stmt.run(id);
+    const result = stmt.run(validId);
 
     if (result.changes === 0) {
       return res.status(404).json({ message: "Recibo no encontrado" });
@@ -188,7 +222,7 @@ function deleteRecibo(req, res) {
 
     res.status(204).send();
   } catch (err) {
-    console.error("Error deleteRecibo", err);
+    logger.error("Error deleteRecibo", { error: err.message });
     res.status(500).json({ message: "Error al eliminar recibo" });
   }
 }

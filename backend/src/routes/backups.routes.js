@@ -3,6 +3,7 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 const multer = require("multer");
+const logger = require("../utils/logger");
 
 const router = express.Router();
 
@@ -45,6 +46,9 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
+  limits: {
+    fileSize: 50 * 1024 * 1024, // 50 MB máximo
+  },
   fileFilter: (req, file, cb) => {
     if (!file.originalname.toLowerCase().endsWith(".db")) {
       return cb(new Error("Solo se permiten archivos .db"));
@@ -72,7 +76,7 @@ router.post("/create", (req, res) => {
       filename,
     });
   } catch (err) {
-    console.error("Error creando backup:", err);
+    logger.error("Error creando backup", { error: err.message });
     res
       .status(500)
       .json({ ok: false, message: `Error al crear backup: ${err.message}` });
@@ -93,7 +97,7 @@ router.get("/list", (req, res) => {
 
     res.json({ ok: true, files });
   } catch (err) {
-    console.error("Error listando backups:", err);
+    logger.error("Error listando backups", { error: err.message });
     res.status(500).json({ ok: false, message: "Error al listar backups" });
   }
 });
@@ -117,7 +121,7 @@ router.get("/download/:filename", (req, res) => {
 
     res.download(filePath, safeName);
   } catch (err) {
-    console.error("Error descargando backup:", err);
+    logger.error("Error descargando backup", { error: err.message });
     res.status(500).json({ ok: false, message: "Error al descargar backup" });
   }
 });
@@ -139,7 +143,7 @@ router.post("/upload", upload.single("backup"), (req, res) => {
       filename: req.file.filename,
     });
   } catch (err) {
-    console.error("Error subiendo backup:", err);
+    logger.error("Error subiendo backup", { error: err.message });
     return res
       .status(500)
       .json({ ok: false, message: "Error al subir backup" });
@@ -175,7 +179,7 @@ router.post("/restore", (req, res) => {
         "Backup restaurado correctamente. Es recomendable reiniciar el backend después de esta operación.",
     });
   } catch (err) {
-    console.error("Error restaurando backup:", err);
+    logger.error("Error restaurando backup", { error: err.message });
     res.status(500).json({ ok: false, message: "Error al restaurar backup" });
   }
 });
@@ -208,7 +212,7 @@ router.delete("/:filename", (req, res) => {
       message: "Backup eliminado correctamente",
     });
   } catch (err) {
-    console.error("Error eliminando backup:", err);
+    logger.error("Error eliminando backup", { error: err.message });
     res.status(500).json({ ok: false, message: "Error al eliminar backup" });
   }
 });

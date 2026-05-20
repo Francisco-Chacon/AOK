@@ -1,0 +1,202 @@
+.proposal-page-wrapper {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #eef2f6 0%, #e2e8f0 100%);
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.proposal-toolbar {
+  display: flex;
+  gap: 1rem;
+  width: min(816px, 100%);
+  justify-content: space-between;
+  align-items: center;
+}
+
+.proposal-toolbar--end {
+  justify-content: flex-end;
+}
+
+.proposal-page {
+  width: min(816px, 100%);
+  min-height: 1056px;
+  background: #ffffff;
+  padding: 40px 55px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: #1e293b;
+  box-sizing: border-box;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.proposal-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  margin-bottom: 10px;
+}
+
+.proposal-logo {
+  width: 150px;
+  height: auto;
+  object-fit: contain;
+}
+
+.proposal-company-info {
+  text-align: center;
+  line-height: 1.1;
+}
+
+.proposal-company-info h1 {
+  font-size: 28px;
+  letter-spacing: 1px;
+  color: #700e0c;
+  margin: 0 0 8px 0;
+  font-weight: 700;
+}
+
+.proposal-company-info p {
+  margin: 2px 0;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.proposal-title {
+  text-align: center;
+  font-size: 28px;
+  margin: 15px 0 5px 0;
+  font-weight: 500;
+}
+
+.proposal-info-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 5px;
+  font-size: 14px;
+}
+
+.proposal-info-table td {
+  border: 1px solid #cbd5e1;
+  padding: 6px 10px;
+  height: 26px;
+}
+
+.proposal-info-table td:first-child {
+  width: 180px;
+  font-weight: 600;
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.proposal-description {
+  min-height: 520px;
+  padding: 30px 35px;
+  text-align: center;
+  background: #fafbfc;
+  border-radius: 8px;
+  margin: 20px 0;
+}
+
+.proposal-description p {
+  white-space: pre-line;
+  font-size: 13px;
+  line-height: 2;
+  margin: 0;
+}
+
+.proposal-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 35px;
+  font-size: 13px;
+  padding-top: 20px;
+  border-top: 2px solid #e2e8f0;
+}
+
+.proposal-amount {
+  font-size: 18px;
+  color: #700e0c;
+  font-weight: 600;
+}
+
+.proposal-date {
+  font-size: 14px;
+  color: #64748b;
+}
+
+@media print {
+  body {
+    margin: 0;
+    background: white;
+  }
+
+  .proposal-page-wrapper {
+    background: white;
+    padding: 0;
+  }
+
+  .proposal-toolbar {
+    display: none;
+  }
+
+  .proposal-page {
+    width: 8.5in;
+    min-height: 11in;
+    border: none;
+    box-shadow: none;
+    padding: 0.45in 0.6in;
+  }
+}
+
+@media (max-width: 720px) {
+  .proposal-page-wrapper {
+    padding: 12px;
+  }
+
+  .proposal-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .proposal-page {
+    min-height: auto;
+    padding: 24px 18px;
+  }
+
+  .proposal-header {
+    flex-direction: column;
+  }
+
+  .proposal-logo {
+    width: 110px;
+  }
+
+  .proposal-company-info h1 {
+    font-size: 22px;
+  }
+
+  .proposal-info-table {
+    font-size: 12px;
+  }
+
+  .proposal-info-table td:first-child {
+    width: 130px;
+  }
+
+  .proposal-description {
+    min-height: 260px;
+    padding: 16px 8px;
+  }
+
+  .proposal-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

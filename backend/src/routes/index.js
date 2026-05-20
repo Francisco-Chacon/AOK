@@ -5,17 +5,18 @@ const router = express.Router();
 const clientesRoutes = require("./clientes.routes");
 const visitasRoutes = require("./visitas.routes");
 const recibosRoutes = require("./recibos.routes");
-// 👇 agrega esta línea
-const backupsRoutes = require("./backups.routes"); // 👈 NUEVO
-
 const estimadosRoutes = require("./estimados.routes");
+const facturasRoutes = require("./facturas.routes");
+const rutasHojasRoutes = require("./rutas_hojas.routes");
+const backupsRoutes = require("./backups.routes");
 
 router.use("/clientes", clientesRoutes);
 router.use("/visitas", visitasRoutes);
 router.use("/recibos", recibosRoutes);
-// 👇 nueva ruta
 router.use("/estimados", estimadosRoutes);
-router.use("/backups", backupsRoutes); // 👈 NUEVO
+router.use("/facturas", facturasRoutes);
+router.use("/rutas-hojas", rutasHojasRoutes);
+router.use("/backups", backupsRoutes);
 
 
 module.exports = router;
