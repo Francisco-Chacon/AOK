@@ -15,38 +15,31 @@ const ProposalPreview = ({ estimado, onClose }) => {
 
   const escapeHtml = sanitizeHtml;
 
-  const getItemsFromDescripcion = (descripcion, monto) => {
-    if (!descripcion) return [];
-    const lines = descripcion.split("\n").filter((line) => line.trim());
-    return lines.map((line) => {
-      const match = line.match(/^(\d+)x\s+(.+)\s+\(\$([\d.]+)\s+c\/u\)$/);
-      if (match) {
-        return {
-          cantidad: parseInt(match[1], 10),
-          descripcion: match[2],
-          precio_unitario: parseFloat(match[3]),
-        };
-      }
-      return {
-        cantidad: 1,
-        descripcion: line,
-        precio_unitario: monto || 0,
-      };
-    });
-  };
-
-  const items = getItemsFromDescripcion(estimado.descripcion_trabajo, estimado.monto);
-  const descripcionTexto = items.length === 0 
-    ? (estimado.descripcion_trabajo || "") 
-    : items.map(i => `${i.cantidad > 1 ? `${i.cantidad}x ` : ''}${i.descripcion}`).join("\n");
-
   const formatDate = (dateStr) => {
     if (!dateStr) return "";
     return dateStr.slice(0, 10);
   };
 
+  const addDays = (dateStr, days) => {
+    if (!dateStr) return "";
+    const date = new Date(`${dateStr.slice(0, 10)}T00:00:00`);
+    if (Number.isNaN(date.getTime())) return "";
+    date.setDate(date.getDate() + days);
+    return date.toISOString().slice(0, 10);
+  };
+
+  const rawDescription = (estimado.descripcion_trabajo || "").trim();
+  const notes = (estimado.notas_adicionales || "").trim();
+  const descriptionLines = rawDescription.split("\n").filter((line) => line.trim());
+  const looksLikeOldMaterials =
+    descriptionLines.length > 0 &&
+    descriptionLines.every((line) => /^(\d+)x\s+.+\s+\(\$[\d.]+\s+c\/u\)$/.test(line.trim()));
+  const descripcionTexto = notes
+    ? (!rawDescription || looksLikeOldMaterials ? notes : `${rawDescription}\n\n${notes}`)
+    : rawDescription;
+
   const effectiveDate = formatDate(estimado.fecha);
-  const endDate = estimado.fecha_validez ? formatDate(estimado.fecha_validez) : "";
+  const endDate = estimado.fecha_validez ? formatDate(estimado.fecha_validez) : addDays(effectiveDate, 30);
   const customerName = estimado.cliente_nombre || t(lang, "cliente_sin_nombre");
   const jobAddress = estimado.direccion_trabajo || t(lang, "sin_direccion");
   const phone = estimado.cliente_telefono || "";
@@ -81,6 +74,7 @@ const ProposalPreview = ({ estimado, onClose }) => {
       min-height: 11in;
       background: #ffffff;
       padding: 0.5in 0.7in;
+      margin: 0 auto;
       font-family: Arial, Helvetica, sans-serif;
       color: #111;
     }
@@ -141,6 +135,7 @@ const ProposalPreview = ({ estimado, onClose }) => {
       white-space: pre-line;
       font-size: 12px;
       line-height: 1.8;
+      overflow-wrap: anywhere;
     }
     .proposal-footer {
       display: flex;
@@ -152,6 +147,7 @@ const ProposalPreview = ({ estimado, onClose }) => {
       body { margin: 0; }
       .proposal-page { padding: 0.4in 0.5in; }
     }
+    @page { size: letter; margin: 0; }
   </style>
 </head>
 <body>

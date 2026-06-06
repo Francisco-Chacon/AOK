@@ -6,6 +6,7 @@ import SearchableSelect from "../components/SearchableSelect";
 import InvoiceScreen from "./InvoicePage/InvoiceScreen";
 import { useLanguage } from "../i18n/LanguageContext";
 import { t } from "../i18n/translations";
+import { sanitizeHtml } from "../utils/sanitize";
 
 const InvoicePage = () => {
   const { lang } = useLanguage();
@@ -144,6 +145,89 @@ const InvoicePage = () => {
 
   const total = items.reduce((sum, i) => sum + (Number(i.precio) || 0) * (Number(i.cantidad) || 1), 0);
 
+  const printInvoice = (invoice) => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+
+    const invoiceItems = invoice.items || [];
+    const invoiceTotal = invoiceItems.reduce((sum, item) => sum + (Number(item.precio) || 0) * (Number(item.cantidad) || 1), 0);
+    const rows = invoiceItems.length > 0 ? invoiceItems : Array.from({ length: 5 }, () => ({}));
+    const s = sanitizeHtml;
+
+    printWindow.document.write(`<!DOCTYPE html>
+<html>
+<head>
+  <title>Invoice - ${s(invoice.cliente_nombre || "")}</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #fff; color: #111; font-family: Arial, Helvetica, sans-serif; }
+    .invoice-page { width: 8.5in; min-height: 11in; padding: 0.45in; margin: 0 auto; }
+    .invoice-header { display: flex; justify-content: center; align-items: center; gap: 18px; margin-bottom: 8px; }
+    .invoice-logo { width: 140px; height: auto; object-fit: contain; }
+    .invoice-company-info { text-align: center; line-height: 1.1; }
+    .invoice-company-info h1 { margin: 0; font-size: 28px; letter-spacing: 2px; color: #700e0c; font-weight: 900; }
+    .invoice-company-info h2 { margin: 2px 0; font-size: 26px; letter-spacing: 2px; font-weight: 900; }
+    .invoice-company-info p { margin: 2px 0; font-size: 12px; color: #555; }
+    .invoice-title { text-align: center; margin: 10px 0; font-size: 24px; font-weight: 500; }
+    table { width: 100%; border-collapse: collapse; }
+    td, th { border: 1px solid #333; padding: 5px 7px; font-size: 13px; vertical-align: top; }
+    th { background: #eee; text-align: left; font-size: 12px; }
+    .invoice-info-table td:first-child { width: 110px; font-weight: bold; }
+    .invoice-section-label { border: 1px solid #333; border-top: 0; text-align: center; padding: 8px; font-size: 12px; }
+    .invoice-job-table td { height: 40px; }
+    .invoice-job-table th:nth-child(1), .invoice-job-table td:nth-child(1) { width: 85px; }
+    .invoice-job-table th:nth-child(3), .invoice-job-table td:nth-child(3) { width: 55px; text-align: right; }
+    .invoice-job-table th:nth-child(4), .invoice-job-table td:nth-child(4),
+    .invoice-job-table th:nth-child(5), .invoice-job-table td:nth-child(5) { width: 95px; text-align: right; }
+    .invoice-total-row { margin-top: 10px; text-align: right; font-size: 14px; padding: 6px 0; font-weight: 700; }
+    .invoice-note { margin-top: 8px; font-size: 12px; border: 1px solid #333; padding: 6px 8px; }
+    .invoice-footer-note { margin-top: 180px; font-size: 12px; color: #555; }
+    .invoice-footer-note p { margin: 6px 0; }
+    @page { size: letter; margin: 0; }
+    @media print { body { margin: 0; } .invoice-page { margin: 0; } }
+  </style>
+</head>
+<body>
+  <div class="invoice-page">
+    <div class="invoice-header">
+      <img src="${window.location.origin}/logo.jpg" alt="Company logo" class="invoice-logo" />
+      <div class="invoice-company-info">
+        <h1>MAKE IT TO HAPPEN LLC</h1>
+        <h2>385-601-8129</h2>
+        <p>makeittohappen@gmail.com</p>
+        <p>PO BOX 18670 Salt Lake City, UT 84118</p>
+      </div>
+    </div>
+    <h2 class="invoice-title">Invoice</h2>
+    <table class="invoice-info-table"><tbody>
+      <tr><td><strong>Customer:</strong></td><td>${s(invoice.cliente_nombre || "")}</td></tr>
+      <tr><td><strong>Address:</strong></td><td>${s(invoice.cliente_direccion || "")}</td></tr>
+      <tr><td><strong>E-mail:</strong></td><td>${s(invoice.cliente_email || "")}</td></tr>
+      <tr><td><strong>Phone:</strong></td><td>${s(invoice.cliente_telefono || "")}</td></tr>
+    </tbody></table>
+    <div class="invoice-section-label">Description of the job that was done</div>
+    <table class="invoice-job-table">
+      <thead><tr><th>Date</th><th>Description</th><th>Qty</th><th>Unit</th><th>Amount</th></tr></thead>
+      <tbody>${rows.map((item) => {
+        const qty = Number(item.cantidad) || (item.descripcion ? 1 : 0);
+        const price = Number(item.precio) || 0;
+        const amount = qty * price;
+        return `<tr><td>${s(item.fecha || "")}</td><td>${s(item.descripcion || "")}</td><td>${qty || ""}</td><td>${item.descripcion ? `$${price.toFixed(2)}` : ""}</td><td>${item.descripcion ? `$${amount.toFixed(2)}` : ""}</td></tr>`;
+      }).join("")}</tbody>
+    </table>
+    <div class="invoice-total-row"><strong>Total:</strong> $${invoiceTotal.toFixed(2)}</div>
+    ${invoice.nota ? `<div class="invoice-note"><strong>Note:</strong> ${s(invoice.nota)}</div>` : ""}
+    <div class="invoice-footer-note">
+      <p>Hour Rate $</p>
+      <p>Invoice must be paid within the next 10 business days. Customers with accounts over 30 days past due are subject to termination of service. Additional fees apply.</p>
+    </div>
+  </div>
+  <script>window.onload = function() { window.print(); }</script>
+</body>
+</html>`);
+    printWindow.document.close();
+  };
+
   return (
     <div className="page">
       <header className="page-header">
@@ -266,7 +350,7 @@ const InvoicePage = () => {
       {/* Preview modal */}
       <Modal open={previewOpen} title={t(lang, "vista_previa_factura")} onClose={() => setPreviewOpen(false)} wide>
         <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end", marginBottom: "0.5rem" }}>
-          <button className="btn-outline" onClick={() => window.print()}>{t(lang, "imprimir")}</button>
+          <button className="btn-outline" onClick={() => previewData && printInvoice(previewData)}>{t(lang, "imprimir")}</button>
         </div>
         {previewData && <InvoiceScreen data={previewData} />}
       </Modal>

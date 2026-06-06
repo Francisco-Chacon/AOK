@@ -6,6 +6,7 @@ import SearchableSelect from "../components/SearchableSelect";
 import RouteSheetScreen from "./RouteSheetPage/RouteSheetScreen";
 import { useLanguage } from "../i18n/LanguageContext";
 import { t } from "../i18n/translations";
+import { sanitizeHtml } from "../utils/sanitize";
 
 const RouteSheetPage = () => {
   const { lang } = useLanguage();
@@ -143,6 +144,77 @@ const RouteSheetPage = () => {
     finally { setConfirmDeleteOpen(false); setHojaToDelete(null); }
   };
 
+  const printRouteSheet = (routeSheet) => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+
+    const s = sanitizeHtml;
+    const rows = routeSheet.clientes?.length > 0
+      ? [...routeSheet.clientes, ...Array.from({ length: Math.max(0, 8 - routeSheet.clientes.length) }, () => ({}))]
+      : Array.from({ length: 8 }, () => ({}));
+
+    printWindow.document.write(`<!DOCTYPE html>
+<html>
+<head>
+  <title>Route Sheet - ${s(routeSheet.fecha || "")}</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #fff; color: #111; font-family: Arial, Helvetica, sans-serif; }
+    .route-sheet-page { width: 8.5in; min-height: 11in; padding: 0.45in; margin: 0 auto; }
+    .invoice-header { display: flex; justify-content: center; align-items: center; gap: 18px; margin-bottom: 8px; }
+    .invoice-logo { width: 140px; height: auto; object-fit: contain; }
+    .invoice-company-info { text-align: center; line-height: 1.1; }
+    .invoice-company-info h1 { margin: 0; font-size: 28px; letter-spacing: 2px; color: #700e0c; font-weight: 900; }
+    .invoice-company-info h2 { margin: 2px 0; font-size: 26px; letter-spacing: 2px; font-weight: 900; }
+    .invoice-company-info p { margin: 2px 0; font-size: 12px; color: #555; }
+    .invoice-title { text-align: center; margin: 10px 0; font-size: 24px; font-weight: 500; }
+    table { width: 100%; border-collapse: collapse; }
+    td, th { border: 1px solid #333; padding: 5px 7px; font-size: 13px; vertical-align: top; }
+    th { background: #eee; text-align: left; font-size: 12px; }
+    .route-top-table { margin-top: 6px; }
+    .route-top-table td { height: 24px; }
+    .route-top-table td:nth-child(1) { width: 32%; }
+    .route-top-table td:nth-child(2) { width: 36%; }
+    .route-top-table td:nth-child(3) { width: 32%; }
+    .route-table td { height: 66px; }
+    .route-table th:nth-child(1), .route-table td:nth-child(1) { width: 25%; }
+    .route-table th:nth-child(2), .route-table td:nth-child(2),
+    .route-table th:nth-child(3), .route-table td:nth-child(3) { width: 12%; }
+    .route-table th:nth-child(4), .route-table td:nth-child(4) { width: 51%; }
+    .route-customer-name { font-weight: 700; margin-bottom: 3px; }
+    .route-customer-address { font-size: 11px; line-height: 1.25; color: #333; }
+    @page { size: letter; margin: 0; }
+    @media print { body { margin: 0; } .route-sheet-page { margin: 0; } }
+  </style>
+</head>
+<body>
+  <div class="route-sheet-page">
+    <div class="invoice-header">
+      <img src="${window.location.origin}/logo.jpg" alt="Company logo" class="invoice-logo" />
+      <div class="invoice-company-info">
+        <h1>MAKE IT TO HAPPEN LLC</h1>
+        <h2>385-601-8129</h2>
+        <p>makeittohappen@gmail.com</p>
+        <p>PO BOX 18670 Salt Lake City, UT 84118</p>
+      </div>
+    </div>
+    <table class="route-top-table"><tbody><tr>
+      <td><strong>Date:</strong> ${s(routeSheet.fecha || "")}</td>
+      <td><strong>Driver/helper:</strong> ${s(routeSheet.conductor || "")}</td>
+      <td><strong>Truck:</strong> ${s(routeSheet.camion || "")}</td>
+    </tr></tbody></table>
+    <h2 class="invoice-title">Route Sheet</h2>
+    <table class="route-table">
+      <thead><tr><th>Customer</th><th>In</th><th>Out</th><th>Description</th></tr></thead>
+      <tbody>${rows.map((c) => `<tr><td>${c.cliente_nombre ? `<div class="route-customer-name">${s(c.cliente_nombre)}</div>` : ""}${c.cliente_direccion ? `<div class="route-customer-address">${s(c.cliente_direccion)}</div>` : ""}</td><td>${s(c.hora_entrada || "")}</td><td>${s(c.hora_salida || "")}</td><td>${s(c.descripcion || "")}</td></tr>`).join("")}</tbody>
+    </table>
+  </div>
+  <script>window.onload = function() { window.print(); }</script>
+</body>
+</html>`);
+    printWindow.document.close();
+  };
+
   return (
     <div className="page">
       <header className="page-header">
@@ -251,7 +323,7 @@ const RouteSheetPage = () => {
       {/* Preview modal */}
       <Modal open={previewOpen} title={t(lang, "vista_previa_ruta_hoja")} onClose={() => setPreviewOpen(false)} wide>
         <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end", marginBottom: "0.5rem" }}>
-          <button className="btn-outline" onClick={() => window.print()}>{t(lang, "imprimir")}</button>
+          <button className="btn-outline" onClick={() => previewData && printRouteSheet(previewData)}>{t(lang, "imprimir")}</button>
         </div>
         {previewData && <RouteSheetScreen data={previewData} />}
       </Modal>

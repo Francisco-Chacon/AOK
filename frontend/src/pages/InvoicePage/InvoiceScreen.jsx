@@ -39,24 +39,33 @@ export default function InvoiceScreen({ data }) {
       </div>
 
       <table className="invoice-job-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Description</th>
+            <th>Qty</th>
+            <th>Unit</th>
+            <th>Amount</th>
+          </tr>
+        </thead>
         <tbody>
           {items.length > 0 ? (
             items.map((item, index) => (
               <tr key={index}>
-                <td><strong>Date:</strong></td>
                 <td>{item.fecha || ""}</td>
                 <td>{item.descripcion || ""}</td>
-                <td><strong>Amount</strong></td>
+                <td>{Number(item.cantidad) || 1}</td>
                 <td>${(Number(item.precio) || 0).toFixed(2)}</td>
+                <td>${((Number(item.precio) || 0) * (Number(item.cantidad) || 1)).toFixed(2)}</td>
               </tr>
             ))
           ) : (
             Array.from({ length: 5 }).map((_, i) => (
               <tr key={i}>
-                <td><strong>Date:</strong></td>
                 <td></td>
                 <td></td>
-                <td><strong>Amount</strong></td>
+                <td></td>
+                <td></td>
                 <td></td>
               </tr>
             ))

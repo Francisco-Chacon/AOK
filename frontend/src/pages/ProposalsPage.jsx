@@ -17,7 +17,9 @@ const ProposalsPage = () => {
   const [loading, setLoading] = useState(true);
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [editingEstimado, setEditingEstimado] = useState(null);
+  const [editingProposal, setEditingProposal] = useState(null);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [proposalToDelete, setProposalToDelete] = useState(null);
   const [form, setForm] = useState({
     cliente_id: "",
     direccion_trabajo: "",
@@ -26,13 +28,6 @@ const ProposalsPage = () => {
     moneda: "USD",
     descripcion_trabajo: "",
     estado: "borrador",
-  });
-
-  const [items, setItems] = useState([]);
-  const [newItem, setNewItem] = useState({
-    descripcion: "",
-    cantidad: 1,
-    precio_unitario: "",
   });
 
   const loadData = async () => {
@@ -45,7 +40,7 @@ const ProposalsPage = () => {
       setClientes(resClientes.data || []);
       const data = resEstimados.data || [];
       setEstimados(data);
-      setSelectedId((current) => current || data[0]?.id || null);
+      setSelectedId((current) => data.some((item) => item.id === current) ? current : data[0]?.id || null);
     } catch (err) {
       console.error("Error cargando proposals", err);
     } finally {
@@ -58,7 +53,7 @@ const ProposalsPage = () => {
   }, []);
 
   const openNewModal = () => {
-    setEditingEstimado(null);
+    setEditingProposal(null);
     setForm({
       cliente_id: "",
       direccion_trabajo: "",
@@ -68,72 +63,92 @@ const ProposalsPage = () => {
       descripcion_trabajo: "",
       estado: "borrador",
     });
-    setItems([]);
-    setNewItem({ descripcion: "", cantidad: 1, precio_unitario: "" });
     setModalOpen(true);
+  };
+
+  const getEditableDescription = (proposal) => {
+    const rawDescription = (proposal.descripcion_trabajo || "").trim();
+    const notes = (proposal.notas_adicionales || "").trim();
+    const lines = rawDescription.split("\n").filter((line) => line.trim());
+    const looksLikeOldMaterials =
+      lines.length > 0 &&
+      lines.every((line) => /^(\d+)x\s+.+\s+\(\$[\d.]+\s+c\/u\)$/.test(line.trim()));
+
+    if (notes && (!rawDescription || looksLikeOldMaterials)) return notes;
+    return rawDescription;
+  };
+
+  const openEditModal = (proposal) => {
+    setEditingProposal(proposal);
+    setForm({
+      cliente_id: proposal.cliente_id || "",
+      direccion_trabajo: proposal.direccion_trabajo || "",
+      fecha: (proposal.fecha || "").slice(0, 10),
+      monto: proposal.monto ?? "",
+      moneda: proposal.moneda || "USD",
+      descripcion_trabajo: getEditableDescription(proposal),
+      estado: proposal.estado || "borrador",
+    });
+    setModalOpen(true);
+  };
+
+  const askDelete = (proposal) => {
+    setProposalToDelete(proposal);
+    setConfirmDeleteOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!proposalToDelete) return;
+
+    try {
+      await api.delete(`/estimados/${proposalToDelete.id}`);
+      setConfirmDeleteOpen(false);
+      setProposalToDelete(null);
+      await loadData();
+    } catch (err) {
+      console.error("Error eliminando proposal", err);
+      alert("No se pudo eliminar el proposal.");
+    }
   };
 
   const handleChange = (ev) => {
     const { name, value } = ev.target;
-    setForm((f) => ({ ...f, [name]: value }));
-  };
-
-  const handleNewItemChange = (ev) => {
-    const { name, value } = ev.target;
-    setNewItem((item) => ({ ...item, [name]: value }));
-  };
-
-  const addItem = () => {
-    if (!newItem.descripcion || !newItem.precio_unitario) {
-      alert("Completa descripción y precio unitario");
-      return;
-    }
-    const item = {
-      ...newItem,
-      cantidad: Number(newItem.cantidad) || 1,
-      precio_unitario: Number(newItem.precio_unitario) || 0,
-      total: (Number(newItem.cantidad) || 1) * (Number(newItem.precio_unitario) || 0),
-    };
-    setItems((prev) => [...prev, item]);
-    setNewItem({ descripcion: "", cantidad: 1, precio_unitario: "" });
-  };
-
-  const removeItem = (index) => {
-    setItems((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const calculateSubtotal = () => {
-    return items.reduce((acc, item) => acc + (item.total || 0), 0);
-  };
-
-  const calculateTotal = () => {
-    const subtotal = calculateSubtotal();
-    const itbms = subtotal * 0.07;
-    return subtotal + itbms;
+    setForm((f) => {
+      const next = { ...f, [name]: value };
+      if (name === "cliente_id") {
+        const selectedClient = clientes.find((cliente) => cliente.id === Number(value));
+        if (selectedClient && !f.direccion_trabajo) {
+          next.direccion_trabajo = selectedClient.direccion || "";
+        }
+      }
+      return next;
+    });
   };
 
   const handleSubmit = async (ev) => {
     ev.preventDefault();
-    const subtotal = calculateSubtotal();
-    const total = calculateTotal();
-    const descripcionItems = items.map((i) => `${i.cantidad}x ${i.descripcion} ($${i.precio_unitario} c/u)`).join("\n");
-    const notasAdicionales = form.descripcion_trabajo || "";
+    const monto = Number(form.monto) || 0;
     const payload = {
       cliente_id: form.cliente_id,
       direccion_trabajo: form.direccion_trabajo,
       fecha: form.fecha,
-      monto: total,
+      monto,
       moneda: form.moneda,
-      descripcion_trabajo: descripcionItems,
-      notas_adicionales: notasAdicionales,
+      descripcion_trabajo: form.descripcion_trabajo,
+      notas_adicionales: "",
       estado: form.estado,
     };
 
     try {
-      const res = await api.post("/estimados", payload);
+      const res = editingProposal
+        ? await api.put(`/estimados/${editingProposal.id}`, payload)
+        : await api.post("/estimados", payload);
       setModalOpen(false);
+      setEditingProposal(null);
       await loadData();
-      if (res.data?.id) {
+      if (res.data?.id || editingProposal?.id) {
+        setSelectedId(res.data?.id || editingProposal.id);
+      } else if (res.data?.id) {
         setSelectedId(res.data.id);
       }
     } catch (err) {
@@ -165,9 +180,21 @@ const ProposalsPage = () => {
           <h2 className="page-title">{t(lang, "proposals")}</h2>
           <p className="page-subtitle">{t(lang, "proposals_page_subtitle")}</p>
         </div>
-        <button className="btn-primary" onClick={openNewModal}>
-          + {t(lang, "nuevo_estimado")}
-        </button>
+        <div className="page-header-actions">
+          {selectedProposal && (
+            <>
+              <button className="btn-ghost" onClick={() => openEditModal(selectedProposal)}>
+                {t(lang, "editar")}
+              </button>
+              <button className="btn-danger-ghost" onClick={() => askDelete(selectedProposal)}>
+                {t(lang, "eliminar")}
+              </button>
+            </>
+          )}
+          <button className="btn-primary" onClick={openNewModal}>
+            + {t(lang, "nuevo_estimado")}
+          </button>
+        </div>
       </header>
 
       <div className="proposal-layout">
@@ -226,8 +253,8 @@ const ProposalsPage = () => {
 
       <Modal
         open={modalOpen}
-        title={t(lang, "nuevo_estimado_title")}
-        onClose={() => setModalOpen(false)}
+        title={editingProposal ? t(lang, "editar_estimado_title") : t(lang, "nuevo_estimado_title")}
+        onClose={() => { setModalOpen(false); setEditingProposal(null); }}
         wide
       >
         <form className="items-form" onSubmit={handleSubmit}>
@@ -268,136 +295,38 @@ const ProposalsPage = () => {
           </div>
 
           <div className="items-form-section">
-            <h3 className="items-form-title">{t(lang, "agregar_materials")}</h3>
-            <div className="items-input-row">
-              <div className="items-input-field items-input-desc">
-                <span>{t(lang, "descripcion")}</span>
-                <input
-                  className="input"
-                  name="descripcion"
-                  value={newItem.descripcion}
-                  onChange={handleNewItemChange}
-                  placeholder={t(lang, "ejemplo_material")}
-                />
-              </div>
-              <div className="items-input-field">
-                <span>{t(lang, "cantidad")}</span>
-                <input
-                  className="input"
-                  type="number"
-                  name="cantidad"
-                  value={newItem.cantidad}
-                  onChange={handleNewItemChange}
-                  min="1"
-                />
-              </div>
-              <div className="items-input-field">
-                <span>{t(lang, "precio_unit")}</span>
-                <input
-                  className="input"
-                  type="number"
-                  step="0.01"
-                  name="precio_unitario"
-                  value={newItem.precio_unitario}
-                  onChange={handleNewItemChange}
-                  placeholder="0.00"
-                />
-              </div>
-              <button type="button" className="btn-add-item" onClick={addItem}>
-                +
-              </button>
-            </div>
-          </div>
-
-          <div className="items-form-section">
-            <h3 className="items-form-title">{t(lang, "materials_agregados")}</h3>
-            {items.length === 0 ? (
-              <p className="muted">{t(lang, "sin_materials")}</p>
-            ) : (
-              <table className="items-table">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>{t(lang, "descripcion")}</th>
-                    <th>{t(lang, "cantidad")}</th>
-                    <th>{t(lang, "precio_unit")}</th>
-                    <th>{t(lang, "total")}</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.map((item, index) => (
-                    <tr key={index}>
-                      <td>{index + 1}</td>
-                      <td>{item.descripcion}</td>
-                      <td>{item.cantidad}</td>
-                      <td>${Number(item.precio_unitario || 0).toFixed(2)}</td>
-                      <td>
-                        ${Number(item.total || item.cantidad * item.precio_unitario || 0).toFixed(2)}
-                      </td>
-                      <td>
-                        <button
-                          type="button"
-                          className="btn-remove-item"
-                          onClick={() => removeItem(index)}
-                        >
-                          ×
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr>
-                    <td colSpan={3} className="items-total-label">
-                      {t(lang, "subtotal")}
-                    </td>
-                    <td className="items-total-value">
-                      ${calculateSubtotal().toFixed(2)}
-                    </td>
-                    <td></td>
-                  </tr>
-                  <tr>
-                    <td colSpan={3} className="items-total-label">
-                      {t(lang, "impuesto")} (7%)
-                    </td>
-                    <td className="items-total-value">
-                      ${(calculateSubtotal() * 0.07).toFixed(2)}
-                    </td>
-                    <td></td>
-                  </tr>
-                  <tr>
-                    <td colSpan={3} className="items-total-label">
-                      {t(lang, "total")}
-                    </td>
-                    <td className="items-total-value">
-                      ${calculateTotal().toFixed(2)}
-                    </td>
-                    <td></td>
-                  </tr>
-                </tfoot>
-              </table>
-            )}
-          </div>
-
-          <div className="items-form-section">
-            <h3 className="items-form-title">{t(lang, "notas_adicionales_trabajo")}</h3>
+            <h3 className="items-form-title">{t(lang, "descripcion_trabajo")}</h3>
             <div className="items-form-grid">
               <label className="form-field form-field--full">
-                <span>{t(lang, "descripcion_trabajo")}</span>
+                <span>{t(lang, "descripcion")}</span>
                 <textarea
                   className="input"
                   name="descripcion_trabajo"
                   value={form.descripcion_trabajo}
                   onChange={handleChange}
-                  rows={3}
+                  rows={8}
                   placeholder={t(lang, "descripcion_trabajo_placeholder")}
+                  required
                 />
               </label>
             </div>
           </div>
 
           <div className="items-form-footer">
+            <label className="form-field">
+              <span>{t(lang, "monto")}</span>
+              <input
+                className="input"
+                type="number"
+                step="0.01"
+                min="0"
+                name="monto"
+                value={form.monto}
+                onChange={handleChange}
+                placeholder="0.00"
+                required
+              />
+            </label>
             <label className="form-field">
               <span>{t(lang, "estado")}</span>
               <select
@@ -425,24 +354,16 @@ const ProposalsPage = () => {
                 ))}
               </select>
             </label>
-            <div style={{ textAlign: "right" }}>
-              <div className="muted" style={{ fontSize: "0.8rem" }}>
-                {t(lang, "subtotal")}: ${calculateSubtotal().toFixed(2)} {form.moneda}
-              </div>
-              <div className="muted" style={{ fontSize: "0.8rem" }}>
-                {t(lang, "impuesto")} (7%): ${(calculateSubtotal() * 0.07).toFixed(2)} {form.moneda}
-              </div>
-              <span className="items-grand-total">
-                {t(lang, "total")}: ${calculateTotal().toFixed(2)} {form.moneda}
-              </span>
-            </div>
+            <span className="items-grand-total">
+              {form.moneda} {Number(form.monto || 0).toFixed(2)}
+            </span>
           </div>
 
           <div className="form-actions">
             <button
               type="button"
               className="btn-ghost"
-              onClick={() => setModalOpen(false)}
+              onClick={() => { setModalOpen(false); setEditingProposal(null); }}
             >
               {t(lang, "cancelar")}
             </button>
@@ -451,6 +372,24 @@ const ProposalsPage = () => {
             </button>
           </div>
         </form>
+      </Modal>
+
+      <Modal
+        open={confirmDeleteOpen}
+        title={t(lang, "confirmar_eliminar")}
+        onClose={() => setConfirmDeleteOpen(false)}
+      >
+        <p>
+          {t(lang, "seguro_eliminar_estimado")} {proposalToDelete?.cliente_nombre || ""}?
+        </p>
+        <div className="form-actions" style={{ marginTop: "1rem" }}>
+          <button type="button" className="btn-ghost" onClick={() => setConfirmDeleteOpen(false)}>
+            {t(lang, "cancelar")}
+          </button>
+          <button type="button" className="btn btn-danger" onClick={confirmDelete}>
+            {t(lang, "si_eliminar")}
+          </button>
+        </div>
       </Modal>
     </div>
   );

@@ -21,6 +21,8 @@ function getAllEstimados(req, res) {
         e.id,
         e.cliente_id,
         c.nombre AS cliente_nombre,
+        c.telefono AS cliente_telefono,
+        c.email AS cliente_email,
         e.direccion_trabajo,
         e.fecha,
         e.monto,
@@ -63,7 +65,7 @@ function createEstimado(req, res) {
       validateString(direccion_trabajo, "direccion_trabajo", 300, true);
       validateDate(fecha, "fecha", true);
       validMonto = validateNumber(monto, "monto", false);
-      if (moneda) validateEnum(moneda, "moneda", ["USD", "EUR", "MXN"], false);
+      if (moneda) validateEnum(moneda, "moneda", ["USD", "EUR", "MXN", "PAB", "COP"], false);
       if (estado) validateEnum(estado, "estado", ["borrador", "enviado", "aceptado", "rechazado"], false);
       validateString(descripcion_trabajo, "descripcion_trabajo", 2000, false);
       validateString(notas_adicionales, "notas_adicionales", 2000, false);
@@ -89,7 +91,7 @@ function createEstimado(req, res) {
         estado,
         created_at,
         updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const result = stmt.run(
@@ -111,6 +113,8 @@ function createEstimado(req, res) {
           e.id,
           e.cliente_id,
           c.nombre AS cliente_nombre,
+          c.telefono AS cliente_telefono,
+          c.email AS cliente_email,
           e.direccion_trabajo,
           e.fecha,
           e.monto,
@@ -157,7 +161,7 @@ const {
       validateString(direccion_trabajo, "direccion_trabajo", 300, true);
       validateDate(fecha, "fecha", true);
       validMonto = validateNumber(monto, "monto", false);
-      if (moneda) validateEnum(moneda, "moneda", ["USD", "EUR", "MXN"], false);
+      if (moneda) validateEnum(moneda, "moneda", ["USD", "EUR", "MXN", "PAB", "COP"], false);
       if (estado) validateEnum(estado, "estado", ["borrador", "enviado", "aceptado", "rechazado"], false);
       validateString(descripcion_trabajo, "descripcion_trabajo", 2000, false);
       validateString(notas_adicionales, "notas_adicionales", 2000, false);
@@ -204,6 +208,8 @@ const {
           e.id,
           e.cliente_id,
           c.nombre AS cliente_nombre,
+          c.telefono AS cliente_telefono,
+          c.email AS cliente_email,
           e.direccion_trabajo,
           e.fecha,
           e.monto,

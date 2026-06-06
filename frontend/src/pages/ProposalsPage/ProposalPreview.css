@@ -107,6 +107,7 @@
   font-size: 13px;
   line-height: 2;
   margin: 0;
+  overflow-wrap: anywhere;
 }
 
 .proposal-footer {

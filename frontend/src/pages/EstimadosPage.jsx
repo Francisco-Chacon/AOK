@@ -135,6 +135,11 @@ const EstimadosPage = () => {
 
   const printStatement = (estimado) => {
     const items = getItemsFromDescripcion(estimado.descripcion_trabajo, estimado.monto, estimado.moneda);
+    const storedTotal = Number(estimado.monto || 0);
+    const itemsSubtotal = items.reduce((sum, item) => sum + (Number(item.cantidad) || 1) * (Number(item.precio_unitario) || 0), 0);
+    const subtotal = itemsSubtotal || (storedTotal ? storedTotal / 1.07 : 0);
+    const tax = subtotal * 0.07;
+    const statementTotal = storedTotal || subtotal + tax;
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
     
@@ -240,15 +245,15 @@ const EstimadosPage = () => {
     <table class="totals-table">
       <tr>
         <td class="label">${t(lang, "subtotal")}:</td>
-        <td>${s(estimado.moneda)} ${Number(estimado.monto || 0).toFixed(2)}</td>
+        <td>${s(estimado.moneda)} ${subtotal.toFixed(2)}</td>
       </tr>
       <tr>
         <td class="label">${ivaLabel}:</td>
-        <td>${s(estimado.moneda)} ${Number((estimado.monto || 0) * 0.07).toFixed(2)}</td>
+        <td>${s(estimado.moneda)} ${tax.toFixed(2)}</td>
       </tr>
       <tr class="total-row">
         <td class="label">${t(lang, "total")}:</td>
-        <td>${s(estimado.moneda)} ${Number((estimado.monto || 0) * 1.07).toFixed(2)}</td>
+        <td>${s(estimado.moneda)} ${statementTotal.toFixed(2)}</td>
       </tr>
     </table>
   </div>

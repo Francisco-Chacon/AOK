@@ -4,6 +4,9 @@ import InvoiceHeader from "../InvoicePage/InvoiceHeader";
 
 export default function RouteSheetScreen({ data }) {
   const { fecha, conductor, camion, clientes = [] } = data || {};
+  const rows = clientes.length > 0
+    ? [...clientes, ...Array.from({ length: Math.max(0, 8 - clientes.length) }, () => ({}))]
+    : Array.from({ length: 8 }, () => ({}));
 
   return (
     <div className="route-sheet-page">
@@ -31,25 +34,17 @@ export default function RouteSheetScreen({ data }) {
           </tr>
         </thead>
         <tbody>
-          {clientes.length > 0 ? (
-            clientes.map((c, i) => (
-              <tr key={i}>
-                <td>{c.cliente_nombre || ""}{c.cliente_direccion ? `\n${c.cliente_direccion}` : ""}</td>
-                <td>{c.hora_entrada || ""}</td>
-                <td>{c.hora_salida || ""}</td>
-                <td>{c.descripcion || ""}</td>
-              </tr>
-            ))
-          ) : (
-            Array.from({ length: 8 }).map((_, i) => (
-              <tr key={i}>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-              </tr>
-            ))
-          )}
+          {rows.map((c, i) => (
+            <tr key={i}>
+              <td>
+                {c.cliente_nombre && <div className="route-customer-name">{c.cliente_nombre}</div>}
+                {c.cliente_direccion && <div className="route-customer-address">{c.cliente_direccion}</div>}
+              </td>
+              <td>{c.hora_entrada || ""}</td>
+              <td>{c.hora_salida || ""}</td>
+              <td>{c.descripcion || ""}</td>
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>
