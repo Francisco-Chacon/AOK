@@ -73,6 +73,7 @@ npm run dev
 | `PORT` | Puerto del servidor backend | `4000` |
 | `NODE_ENV` | Entorno de ejecución (`development`, `production`) | `development` |
 | `VITE_API_URL` | URL base de la API (frontend) | `http://localhost:4000/api` |
+| `OPENROUTER_API_KEY` | API key para el asistente IA | — |
 
 No se requieren archivos `.env` obligatorios; los valores por defecto funcionan para desarrollo local. Si deseas personalizar, crea un archivo `.env` en la raíz del backend y `.env.local` en `frontend/`.
 
@@ -158,6 +159,7 @@ sistema_local/
 | `/api/backups/upload` | POST | Sube archivo .db (multer, límite 50MB) |
 | `/api/backups/restore` | POST | |
 | `/api/backups/:filename` | DELETE | |
+| `/api/ai/chat` | POST | Chat con asistente IA (requiere `OPENROUTER_API_KEY`) |
 
 > **Nota:** Actualmente **no existe** un endpoint `/api/rutas`. La tabla `rutas` en la BD solo se usa internamente y no tiene API expuesta. Las rutas del sidebar gestionan en realidad las **visitas**.
 

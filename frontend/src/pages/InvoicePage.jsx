@@ -309,7 +309,7 @@ const InvoicePage = () => {
                 <div key={i} className="items-input-row" style={{ marginBottom: "0.5rem" }}>
                   <div className="items-input-field">
                     <span>{t(lang, "fecha")}</span>
-                    <input className="input" type="date" value={item.fecha} onChange={e => handleItemChange(i, "fecha", e.target.value)} style={{ width: "130px" }} />
+                    <input className="input input-date" type="date" value={item.fecha} onChange={e => handleItemChange(i, "fecha", e.target.value)} />
                   </div>
                   <div className="items-input-field items-input-desc">
                     <span>{t(lang, "descripcion")}</span>
@@ -317,11 +317,11 @@ const InvoicePage = () => {
                   </div>
                   <div className="items-input-field">
                     <span>{t(lang, "cantidad")}</span>
-                    <input className="input" type="number" min="1" value={item.cantidad} onChange={e => handleItemChange(i, "cantidad", e.target.value)} style={{ width: "70px" }} />
+                    <input className="input input-qty" type="number" min="1" value={item.cantidad} onChange={e => handleItemChange(i, "cantidad", e.target.value)} />
                   </div>
                   <div className="items-input-field">
                     <span>{t(lang, "precio_unit")}</span>
-                    <input className="input" type="number" step="0.01" value={item.precio} onChange={e => handleItemChange(i, "precio", e.target.value)} style={{ width: "90px" }} />
+                    <input className="input input-price" type="number" step="0.01" value={item.precio} onChange={e => handleItemChange(i, "precio", e.target.value)} />
                   </div>
                   <button type="button" className="btn-remove-item" onClick={() => removeItem(i)}>×</button>
                 </div>

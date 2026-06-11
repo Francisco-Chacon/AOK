@@ -63,7 +63,7 @@ const Sidebar = ({ activePage, onChangePage }) => {
   };
 
   return (
-    <aside className="sidebar">
+    <aside className={"sidebar" + (menuOpen ? " sidebar--open" : "")}>
       <div className="sidebar-header">
         <img src="/logo.jpg" alt="Logo" className="sidebar-logo-img" />
         <div>

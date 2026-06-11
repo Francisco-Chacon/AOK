@@ -17,6 +17,7 @@
   "dependencies": {
     "better-sqlite3": "^12.4.6",
     "cors": "^2.8.5",
+    "dotenv": "^17.4.2",
     "express": "^5.1.0",
     "multer": "^2.0.2",
     "router": "^2.2.0"

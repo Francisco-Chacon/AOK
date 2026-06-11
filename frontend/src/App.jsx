@@ -12,6 +12,7 @@ import ProposalsPage from "./pages/ProposalsPage";
 import BackupsPage from "./pages/BackupsPage";
 import InvoicePage from "./pages/InvoicePage";
 import RouteSheetPage from "./pages/RouteSheetPage";
+import AiAssistant from "./components/AiAssistant";
 
 const App = () => {
   const [activePage, setActivePage] = useState("clientes");
@@ -45,6 +46,7 @@ const App = () => {
         <div className="app-shell">
           <Sidebar activePage={activePage} onChangePage={setActivePage} />
           <main className="app-main">{renderPage()}</main>
+          <AiAssistant />
         </div>
       </LanguageProvider>
     </ErrorBoundary>

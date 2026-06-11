@@ -9,6 +9,7 @@ const estimadosRoutes = require("./estimados.routes");
 const facturasRoutes = require("./facturas.routes");
 const rutasHojasRoutes = require("./rutas_hojas.routes");
 const backupsRoutes = require("./backups.routes");
+const aiRoutes = require("./ai.routes");
 
 router.use("/clientes", clientesRoutes);
 router.use("/visitas", visitasRoutes);
@@ -17,6 +18,6 @@ router.use("/estimados", estimadosRoutes);
 router.use("/facturas", facturasRoutes);
 router.use("/rutas-hojas", rutasHojasRoutes);
 router.use("/backups", backupsRoutes);
-
+router.use("/ai", aiRoutes);
 
 module.exports = router;

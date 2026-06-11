@@ -296,11 +296,11 @@ const RouteSheetPage = () => {
                   <div className="items-input-row">
                     <div className="items-input-field">
                       <span>{t(lang, "hora_entrada")}</span>
-                      <input className="input" type="time" value={c.hora_entrada} onChange={e => handleClienteChange(i, "hora_entrada", e.target.value)} style={{ width: "110px" }} />
+                      <input className="input input-time" type="time" value={c.hora_entrada} onChange={e => handleClienteChange(i, "hora_entrada", e.target.value)} />
                     </div>
                     <div className="items-input-field">
                       <span>{t(lang, "hora_salida")}</span>
-                      <input className="input" type="time" value={c.hora_salida} onChange={e => handleClienteChange(i, "hora_salida", e.target.value)} style={{ width: "110px" }} />
+                      <input className="input input-time" type="time" value={c.hora_salida} onChange={e => handleClienteChange(i, "hora_salida", e.target.value)} />
                     </div>
                     <div className="items-input-field items-input-desc">
                       <span>{t(lang, "descripcion")}</span>

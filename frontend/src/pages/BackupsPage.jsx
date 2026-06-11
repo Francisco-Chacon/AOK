@@ -338,7 +338,7 @@ const BackupsPage = () => {
               <thead>
                 <tr>
                   <th>{t(lang, "archivo")}</th>
-                  <th style={{ width: "320px" }}>{t(lang, "acciones")}</th>
+                  <th className="th-actions">{t(lang, "acciones")}</th>
                 </tr>
               </thead>
               <tbody>
