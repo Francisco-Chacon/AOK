@@ -3,8 +3,7 @@ import React, { useEffect, useState } from "react";
 import Modal from "../components/Modal";
 import { useLanguage } from "../i18n/LanguageContext";
 import { t } from "../i18n/translations";
-
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
+import api from "../api/apiClient";
 
 const BackupsPage = () => {
   const { lang } = useLanguage();
@@ -46,8 +45,7 @@ const BackupsPage = () => {
   const fetchBackups = async () => {
     try {
       setLoadingList(true);
-      const res = await fetch(`${API_BASE}/backups/list`);
-      const data = await res.json();
+      const { data } = await api.get("/backups/list");
       if (data.ok) {
         setBackups(data.files || []);
       } else {
@@ -62,7 +60,11 @@ const BackupsPage = () => {
   };
 
   useEffect(() => {
-    fetchBackups();
+    api.get("/backups/list").then(({ data }) => {
+      if (data.ok) setBackups(data.files || []);
+    }).catch((err) => {
+      console.error(err);
+    });
   }, []);
 
   // ---------- CREAR BACKUP ----------
@@ -79,10 +81,7 @@ const BackupsPage = () => {
   const handleCreateBackup = async () => {
     try {
       setLoadingCreate(true);
-      const res = await fetch(`${API_BASE}/backups/create`, {
-        method: "POST",
-      });
-      const data = await res.json();
+      const { data } = await api.post("/backups/create");
       if (data.ok) {
         showSuccess(data.message || "Backup creado correctamente.");
         fetchBackups();
@@ -102,7 +101,7 @@ const BackupsPage = () => {
 
   const handleDownload = (filename) => {
     window.open(
-      `${API_BASE}/backups/download/${encodeURIComponent(filename)}`,
+      `${api.defaults.baseURL}/backups/download/${encodeURIComponent(filename)}`,
       "_blank"
     );
   };
@@ -125,12 +124,9 @@ const BackupsPage = () => {
 
     try {
       setLoadingRestore(true);
-      const res = await fetch(`${API_BASE}/backups/restore`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ filename: backupToRestore }),
+      const { data } = await api.post("/backups/restore", {
+        filename: backupToRestore,
       });
-      const data = await res.json();
       if (data.ok) {
         showSuccess(
           data.message ||
@@ -167,11 +163,9 @@ const BackupsPage = () => {
 
     try {
       setLoadingDelete(true);
-      const res = await fetch(
-        `${API_BASE}/backups/${encodeURIComponent(backupToDelete)}`,
-        { method: "DELETE" }
+      const { data } = await api.delete(
+        `/backups/${encodeURIComponent(backupToDelete)}`
       );
-      const data = await res.json();
       if (data.ok) {
         showSuccess(data.message || "Backup eliminado correctamente.");
         fetchBackups();
@@ -209,15 +203,9 @@ const BackupsPage = () => {
     try {
       setUploading(true);
       const formData = new FormData();
-      // 'backup' debe coincidir con upload.single("backup") en el backend
       formData.append("backup", backupFile);
 
-      const res = await fetch(`${API_BASE}/backups/upload`, {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await res.json();
+      const { data } = await api.post("/backups/upload", formData);
       if (data.ok) {
         showSuccess(data.message || "Backup subido correctamente.");
         setBackupFile(null);
@@ -235,16 +223,16 @@ const BackupsPage = () => {
   };
 
   return (
-    <div className="page">
-      <header className="page-header">
-        <div className="page-header-main">
-          <h1 className="page-title">{t(lang, "backups")}</h1>
-          <p className="page-subtitle">
+    <div className="page mx-auto w-full max-w-6xl">
+      <header className="page-header mb-6 flex items-center justify-between gap-4 rounded-3xl border border-[var(--record-border)] bg-[var(--bg-panel)] px-5 py-5 shadow-[var(--shadow-soft)] backdrop-blur">
+        <div className="page-header-main flex flex-col gap-1">
+          <h1 className="page-title text-3xl font-bold tracking-[-0.035em] text-[var(--text-main)]">{t(lang, "backups")}</h1>
+          <p className="page-subtitle text-sm text-[var(--text-muted)]">
             {t(lang, "backups_page_subtitle")}
           </p>
         </div>
 
-        <div className="backups-actions">
+        <div className="backups-actions flex shrink-0 gap-2">
           <button
             className="btn btn-primary"
             onClick={openCreateConfirm}
@@ -283,7 +271,7 @@ const BackupsPage = () => {
       )}
 
       {/* Sección para subir backup */}
-      <section className="card" style={{ marginTop: "1rem" }}>
+      <section className="card mt-4 flex justify-between gap-5 rounded-xl border border-[var(--record-border)] bg-[var(--bg-card)] p-5 shadow-[var(--record-shadow)] backdrop-blur">
         <h2>{t(lang, "subir_desde_archivo")}</h2>
         <p className="muted">
           {t(lang, "subir_backup_desc")}
@@ -312,9 +300,9 @@ const BackupsPage = () => {
         </div>
       </section>
 
-      <div className="page-toolbar">
+      <div className="page-toolbar backups-search-toolbar mb-5 mt-6 flex items-center justify-between gap-4">
         <input
-          className="input search-bar"
+          className="input search-bar w-full max-w-sm rounded-xl border border-[var(--record-border)] bg-[var(--bg-input)] px-3 py-2 text-sm text-[var(--text-main)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-[var(--accent-strong)] focus:ring-2 focus:ring-[rgba(var(--primary),0.16)]"
           placeholder={t(lang, "busqueda")}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -322,18 +310,18 @@ const BackupsPage = () => {
       </div>
 
       {/* Lista de backups */}
-      <div className="list" style={{ marginTop: "1rem" }}>
+      <div className="list mt-4 flex flex-col gap-3">
         {backupsFiltrados.length === 0 ? (
-          <div className="card">
-            <div className="card-main">
-              <p className="card-title">{t(lang, "sin_backups")}</p>
-              <p className="card-text muted">
+          <div className="card flex justify-between gap-5 rounded-xl border border-[var(--record-border)] bg-[var(--bg-card)] p-5 shadow-[var(--record-shadow)]">
+            <div className="card-main flex flex-col gap-1">
+              <p className="card-title font-bold text-[var(--text-main)]">{t(lang, "sin_backups")}</p>
+              <p className="card-text muted text-sm text-[var(--text-muted)]">
                 {t(lang, "sin_backups_desc")}
               </p>
             </div>
           </div>
         ) : (
-          <div className="card">
+          <div className="card flex justify-between gap-5 rounded-xl border border-[var(--record-border)] bg-[var(--bg-card)] p-5 shadow-[var(--record-shadow)]">
             <table className="table">
               <thead>
                 <tr>

@@ -55,7 +55,10 @@ const RecibosPage = () => {
   };
 
   useEffect(() => {
-    loadData();
+    Promise.all([api.get("/recibos"), api.get("/clientes")]).then(([resRecibos, resClientes]) => {
+      setRecibos(resRecibos.data || []);
+      setClientes(resClientes.data || []);
+    }).catch((err) => console.error("Error cargando recibos", err)).finally(() => setLoading(false));
   }, []);
 
   const totalPagado = recibos
@@ -164,11 +167,11 @@ const RecibosPage = () => {
   };
 
   return (
-    <div className="page">
-      <header className="page-header">
-        <div className="page-header-main">
-          <h2 className="page-title">{t(lang, "recibos")}</h2>
-          <p className="page-subtitle">
+    <div className="page mx-auto w-full max-w-6xl">
+      <header className="page-header mb-6 flex items-center justify-between gap-4 rounded-3xl border border-[var(--record-border)] bg-[var(--bg-panel)] px-5 py-5 shadow-[var(--shadow-soft)] backdrop-blur">
+        <div className="page-header-main flex flex-col gap-1">
+          <h2 className="page-title text-3xl font-bold tracking-[-0.035em] text-[var(--text-main)]">{t(lang, "recibos")}</h2>
+          <p className="page-subtitle text-sm text-[var(--text-muted)]">
             {t(lang, "recibos_page_subtitle")}
           </p>
         </div>
@@ -196,9 +199,9 @@ const RecibosPage = () => {
         </div>
       </section>
 
-      <div className="page-toolbar">
+      <div className="page-toolbar mb-5 flex items-center justify-between gap-4">
         <input
-          className="input search-bar"
+          className="input search-bar w-full max-w-sm rounded-xl border border-[var(--record-border)] bg-[var(--bg-input)] px-3 py-2 text-sm text-[var(--text-main)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-[var(--accent-strong)] focus:ring-2 focus:ring-[rgba(var(--primary),0.16)]"
           placeholder={t(lang, "busqueda")}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -226,15 +229,15 @@ const RecibosPage = () => {
       ) : filtrados.length === 0 ? (
         <p className="muted">{t(lang, "sin_resultados")}</p>
       ) : (
-        <div className="list">
+        <div className="list flex flex-col gap-3">
           {filtrados.map((r) => (
             <article
               key={r.id}
-              className="card card--clickable"
+              className="card card--clickable flex cursor-pointer justify-between gap-5 rounded-xl border border-[var(--record-border)] bg-[var(--bg-card)] p-5 shadow-[var(--record-shadow)] transition hover:-translate-y-0.5 hover:border-[var(--record-border-strong)] hover:shadow-[var(--record-shadow-hover)]"
               onClick={() => openDetails(r)}
             >
-              <div className="card-main">
-                <div className="badge-row">
+              <div className="card-main flex flex-col gap-1">
+                <div className="badge-row flex items-center gap-1.5">
                   <span className="badge badge-soft">
                     {r.codigo || `REC-${r.id}`}
                   </span>
@@ -262,7 +265,7 @@ const RecibosPage = () => {
                     : t(lang, "sin_descripcion")}
                 </p>
               </div>
-              <div className="card-meta">
+              <div className="card-meta flex min-w-40 flex-col items-end gap-1.5">
                 <p className="card-text">
                   <strong>{t(lang, "fecha")}:</strong> {r.fecha?.slice(0, 10)}
                 </p>

@@ -6,13 +6,15 @@
   "scripts": {
     "dev": "electron .",
     "build": "electron-builder --win",
-    "dist": "npm run build"
+    "dist": "npm run build",
+    "test": "vitest run"
   },
   "dependencies": {
     "electron": "^33.0.0"
   },
   "devDependencies": {
-    "electron-builder": "^25.0.0"
+    "electron-builder": "^25.0.0",
+    "vitest": "^4.1.9"
   },
   "build": {
     "appId": "com.sistema.gestion",

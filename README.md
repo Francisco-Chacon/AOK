@@ -23,7 +23,7 @@ Aplicación local para gestión de clientes, rutas, visitas, recibos, estimados,
 - **Backend**: Express.js + SQLite (better-sqlite3) — puerto 4000
 - **Escritorio**: Electron  — ventana 1280×800, lanza backend como proceso hijo
 - **Estilos**: CSS personalizado
-- **Cliente HTTP**: Axios (excepto BackupsPage que usa `fetch()` nativo)
+- **Cliente HTTP**: Axios
 - **Guía futura**: Nuevos componentes deben escribirse en TypeScript/TSX; el código JSX existente puede migrarse gradualmente.
 
 ## Requisitos
@@ -91,7 +91,7 @@ No se requieren archivos `.env` obligatorios; los valores por defecto funcionan 
 ### Backend (`cd backend`)
 | Script | Descripción |
 |--------|-------------|
-| `npm run dev` | Inicia servidor con nodemon en puerto 4000 |
+| `npm run dev` | Inicia servidor con node plano en puerto 4000 |
 | `npm start` | `node src/server.js` |
 | `npm run init-db` | Inicializa BD con tablas básicas |
 | `npm run migrate:add-fecha-visitas` | Agrega columna `fecha` a tabla `visitas` |
@@ -135,7 +135,7 @@ sistema_local/
 │   ├── main.js             # Proceso principal (spawn backend, BrowserWindow)
 │   ├── preload.js          # API expuesta al renderer
 │   └── package.json        # Config electron-builder (target portable)
-├── AGENT.md                # Contexto para asistentes de IA
+├── AGENTS.md               # Contexto para asistentes de IA
 ├── .gitignore              # Ignora node_modules, backend/data/, backend/public/, dist/
 └── package.json
 ```
@@ -197,13 +197,13 @@ La base de datos se inicializa automáticamente al iniciar el backend mediante `
 Los recursos estáticos (imágenes, iconos, favicon) se encuentran en `frontend/public/`:
 
 - `favicon.ico` — Icono de la aplicación
-- `logo.jpg` — Logo de la empresa/sistema
+- `logo.png` — Logo de la empresa/sistema
 
 No existe una carpeta `assets/` separada; se utiliza `public/` de Vite para servir archivos estáticos.
 
 ## Documentación Adicional
 
-- **AGENT.md** — Guía de contexto para asistentes de IA (OpenCode)
+- **AGENTS.md** — Guía de contexto para asistentes de IA (OpenCode)
 - **API Docs** — Pendiente de generar. Los endpoints actuales están listados en la sección [API Endpoints](#api-endpoints) de este documento. Se recomienda crear `docs/api.md` con ejemplos de peticiones/respuestas.
 
 ## Componentes Principales (Frontend)
@@ -263,10 +263,7 @@ También se recomienda revisar en navegador:
 - **Sin tests**: No hay pruebas automatizadas en todo el proyecto
 - **BD en .gitignore**: El archivo `backend/data/gestion_local.db` está excluido del repositorio (`.gitignore`). La BD no se versiona.
 - **Datos de empresa hardcodeados**: Facturas y hojas de ruta usan "MAKE IT TO HAPPEN LLC" (tel: 385-601-8129, email: makeittohappen@gmail.com, dirección: PO BOX 18670 Salt Lake City, UT 84118). Las claves de traducción `empresa_*` existen pero están vacías.
-- **Traducciones corruptas**: Algunas claves en i18n contienen texto en chino (`选择性`) en lugar del español correcto (`direccion`, etc.). Se recomienda revisar `frontend/src/i18n/translations.js`.
-- **Inconsistencia de routers**: Clientes, visitas y recibos usan el paquete `router`; el resto usa `express.Router()`.
-- **BackupsPage** usa `fetch()` nativo en lugar de Axios como el resto de la app.
-- **Archivo `.env` vacío** existe en `backend/src/.env` (no se usa actualmente).
+
 
 ## Licencia
 

@@ -46,7 +46,12 @@ const InvoicePage = () => {
     }
   };
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    Promise.all([api.get("/facturas"), api.get("/clientes")]).then(([resFacturas, resClientes]) => {
+      setFacturas(resFacturas.data || []);
+      setClientes(resClientes.data || []);
+    }).catch(console.error).finally(() => setLoading(false));
+  }, []);
 
   const filtradas = facturas.filter(f => {
     if (!searchQuery) return true;
@@ -162,12 +167,8 @@ const InvoicePage = () => {
     * { box-sizing: border-box; }
     body { margin: 0; background: #fff; color: #111; font-family: Arial, Helvetica, sans-serif; }
     .invoice-page { width: 8.5in; min-height: 11in; padding: 0.45in; margin: 0 auto; }
-    .invoice-header { display: flex; justify-content: center; align-items: center; gap: 18px; margin-bottom: 8px; }
-    .invoice-logo { width: 140px; height: auto; object-fit: contain; }
-    .invoice-company-info { text-align: center; line-height: 1.1; }
-    .invoice-company-info h1 { margin: 0; font-size: 28px; letter-spacing: 2px; color: #700e0c; font-weight: 900; }
-    .invoice-company-info h2 { margin: 2px 0; font-size: 26px; letter-spacing: 2px; font-weight: 900; }
-    .invoice-company-info p { margin: 2px 0; font-size: 12px; color: #555; }
+    .invoice-header { display: flex; justify-content: center; align-items: center; margin-bottom: 8px; }
+    .invoice-logo { width: 560px; max-width: 100%; height: auto; display: block; object-fit: contain; }
     .invoice-title { text-align: center; margin: 10px 0; font-size: 24px; font-weight: 500; }
     table { width: 100%; border-collapse: collapse; }
     td, th { border: 1px solid #333; padding: 5px 7px; font-size: 13px; vertical-align: top; }
@@ -190,13 +191,7 @@ const InvoicePage = () => {
 <body>
   <div class="invoice-page">
     <div class="invoice-header">
-      <img src="${window.location.origin}/logo.jpg" alt="Company logo" class="invoice-logo" />
-      <div class="invoice-company-info">
-        <h1>MAKE IT TO HAPPEN LLC</h1>
-        <h2>385-601-8129</h2>
-        <p>makeittohappen@gmail.com</p>
-        <p>PO BOX 18670 Salt Lake City, UT 84118</p>
-      </div>
+      <img src="${window.location.origin}/logo.png" alt="Company logo" class="invoice-logo" />
     </div>
     <h2 class="invoice-title">Invoice</h2>
     <table class="invoice-info-table"><tbody>
@@ -229,17 +224,17 @@ const InvoicePage = () => {
   };
 
   return (
-    <div className="page">
-      <header className="page-header">
-        <div className="page-header-main">
-          <h2 className="page-title">{t(lang, "facturas")}</h2>
-          <p className="page-subtitle">{t(lang, "facturas_page_subtitle")}</p>
+    <div className="page mx-auto w-full max-w-6xl">
+      <header className="page-header mb-6 flex items-center justify-between gap-4 rounded-3xl border border-[var(--record-border)] bg-[var(--bg-panel)] px-5 py-5 shadow-[var(--shadow-soft)] backdrop-blur">
+        <div className="page-header-main flex flex-col gap-1">
+          <h2 className="page-title text-3xl font-bold tracking-[-0.035em] text-[var(--text-main)]">{t(lang, "facturas")}</h2>
+          <p className="page-subtitle text-sm text-[var(--text-muted)]">{t(lang, "facturas_page_subtitle")}</p>
         </div>
         <button className="btn-primary" onClick={openNewModal}>+ {t(lang, "nueva_factura")}</button>
       </header>
 
-      <div className="page-toolbar">
-        <input className="input search-bar" placeholder={t(lang, "busqueda")} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+      <div className="page-toolbar mb-5 flex items-center justify-between gap-4">
+        <input className="input search-bar w-full max-w-sm rounded-xl border border-[var(--record-border)] bg-[var(--bg-input)] px-3 py-2 text-sm text-[var(--text-main)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-[var(--accent-strong)] focus:ring-2 focus:ring-[rgba(var(--primary),0.16)]" placeholder={t(lang, "busqueda")} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
       </div>
 
       {loading ? (
@@ -247,18 +242,18 @@ const InvoicePage = () => {
       ) : filtradas.length === 0 ? (
         <p className="muted">{t(lang, "sin_resultados")}</p>
       ) : (
-        <div className="list">
+        <div className="list flex flex-col gap-3">
           {filtradas.map(f => (
-            <article key={f.id} className="card card--clickable" onClick={() => openPreview(f)}>
-              <div className="card-main">
-                <div className="badge-row">
+            <article key={f.id} className="card card--clickable flex cursor-pointer justify-between gap-5 rounded-xl border border-[var(--record-border)] bg-[var(--bg-card)] p-5 shadow-[var(--record-shadow)] transition hover:-translate-y-0.5 hover:border-[var(--record-border-strong)] hover:shadow-[var(--record-shadow-hover)]" onClick={() => openPreview(f)}>
+              <div className="card-main flex flex-col gap-1">
+                <div className="badge-row flex items-center gap-1.5">
                   <span className="badge badge-soft">INV-{f.id}</span>
                   <span className={`badge ${f.estado === "pagado" ? "badge-success" : f.estado === "pendiente" ? "badge-warning" : "badge-muted"}`}>{f.estado}</span>
                 </div>
                 <h3 className="card-title">{f.cliente_nombre || t(lang, "cliente_sin_nombre")}</h3>
                 <p className="card-text muted">{f.nota ? f.nota.slice(0, 120) + (f.nota.length > 120 ? "…" : "") : ""}</p>
               </div>
-              <div className="card-meta">
+              <div className="card-meta flex min-w-40 flex-col items-end gap-1.5">
                 <p className="card-text"><strong>{t(lang, "fecha")}:</strong> {f.fecha?.slice(0, 10)}</p>
                 <p className="card-text"><strong>{t(lang, "monto")}:</strong> ${(f.items || []).reduce((s, i) => s + (Number(i.precio) || 0) * (Number(i.cantidad) || 1), 0).toFixed(2)}</p>
                 <div className="card-actions">
@@ -274,7 +269,7 @@ const InvoicePage = () => {
       {/* Modal create/edit */}
       <Modal open={modalOpen} title={editingFactura ? t(lang, "editar_factura_title") : t(lang, "nueva_factura_title")} onClose={() => setModalOpen(false)}>
         <form onSubmit={handleSubmit}>
-          <div className="form-grid">
+          <div className="form-grid grid grid-cols-1 gap-4 md:grid-cols-2">
             <label className="form-field">
               <span>{t(lang, "cliente")}</span>
               <SearchableSelect

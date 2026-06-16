@@ -58,7 +58,10 @@ const RutasPage = () => {
   };
 
   useEffect(() => {
-    loadData();
+    Promise.all([api.get("/visitas"), api.get("/clientes")]).then(([resVisitas, resClientes]) => {
+      setVisitas(resVisitas.data || []);
+      setClientes(resClientes.data || []);
+    }).catch((err) => console.error("Error cargando visitas", err)).finally(() => setLoading(false));
   }, []);
 
   const visitasPorDia = (dia) =>
@@ -177,11 +180,11 @@ const RutasPage = () => {
     txt ? txt.charAt(0).toUpperCase() + txt.slice(1) : "";
 
   return (
-    <div className="page">
-      <header className="page-header">
-        <div className="page-header-main">
-          <h2 className="page-title">{t(lang, "rutas")}</h2>
-          <p className="page-subtitle">
+    <div className="page mx-auto w-full max-w-6xl">
+      <header className="page-header mb-6 flex items-center justify-between gap-4 rounded-3xl border border-[var(--record-border)] bg-[var(--bg-panel)] px-5 py-5 shadow-[var(--shadow-soft)] backdrop-blur">
+        <div className="page-header-main flex flex-col gap-1">
+          <h2 className="page-title text-3xl font-bold tracking-[-0.035em] text-[var(--text-main)]">{t(lang, "rutas")}</h2>
+          <p className="page-subtitle text-sm text-[var(--text-muted)]">
             {t(lang, "rutas_page_subtitle")}
           </p>
         </div>
@@ -205,9 +208,9 @@ const RutasPage = () => {
         ))}
       </section>
 
-      <div className="page-toolbar">
+      <div className="page-toolbar mb-5 flex items-center justify-between gap-4">
         <input
-          className="input search-bar"
+          className="input search-bar w-full max-w-sm rounded-xl border border-[var(--record-border)] bg-[var(--bg-input)] px-3 py-2 text-sm text-[var(--text-main)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-[var(--accent-strong)] focus:ring-2 focus:ring-[rgba(var(--primary),0.16)]"
           placeholder={t(lang, "busqueda")}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -241,15 +244,15 @@ const RutasPage = () => {
             : t(lang, "sin_visitas_dia")}
         </p>
       ) : (
-        <div className="list">
+        <div className="list flex flex-col gap-3">
           {visitasFiltradas.map((v) => (
             <article
               key={v.id}
-              className="card card--wide card--clickable"
+              className="card card--wide card--clickable flex cursor-pointer items-center justify-between gap-5 rounded-xl border border-[var(--record-border)] bg-[var(--bg-card)] p-5 shadow-[var(--record-shadow)] transition hover:-translate-y-0.5 hover:border-[var(--record-border-strong)] hover:shadow-[var(--record-shadow-hover)]"
               onClick={() => openDetails(v)}
             >
-              <div className="card-main">
-                <div className="badge-row">
+              <div className="card-main flex flex-col gap-1">
+                <div className="badge-row flex items-center gap-1.5">
                   <span className="pill pill--soft">
                     {v.fecha ? v.fecha.slice(0, 10) : t(lang, "sin_fecha")}
                   </span>
@@ -263,7 +266,7 @@ const RutasPage = () => {
                 </h3>
                 <p className="card-text">{v.direccion}</p>
               </div>
-              <div className="card-meta">
+              <div className="card-meta flex min-w-40 flex-col items-end gap-1.5">
                 <span className="badge badge-soft">
                   {v.tipo_servicio || t(lang, "servicio")}
                 </span>
@@ -298,7 +301,7 @@ const RutasPage = () => {
         title={editingVisita ? t(lang, "editar_visita_title") : t(lang, "nueva_visita_title")}
         onClose={() => setModalOpen(false)}
       >
-        <form className="form-grid" onSubmit={handleSubmit}>
+        <form className="form-grid grid grid-cols-1 gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
           <label className="form-field">
             <span>{t(lang, "cliente")}</span>
             <SearchableSelect

@@ -58,7 +58,6 @@ const AiAssistant = () => {
 
     const history = messages.map(({ role, content }) => ({ role, content }));
 
-    const assistantIndex = messages.length + 1;
     setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
 
     try {
@@ -81,7 +80,7 @@ const AiAssistant = () => {
       const decoder = new TextDecoder();
       let buffer = "";
 
-      while (true) {
+      while (true) { // eslint-disable-line no-constant-condition
         const { done, value } = await reader.read();
         if (done) break;
 

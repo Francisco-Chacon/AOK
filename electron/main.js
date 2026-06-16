@@ -1,6 +1,7 @@
 const { app, BrowserWindow, shell } = require("electron");
 const path = require("path");
 const { spawn } = require("child_process");
+const { pollBackend } = require("./pollBackend");
 
 let mainWindow;
 let backendProcess;
@@ -63,12 +64,15 @@ function createWindow() {
   });
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   startBackend();
-
-  setTimeout(() => {
-    createWindow();
-  }, 1500);
+  try {
+    await pollBackend();
+    console.log("Backend listo, abriendo ventana");
+  } catch (err) {
+    console.error(err.message);
+  }
+  createWindow();
 });
 
 app.on("window-all-closed", () => {

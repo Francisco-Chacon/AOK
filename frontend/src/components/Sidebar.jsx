@@ -1,7 +1,7 @@
-// src/components/Sidebar.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useLanguage } from "../i18n/LanguageContext";
 import { t } from "../i18n/translations";
+import { cn } from "../utils/cn";
 
 const ICONS = {
   clientes: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8 M22 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75",
@@ -12,50 +12,28 @@ const ICONS = {
   estimados: "M12 2v20 M17 5H9.5a3.5 3.5 0 0 0 0 7H14a3.5 3.5 0 0 1 0 7H6",
   proposals: "M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2 M8 8h8 M8 12h8 M8 16h5",
   backups: "M12 3a9 9 0 1 0 9 9h-4 M21 3v6h-6 M12 7v5l3 2",
-  menu: "M4 6h16 M4 12h16 M4 18h16",
-  sun: "M12 4V2 M12 22v-2 M4.93 4.93 3.51 3.51 M20.49 20.49l-1.42-1.42 M4 12H2 M22 12h-2 M4.93 19.07l-1.42 1.42 M20.49 3.51l-1.42 1.42 M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8",
-  moon: "M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79",
-  language: "M3 5h12 M9 3v2 M10 5c-.7 4.2-3.1 7.2-7 9 M5 9c1.4 2.4 3.6 4.2 6 5 M14 21l4-9 4 9 M15.5 18h5",
 };
 
 const Icon = ({ name }) => (
-  <svg className="sidebar-icon" viewBox="0 0 24 24" aria-hidden="true">
+  <svg className="sidebar-icon h-5 w-5 shrink-0" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d={ICONS[name]} />
   </svg>
 );
 
+const NAV_ITEMS = [
+  { id: "clientes", icon: "clientes", labelKey: "clientes" },
+  { id: "recibos", icon: "recibos", labelKey: "recibos" },
+  { id: "rutas", icon: "rutas", labelKey: "rutas" },
+  { id: "facturas", icon: "facturas", labelKey: "facturas" },
+  { id: "rutas-hojas", icon: "rutas-hojas", labelKey: "rutas_hojas" },
+  { id: "estimados", icon: "estimados", labelKey: "estimados" },
+  { id: "proposals", icon: "proposals", labelKey: "proposals" },
+  { id: "backups", icon: "backups", labelKey: "backups" },
+];
+
 const Sidebar = ({ activePage, onChangePage }) => {
-  const { lang, setLang } = useLanguage();
+  const { lang } = useLanguage();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(() => {
-    const saved = localStorage.getItem("theme");
-    if (saved) return saved === "dark";
-    return window.matchMedia("(prefers-color-scheme: dark)").matches;
-  });
-
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.setAttribute("data-theme", "dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      document.documentElement.setAttribute("data-theme", "light");
-      localStorage.setItem("theme", "light");
-    }
-  }, [darkMode]);
-
-  const items = [
-    { id: "clientes", label: t(lang, "clientes"), icon: "clientes" },
-    { id: "recibos", label: t(lang, "recibos"), icon: "recibos" },
-    { id: "rutas", label: t(lang, "rutas"), icon: "rutas" },
-    { id: "facturas", label: t(lang, "facturas"), icon: "facturas" },
-    { id: "rutas-hojas", label: t(lang, "rutas_hojas"), icon: "rutas-hojas" },
-    { id: "estimados", label: t(lang, "estimados"), icon: "estimados" },
-    { id: "proposals", label: t(lang, "proposals"), icon: "proposals" },
-    { id: "backups", label: t(lang, "backups"), icon: "backups" },
-  ];
-
-  const activeItem = items.find((item) => item.id === activePage);
-  const activeLabel = activeItem?.label || t(lang, "menu");
 
   const handlePageChange = (pageId) => {
     onChangePage(pageId);
@@ -63,61 +41,35 @@ const Sidebar = ({ activePage, onChangePage }) => {
   };
 
   return (
-    <aside className={"sidebar" + (menuOpen ? " sidebar--open" : "")}>
-      <div className="sidebar-header">
-        <img src="/logo.jpg" alt="Logo" className="sidebar-logo-img" />
+    <aside className={cn("sidebar flex h-screen w-[220px] shrink-0 flex-col border-r border-white/10 bg-[#09090b] text-white", menuOpen && "sidebar--open")}>
+      <div className="sidebar-header flex items-center gap-3 border-b border-white/10 px-4 py-4">
+        <img src="/logo.png" alt="Logo" className="sidebar-logo-img h-10 w-10 rounded-xl object-contain" />
         <div>
-          <h1 className="sidebar-title">{t(lang, "appName")}</h1>
-          <p className="sidebar-subtitle">{t(lang, "version")}</p>
+          <div className="text-sm font-bold leading-tight">{t(lang, "appName")}</div>
+          <div className="text-xs text-white/55">{t(lang, "version")}</div>
         </div>
       </div>
 
-      <button
-        type="button"
-        className="sidebar-menu-button"
-        onClick={() => setMenuOpen((open) => !open)}
-        aria-expanded={menuOpen}
-      >
-        <span className="sidebar-menu-current">
-          <Icon name={activeItem?.icon || "menu"} />
-          {activeLabel}
-        </span>
-        <span className="sidebar-menu-chevron">{menuOpen ? "▲" : "▼"}</span>
-      </button>
-
-      <nav className={`sidebar-nav ${menuOpen ? "sidebar-nav--open" : ""}`}>
-        {items.map((item) => (
+      <nav className={cn("sidebar-nav flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-4", menuOpen && "sidebar-nav--open")}>
+        {NAV_ITEMS.map((item) => (
           <button
             key={item.id}
-            className={
-              "sidebar-link" +
-              (activePage === item.id ? " sidebar-link--active" : "")
-            }
+            className={cn(
+              "sidebar-link flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-white/70 transition hover:bg-white/10 hover:text-white",
+              activePage === item.id && "sidebar-link--active bg-white/15 text-white shadow-sm"
+            )}
             onClick={() => handlePageChange(item.id)}
           >
             <Icon name={item.icon} />
-            <span>{item.label}</span>
+            <span>{t(lang, item.labelKey)}</span>
           </button>
         ))}
       </nav>
 
-      <div className="sidebar-footer">
-        <button
-          className="sidebar-toggle-btn"
-          onClick={() => setDarkMode((d) => !d)}
-          title={darkMode ? t(lang, "light") : t(lang, "dark")}
-        >
-          <Icon name={darkMode ? "sun" : "moon"} />
-          <span>{darkMode ? t(lang, "light") : t(lang, "dark")}</span>
-        </button>
-        <button
-          className="sidebar-toggle-btn"
-          onClick={() => setLang(lang === "es" ? "en" : "es")}
-          title={lang === "es" ? "Switch to English" : "Cambiar a Español"}
-        >
-          <Icon name="language" />
-          <span>{lang === "es" ? "EN" : "ES"}</span>
-        </button>
+      <div className="sidebar-footer border-t border-white/10 px-4 py-3 text-xs text-white/45">
+        <div>
+          <span>v1.0</span>
+        </div>
       </div>
     </aside>
   );

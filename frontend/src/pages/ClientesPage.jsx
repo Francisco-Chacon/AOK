@@ -38,7 +38,13 @@ const ClientesPage = () => {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [clienteDetalle, setClienteDetalle] = useState(null);
 
-  // Cargar clientes
+  useEffect(() => {
+    api.get("/clientes")
+      .then((res) => setClientes(res.data || []))
+      .catch((err) => console.error("Error cargando clientes", err))
+      .finally(() => setLoading(false));
+  }, []);
+
   const loadClientes = async () => {
     try {
       setLoading(true);
@@ -50,10 +56,6 @@ const ClientesPage = () => {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    loadClientes();
-  }, []);
 
   // Abrir modal para nuevo cliente
   const openNewModal = () => {
@@ -175,11 +177,11 @@ const ClientesPage = () => {
   const pendientes = clientes.filter((c) => c.estado === "pendiente").length;
 
   return (
-<div className="page">
-      <header className="page-header">
-        <div className="page-header-main">
-          <h2 className="page-title">{t(lang, "clientes")}</h2>
-          <p className="page-subtitle">
+<div className="page mx-auto w-full max-w-6xl">
+      <header className="page-header mb-6 flex items-center justify-between gap-4 rounded-3xl border border-[var(--record-border)] bg-[var(--bg-panel)] px-5 py-5 shadow-[var(--shadow-soft)] backdrop-blur">
+        <div className="page-header-main flex flex-col gap-1">
+          <h2 className="page-title text-3xl font-bold tracking-[-0.035em] text-[var(--text-main)]">{t(lang, "clientes")}</h2>
+          <p className="page-subtitle text-sm text-[var(--text-muted)]">
             {t(lang, "clientes_page_subtitle")}
           </p>
         </div>
@@ -207,9 +209,9 @@ const ClientesPage = () => {
         </div>
       </section>
 
-      <div className="page-toolbar">
+      <div className="page-toolbar mb-5 flex items-center justify-between gap-4">
         <input
-          className="input search-bar"
+          className="input search-bar w-full max-w-sm rounded-xl border border-[var(--record-border)] bg-[var(--bg-input)] px-3 py-2 text-sm text-[var(--text-main)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-[var(--accent-strong)] focus:ring-2 focus:ring-[rgba(var(--primary),0.16)]"
           placeholder={t(lang, "busqueda")}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -239,19 +241,19 @@ const ClientesPage = () => {
       ) : filtrados.length === 0 ? (
         <p className="muted">{t(lang, "sin_resultados")}</p>
       ) : (
-        <div className="list">
+        <div className="list flex flex-col gap-3">
           {filtrados.map((c) => (
             <article
               key={c.id}
-              className="card card--clickable"
+              className="card card--clickable flex cursor-pointer justify-between gap-5 rounded-xl border border-[var(--record-border)] bg-[var(--bg-card)] p-5 shadow-[var(--record-shadow)] transition hover:-translate-y-0.5 hover:border-[var(--record-border-strong)] hover:shadow-[var(--record-shadow-hover)]"
               onClick={() => openDetails(c)}
             >
-              <div className="card-main">
-                <h3 className="card-title">{c.nombre}</h3>
-                <p className="card-text">{c.direccion}</p>
-                <p className="card-text">{c.telefono}</p>
+              <div className="card-main flex flex-col gap-1">
+                <h3 className="card-title font-bold text-[var(--text-main)]">{c.nombre}</h3>
+                <p className="card-text text-sm text-[var(--text-main)]">{c.direccion}</p>
+                <p className="card-text text-sm text-[var(--text-main)]">{c.telefono}</p>
               </div>
-              <div className="card-meta">
+              <div className="card-meta flex min-w-40 flex-col items-end gap-1.5">
                 <div className="badge-row">
                   <span className="badge badge-soft">
                     {c.servicio_principal ||
@@ -304,7 +306,7 @@ const ClientesPage = () => {
         title={editingCliente ? t(lang, "editar_cliente_title") : t(lang, "nuevo_cliente_title")}
         onClose={() => setModalOpen(false)}
       >
-        <form className="form-grid" onSubmit={handleSubmit}>
+        <form className="form-grid grid grid-cols-1 gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
           <label className="form-field">
             <span>{t(lang, "nombre")}</span>
             <input

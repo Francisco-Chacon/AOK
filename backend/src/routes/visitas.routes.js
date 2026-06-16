@@ -1,6 +1,6 @@
 // backend/src/routes/visitas.routes.js
-const Router = require("router");
-const router = Router();
+const express = require("express");
+const router = express.Router();
 
 const {
   getAllVisitas,

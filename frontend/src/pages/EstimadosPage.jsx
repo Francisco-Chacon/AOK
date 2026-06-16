@@ -53,29 +53,23 @@ const EstimadosPage = () => {
 
   const [viewMode, setViewMode] = useState("list"); // "list" | "statement"
 
+  useEffect(() => {
+    api.get("/clientes").then((res) => setClientes(res.data || [])).catch(() => {});
+    api.get("/estimados").then((res) => setEstimados(res.data || [])).catch(() => {}).finally(() => setLoading(false));
+  }, []);
+
   const loadData = async () => {
     setLoading(true);
-
     try {
-      const resClientes = await api.get("/clientes");
+      const [resClientes, resEstimados] = await Promise.all([api.get("/clientes"), api.get("/estimados")]);
       setClientes(resClientes.data || []);
-    } catch (err) {
-      console.error("Error cargando clientes", err);
-    }
-
-    try {
-      const resEstimados = await api.get("/estimados");
       setEstimados(resEstimados.data || []);
     } catch (err) {
-      console.error("Error cargando estimados", err);
+      console.error("Error cargando datos", err);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
-
-  useEffect(() => {
-    loadData();
-  }, []);
 
   const openNewModal = () => {
     setEditingEstimado(null);
@@ -113,11 +107,6 @@ const EstimadosPage = () => {
     setModalOpen(true);
   };
 
-  const openDetails = (e) => {
-    setEstimadoDetalle(e);
-    setDetailsOpen(true);
-  };
-
   const closeDetails = () => {
     setDetailsOpen(false);
     setEstimadoDetalle(null);
@@ -144,11 +133,8 @@ const EstimadosPage = () => {
     if (!printWindow) return;
     
     const s = sanitizeHtml;
-    const empresaNombre = t(lang, "empresa_nombre") || "Empresa";
-    const empresaTelefono = t(lang, "empresa_telefono") || "";
-    const empresaEmail = t(lang, "empresa_email") || "";
-    const empresaDireccion = t(lang, "empresa_direccion") || "";
     const ivaLabel = t(lang, "impuesto_nombre") || "ITBMS (7%)";
+    const validUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10); // eslint-disable-line react-hooks/purity
     
     printWindow.document.write(`<!DOCTYPE html>
 <html>
@@ -157,12 +143,8 @@ const EstimadosPage = () => {
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: Arial, sans-serif; padding: 40px; color: #333; max-width: 800px; margin: 0 auto; }
-    .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 2px solid #333; }
-    .logo-section { flex-shrink: 0; }
-    .logo { width: 140px; height: 140px; object-fit: contain; }
-    .company-info { flex-grow: 1; padding-left: 30px; text-align: right; }
-    .company-info h2 { font-size: 20px; margin-bottom: 8px; }
-    .company-info p { font-size: 13px; color: #555; margin-bottom: 2px; }
+    .header { display: flex; align-items: center; justify-content: center; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 2px solid #333; }
+    .logo { width: 560px; max-width: 100%; height: auto; display: block; object-fit: contain; }
     .title-section { text-align: center; margin: 30px 0; }
     .title-section h1 { font-size: 28px; font-weight: bold; }
     .client-info { display: flex; justify-content: space-between; margin-bottom: 30px; }
@@ -189,15 +171,7 @@ const EstimadosPage = () => {
 </head>
 <body>
   <div class="header">
-    <div class="logo-section">
-      <img src="${window.location.origin}/logo.jpg" alt="Logo" class="logo" />
-    </div>
-    <div class="company-info">
-      <h2>${s(empresaNombre)}</h2>
-      ${empresaTelefono ? `<p>${s(empresaTelefono)}</p>` : ""}
-      ${empresaEmail ? `<p>${s(empresaEmail)}</p>` : ""}
-      ${empresaDireccion ? `<p>${s(empresaDireccion)}</p>` : ""}
-    </div>
+    <img src="${window.location.origin}/logo.png" alt="Logo" class="logo" />
   </div>
 
   <div class="title-section">
@@ -217,7 +191,7 @@ const EstimadosPage = () => {
       <div class="info-label">${s(t(lang, "fecha"))}</div>
       <div class="info-value">${estimado.fecha?.slice(0, 10) || new Date().toISOString().slice(0, 10)}</div>
       <div class="info-label">${t(lang, "valido_hasta")}</div>
-      <div class="info-value">${new Date(Date.now() + 30*24*60*60*1000).toISOString().slice(0, 10)}</div>
+      <div class="info-value">${validUntil}</div>
     </div>
   </div>
 
@@ -318,7 +292,6 @@ const EstimadosPage = () => {
 
   const handleSubmit = async (ev) => {
     ev.preventDefault();
-    const subtotal = calculateSubtotal();
     const total = calculateTotal();
     const descripcionItems = items.map((i) => `${i.cantidad}x ${i.descripcion} ($${i.precio_unitario} c/u)`).join("\n");
     const notasAdicionales = form.descripcion_trabajo || "";
@@ -384,21 +357,9 @@ const EstimadosPage = () => {
     );
   });
 
-  const totalEstimado = estimados.reduce(
-    (acc, e) => acc + (e.monto || 0),
-    0
-  );
+  const totalEstimado = estimados.reduce((acc, e) => acc + (e.monto || 0), 0);
 
-  const getToday = () => {
-    const now = new Date();
-    return now.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
-
-  const getItemsFromDescripcion = (descripcion, monto, moneda) => {
+  const getItemsFromDescripcion = (descripcion, monto) => {
     if (!descripcion) return [];
     const lines = descripcion.split("\n").filter((line) => line.trim());
     return lines.map((line) => {
@@ -424,13 +385,13 @@ const renderStatementView = () => {
         {filtrados.length === 0 ? (
           <p className="muted">No hay estimados registrados.</p>
         ) : (
-          filtrados.map((e, idx) => {
+          filtrados.map((e) => {
             const items = getItemsFromDescripcion(e.descripcion_trabajo, e.monto, e.moneda);
             return (
             <div key={e.id} className="statement-item">
               <div className="statement-header">
                 <div className="statement-logo-section">
-                  <img src="/logo.jpg" alt="Logo" className="statement-logo-img" />
+                  <img src="/logo.png" alt="Logo" className="statement-logo-img" />
                   <div className="statement-brand">
                     <h1 className="statement-title">Sistema de Gestión</h1>
                     <p className="statement-subtitle">Statement</p>
@@ -535,17 +496,17 @@ const renderStatementView = () => {
           </div>
         </section>
 
-        <div className="page-toolbar">
+        <div className="page-toolbar mb-5 flex items-center justify-between gap-4">
           <input
-            className="input search-bar"
+            className="input search-bar w-full max-w-sm rounded-xl border border-[var(--record-border)] bg-[var(--bg-input)] px-3 py-2 text-sm text-[var(--text-main)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-[var(--accent-strong)] focus:ring-2 focus:ring-[rgba(var(--primary),0.16)]"
             placeholder={t(lang, "busqueda")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
 
-        <div className="page-toolbar">
-          <div className="pill-group">
+        <div className="page-toolbar mb-5 flex items-center justify-between gap-4">
+          <div className="pill-group flex flex-wrap gap-2">
             {[
               { id: "todos", label: t(lang, "todos") },
               { id: "borrador", label: t(lang, "borrador") },
@@ -569,11 +530,11 @@ const renderStatementView = () => {
         ) : filtrados.length === 0 ? (
           <p className="muted">{t(lang, "sin_resultados")}</p>
         ) : (
-          <div className="list">
+          <div className="list flex flex-col gap-3">
             {filtrados.map((e) => (
-              <article key={e.id} className="card">
-                <div className="card-main">
-                  <div className="badge-row">
+              <article key={e.id} className="card flex justify-between gap-5 rounded-xl border border-[var(--record-border)] bg-[var(--bg-card)] p-5 shadow-[var(--record-shadow)]">
+                <div className="card-main flex flex-col gap-1">
+                  <div className="badge-row flex items-center gap-1.5">
                     <span className="badge badge-soft">
                       {e.fecha?.slice(0, 10)}
                     </span>
@@ -590,7 +551,7 @@ const renderStatementView = () => {
                     {e.descripcion_trabajo?.slice(0, 120)}…
                   </p>
                 </div>
-                <div className="card-meta">
+                <div className="card-meta flex min-w-40 flex-col items-end gap-1.5">
                   <span
                     className={
                       "badge " +
@@ -644,15 +605,15 @@ const renderStatementView = () => {
   };
 
   return (
-    <div className="page">
-      <header className="page-header">
-        <div className="page-header-main">
-          <h2 className="page-title">{t(lang, "estimados")}</h2>
-          <p className="page-subtitle">
+    <div className="page mx-auto w-full max-w-6xl">
+      <header className="page-header mb-6 flex items-center justify-between gap-4 rounded-3xl border border-[var(--record-border)] bg-[var(--bg-panel)] px-5 py-5 shadow-[var(--shadow-soft)] backdrop-blur">
+        <div className="page-header-main flex flex-col gap-1">
+          <h2 className="page-title text-3xl font-bold tracking-[-0.035em] text-[var(--text-main)]">{t(lang, "estimados")}</h2>
+          <p className="page-subtitle text-sm text-[var(--text-muted)]">
             {t(lang, "estimados_page_subtitle")}
           </p>
         </div>
-        <div style={{ display: "flex", gap: "0.5rem" }}>
+        <div className="flex flex-wrap items-center justify-end gap-2">
           <button
             className={`pill ${viewMode === "list" ? "pill--active" : ""}`}
             onClick={() => setViewMode("list")}
@@ -680,10 +641,10 @@ const renderStatementView = () => {
         onClose={() => setModalOpen(false)}
         wide
       >
-        <form className="items-form" onSubmit={handleSubmit}>
-          <div className="items-form-section">
-            <h3 className="items-form-title">{t(lang, "datos_cliente")}</h3>
-            <div className="items-form-grid">
+        <form className="items-form flex flex-col gap-5" onSubmit={handleSubmit}>
+          <div className="items-form-section rounded-2xl border border-[var(--record-border)] bg-[var(--bg-card)] p-4">
+            <h3 className="items-form-title mb-4 text-base font-bold text-[var(--text-main)]">{t(lang, "datos_cliente")}</h3>
+            <div className="items-form-grid grid grid-cols-1 gap-4 md:grid-cols-2">
               <label className="form-field">
                 <span>{t(lang, "cliente")}</span>
                 <SearchableSelect
@@ -717,8 +678,8 @@ const renderStatementView = () => {
             </div>
           </div>
 
-          <div className="items-form-section">
-            <h3 className="items-form-title">{t(lang, "agregar_materials")}</h3>
+          <div className="items-form-section rounded-2xl border border-[var(--record-border)] bg-[var(--bg-card)] p-4">
+            <h3 className="items-form-title mb-4 text-base font-bold text-[var(--text-main)]">{t(lang, "agregar_materials")}</h3>
             <div className="items-input-row">
               <div className="items-input-field items-input-desc">
                 <span>{t(lang, "descripcion")}</span>
@@ -763,8 +724,8 @@ const renderStatementView = () => {
             </div>
           </div>
 
-          <div className="items-form-section">
-            <h3 className="items-form-title">{t(lang, "materials_agregados")}</h3>
+          <div className="items-form-section rounded-2xl border border-[var(--record-border)] bg-[var(--bg-card)] p-4">
+            <h3 className="items-form-title mb-4 text-base font-bold text-[var(--text-main)]">{t(lang, "materials_agregados")}</h3>
             {items.length === 0 ? (
               <p className="muted">{t(lang, "sin_materials")}</p>
             ) : (
@@ -832,9 +793,9 @@ const renderStatementView = () => {
             )}
           </div>
 
-          <div className="items-form-section">
-            <h3 className="items-form-title">{t(lang, "notas_adicionales_trabajo")}</h3>
-            <div className="items-form-grid">
+          <div className="items-form-section rounded-2xl border border-[var(--record-border)] bg-[var(--bg-card)] p-4">
+            <h3 className="items-form-title mb-4 text-base font-bold text-[var(--text-main)]">{t(lang, "notas_adicionales_trabajo")}</h3>
+            <div className="items-form-grid grid grid-cols-1 gap-4 md:grid-cols-2">
               <label className="form-field form-field--full">
                 <span>{t(lang, "descripcion_trabajo")}</span>
                 <textarea
@@ -894,7 +855,7 @@ const renderStatementView = () => {
             </div>
           </div>
 
-          <div className="form-actions">
+          <div className="form-actions flex justify-end gap-2">
             <button
               type="button"
               className="btn-ghost"
@@ -951,7 +912,7 @@ const renderStatementView = () => {
           <div className="detalle-statement">
             <div className="statement-header-modal">
               <div className="statement-logo-section">
-                <img src="/logo.jpg" alt="Logo" className="statement-logo-img" />
+                <img src="/logo.png" alt="Logo" className="statement-logo-img" />
                 <div className="statement-brand">
                   <h1 className="statement-title">Sistema de Gestión</h1>
                   <p className="statement-subtitle">Detalle</p>
@@ -1057,7 +1018,7 @@ const renderStatementView = () => {
           <div className="statement-modal">
             <div className="statement-header-modal">
               <div className="statement-logo-section">
-                <img src="/logo.jpg" alt="Logo" className="statement-logo-img" />
+                <img src="/logo.png" alt="Logo" className="statement-logo-img" />
                 <div className="statement-brand">
                   <h1 className="statement-title">Sistema de Gestión</h1>
                   <p className="statement-subtitle">Statement</p>

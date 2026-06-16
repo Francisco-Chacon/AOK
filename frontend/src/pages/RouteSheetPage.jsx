@@ -43,7 +43,12 @@ const RouteSheetPage = () => {
     }
   };
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    Promise.all([api.get("/rutas-hojas"), api.get("/clientes")]).then(([resHojas, resClientes]) => {
+      setHojas(resHojas.data || []);
+      setClientes(resClientes.data || []);
+    }).catch(console.error).finally(() => setLoading(false));
+  }, []);
 
   const filtradas = hojas.filter(h => {
     if (!searchQuery) return true;
@@ -161,12 +166,8 @@ const RouteSheetPage = () => {
     * { box-sizing: border-box; }
     body { margin: 0; background: #fff; color: #111; font-family: Arial, Helvetica, sans-serif; }
     .route-sheet-page { width: 8.5in; min-height: 11in; padding: 0.45in; margin: 0 auto; }
-    .invoice-header { display: flex; justify-content: center; align-items: center; gap: 18px; margin-bottom: 8px; }
-    .invoice-logo { width: 140px; height: auto; object-fit: contain; }
-    .invoice-company-info { text-align: center; line-height: 1.1; }
-    .invoice-company-info h1 { margin: 0; font-size: 28px; letter-spacing: 2px; color: #700e0c; font-weight: 900; }
-    .invoice-company-info h2 { margin: 2px 0; font-size: 26px; letter-spacing: 2px; font-weight: 900; }
-    .invoice-company-info p { margin: 2px 0; font-size: 12px; color: #555; }
+    .invoice-header { display: flex; justify-content: center; align-items: center; margin-bottom: 8px; }
+    .invoice-logo { width: 560px; max-width: 100%; height: auto; display: block; object-fit: contain; }
     .invoice-title { text-align: center; margin: 10px 0; font-size: 24px; font-weight: 500; }
     table { width: 100%; border-collapse: collapse; }
     td, th { border: 1px solid #333; padding: 5px 7px; font-size: 13px; vertical-align: top; }
@@ -190,13 +191,7 @@ const RouteSheetPage = () => {
 <body>
   <div class="route-sheet-page">
     <div class="invoice-header">
-      <img src="${window.location.origin}/logo.jpg" alt="Company logo" class="invoice-logo" />
-      <div class="invoice-company-info">
-        <h1>MAKE IT TO HAPPEN LLC</h1>
-        <h2>385-601-8129</h2>
-        <p>makeittohappen@gmail.com</p>
-        <p>PO BOX 18670 Salt Lake City, UT 84118</p>
-      </div>
+      <img src="${window.location.origin}/logo.png" alt="Company logo" class="invoice-logo" />
     </div>
     <table class="route-top-table"><tbody><tr>
       <td><strong>Date:</strong> ${s(routeSheet.fecha || "")}</td>
@@ -216,17 +211,17 @@ const RouteSheetPage = () => {
   };
 
   return (
-    <div className="page">
-      <header className="page-header">
-        <div className="page-header-main">
-          <h2 className="page-title">{t(lang, "rutas_hojas")}</h2>
-          <p className="page-subtitle">{t(lang, "rutas_hojas_page_subtitle")}</p>
+    <div className="page mx-auto w-full max-w-6xl">
+      <header className="page-header mb-6 flex items-center justify-between gap-4 rounded-3xl border border-[var(--record-border)] bg-[var(--bg-panel)] px-5 py-5 shadow-[var(--shadow-soft)] backdrop-blur">
+        <div className="page-header-main flex flex-col gap-1">
+          <h2 className="page-title text-3xl font-bold tracking-[-0.035em] text-[var(--text-main)]">{t(lang, "rutas_hojas")}</h2>
+          <p className="page-subtitle text-sm text-[var(--text-muted)]">{t(lang, "rutas_hojas_page_subtitle")}</p>
         </div>
         <button className="btn-primary" onClick={openNewModal}>+ {t(lang, "nueva_ruta_hoja")}</button>
       </header>
 
-      <div className="page-toolbar">
-        <input className="input search-bar" placeholder={t(lang, "busqueda")} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+      <div className="page-toolbar mb-5 flex items-center justify-between gap-4">
+        <input className="input search-bar w-full max-w-sm rounded-xl border border-[var(--record-border)] bg-[var(--bg-input)] px-3 py-2 text-sm text-[var(--text-main)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-[var(--accent-strong)] focus:ring-2 focus:ring-[rgba(var(--primary),0.16)]" placeholder={t(lang, "busqueda")} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
       </div>
 
       {loading ? (
@@ -234,11 +229,11 @@ const RouteSheetPage = () => {
       ) : filtradas.length === 0 ? (
         <p className="muted">{t(lang, "sin_resultados")}</p>
       ) : (
-        <div className="list">
+        <div className="list flex flex-col gap-3">
           {filtradas.map(h => (
-            <article key={h.id} className="card card--clickable" onClick={() => openPreview(h)}>
-              <div className="card-main">
-                <div className="badge-row">
+            <article key={h.id} className="card card--clickable flex cursor-pointer justify-between gap-5 rounded-xl border border-[var(--record-border)] bg-[var(--bg-card)] p-5 shadow-[var(--record-shadow)] transition hover:-translate-y-0.5 hover:border-[var(--record-border-strong)] hover:shadow-[var(--record-shadow-hover)]" onClick={() => openPreview(h)}>
+              <div className="card-main flex flex-col gap-1">
+                <div className="badge-row flex items-center gap-1.5">
                   <span className="badge badge-soft">RS-{h.id}</span>
                 </div>
                 <h3 className="card-title">{h.fecha?.slice(0, 10) || ""}</h3>
@@ -246,7 +241,7 @@ const RouteSheetPage = () => {
                   {h.conductor || t(lang, "sin_conductor")} {h.camion ? `| ${h.camion}` : ""}
                 </p>
               </div>
-              <div className="card-meta">
+              <div className="card-meta flex min-w-40 flex-col items-end gap-1.5">
                 <p className="card-text"><strong>{t(lang, "clientes")}:</strong> {h.clientes_count || 0}</p>
                 <div className="card-actions">
                   <button className="btn-ghost" onClick={e => { e.stopPropagation(); openEditModal(h); }}>{t(lang, "editar")}</button>
@@ -261,7 +256,7 @@ const RouteSheetPage = () => {
       {/* Modal create/edit */}
       <Modal open={modalOpen} title={editingHoja ? t(lang, "editar_ruta_hoja_title") : t(lang, "nueva_ruta_hoja_title")} onClose={() => setModalOpen(false)}>
         <form onSubmit={handleSubmit}>
-          <div className="form-grid">
+          <div className="form-grid grid grid-cols-1 gap-4 md:grid-cols-2">
             <label className="form-field">
               <span>{t(lang, "fecha")}</span>
               <input className="input" type="date" name="fecha" value={form.fecha} onChange={handleChange} required />

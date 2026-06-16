@@ -49,7 +49,12 @@ const ProposalsPage = () => {
   };
 
   useEffect(() => {
-    loadData();
+    Promise.all([api.get("/clientes"), api.get("/estimados")]).then(([resClientes, resEstimados]) => {
+      setClientes(resClientes.data || []);
+      const data = resEstimados.data || [];
+      setEstimados(data);
+      setSelectedId((current) => data.some((item) => item.id === current) ? current : data[0]?.id || null);
+    }).catch((err) => console.error("Error cargando proposals", err)).finally(() => setLoading(false));
   }, []);
 
   const openNewModal = () => {
@@ -148,12 +153,10 @@ const ProposalsPage = () => {
       await loadData();
       if (res.data?.id || editingProposal?.id) {
         setSelectedId(res.data?.id || editingProposal.id);
-      } else if (res.data?.id) {
-        setSelectedId(res.data.id);
       }
     } catch (err) {
       console.error("Error guardando proposal", err);
-      alert("No se pudo guardar el proposal.");
+      alert(err.response?.data?.message || "No se pudo guardar el proposal.");
     }
   };
 
@@ -174,13 +177,13 @@ const ProposalsPage = () => {
     null;
 
   return (
-    <div className="page page--proposal">
-      <header className="page-header">
-        <div className="page-header-main">
-          <h2 className="page-title">{t(lang, "proposals")}</h2>
-          <p className="page-subtitle">{t(lang, "proposals_page_subtitle")}</p>
+    <div className="page page--proposal mx-auto w-full max-w-[1380px]">
+      <header className="page-header mb-6 flex items-center justify-between gap-4 rounded-3xl border border-[var(--record-border)] bg-[var(--bg-panel)] px-5 py-5 shadow-[var(--shadow-soft)] backdrop-blur">
+        <div className="page-header-main flex flex-col gap-1">
+          <h2 className="page-title text-3xl font-bold tracking-[-0.035em] text-[var(--text-main)]">{t(lang, "proposals")}</h2>
+          <p className="page-subtitle text-sm text-[var(--text-muted)]">{t(lang, "proposals_page_subtitle")}</p>
         </div>
-        <div className="page-header-actions">
+        <div className="page-header-actions flex flex-wrap items-center justify-end gap-2">
           {selectedProposal && (
             <>
               <button className="btn-ghost" onClick={() => openEditModal(selectedProposal)}>
@@ -201,7 +204,7 @@ const ProposalsPage = () => {
         <aside className="proposal-selector">
           <div className="proposal-selector-header">
             <input
-              className="input search-bar"
+              className="input search-bar w-full max-w-sm rounded-xl border border-[var(--record-border)] bg-[var(--bg-input)] px-3 py-2 text-sm text-[var(--text-main)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-[var(--accent-strong)] focus:ring-2 focus:ring-[rgba(var(--primary),0.16)]"
               placeholder={t(lang, "busqueda")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -244,7 +247,7 @@ const ProposalsPage = () => {
           {selectedProposal ? (
             <ProposalPreview estimado={selectedProposal} />
           ) : (
-            <div className="card">
+            <div className="card flex justify-between gap-5 rounded-xl border border-[var(--record-border)] bg-[var(--bg-card)] p-5 shadow-[var(--record-shadow)]">
               <p className="muted">{t(lang, "proposals_no_proposals")}</p>
             </div>
           )}
@@ -257,7 +260,7 @@ const ProposalsPage = () => {
         onClose={() => { setModalOpen(false); setEditingProposal(null); }}
         wide
       >
-        <form className="items-form" onSubmit={handleSubmit}>
+        <form className="items-form flex flex-col gap-5" onSubmit={handleSubmit}>
           <div className="items-form-section">
             <h3 className="items-form-title">{t(lang, "datos_cliente")}</h3>
             <div className="items-form-grid">

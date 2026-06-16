@@ -1,6 +1,6 @@
 // backend/src/routes/clientes.routes.js
-const Router = require("router");
-const router = Router();
+const express = require("express");
+const router = express.Router();
 
 // IMPORTA LAS FUNCIONES DEL CONTROLLER
 const {

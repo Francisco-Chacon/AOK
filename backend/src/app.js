@@ -7,17 +7,20 @@ const routes = require("./routes");
 const app = express();
 
 const allowedOrigins = [
-  "http://localhost:5173",
-  "http://localhost:4000",
-  "http://127.0.0.1:5173",
-  "http://127.0.0.1:4000",
+  /^http:\/\/localhost:\d+$/,
+  /^http:\/\/127\.0\.0\.1:\d+$/,
   "file://",
 ];
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin) || origin.startsWith("file://")) {
+      if (!origin) return callback(null, true);
+      const allowed = allowedOrigins.some((e) => {
+        if (typeof e === "string") return origin === e || origin.startsWith(e);
+        return e.test(origin);
+      });
+      if (allowed) {
         callback(null, true);
       } else {
         callback(new Error("Origen no permitido por CORS"));

@@ -47,8 +47,6 @@ function getAllClientes(req, res) {
 // ============================
 function createCliente(req, res) {
   try {
-    logger.info("createCliente requested", { cliente_nombre: nombre });
-
     const {
       nombre,
       direccion,
@@ -59,6 +57,8 @@ function createCliente(req, res) {
       tipo_servicio: bodyTipoServicio,
       estado,
     } = req.body;
+
+    logger.info("createCliente requested", { cliente_nombre: nombre });
 
     let tipoServicioFinal;
     try {

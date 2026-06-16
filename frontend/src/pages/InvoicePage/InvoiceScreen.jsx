@@ -3,7 +3,7 @@ import React from "react";
 import InvoiceHeader from "./InvoiceHeader";
 
 export default function InvoiceScreen({ data }) {
-  const { cliente_nombre, cliente_direccion, cliente_email, cliente_telefono, fecha, items = [], nota } = data || {};
+  const { cliente_nombre, cliente_direccion, cliente_email, cliente_telefono, items = [], nota } = data || {};
 
   const total = (items || []).reduce((sum, item) => sum + (Number(item.precio) || 0) * (Number(item.cantidad) || 1), 0);
 

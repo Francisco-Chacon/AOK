@@ -9,7 +9,7 @@
     "dev": "node src/server.js",
     "init-db": "node src/utils/initDb.js",
     "migrate:add-fecha-visitas": "node src/utils/addFechaToVisitas.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest run"
   },
   "keywords": [],
   "author": "",
@@ -19,10 +19,11 @@
     "cors": "^2.8.5",
     "dotenv": "^17.4.2",
     "express": "^5.1.0",
-    "multer": "^2.0.2",
-    "router": "^2.2.0"
+    "multer": "^2.0.2"
   },
   "devDependencies": {
-    "pkg": "^5.8.1"
+    "pkg": "^5.8.1",
+    "supertest": "^7.2.2",
+    "vitest": "^4.1.9"
   }
 }

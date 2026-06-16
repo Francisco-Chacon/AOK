@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { cn } from "../utils/cn";
 
 const SearchableSelect = ({ value, onChange, options, placeholder = "Seleccione...", debounceMs = 250 }) => {
   const [search, setSearch] = useState("");
@@ -42,11 +43,11 @@ const SearchableSelect = ({ value, onChange, options, placeholder = "Seleccione.
   };
 
   return (
-    <div className="searchable-select">
-      <div className="searchable-select-input-wrap">
+    <div className="searchable-select relative w-full">
+      <div className="searchable-select-input-wrap relative">
         <input
           ref={inputRef}
-          className="input searchable-select-input"
+          className="input searchable-select-input pr-10"
           type="text"
           value={search}
           onChange={handleInputChange}
@@ -58,7 +59,7 @@ const SearchableSelect = ({ value, onChange, options, placeholder = "Seleccione.
         <input type="hidden" name="cliente_id" value={value} />
         <button
           type="button"
-          className="searchable-select-arrow"
+          className="searchable-select-arrow absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-xs text-[var(--text-muted)] transition hover:bg-[var(--bg-hover)] hover:text-[var(--text-main)]"
           onClick={() => { inputRef.current?.focus(); setOpen((p) => !p); }}
           tabIndex={-1}
         >
@@ -66,14 +67,17 @@ const SearchableSelect = ({ value, onChange, options, placeholder = "Seleccione.
         </button>
       </div>
       {open && (
-        <ul className="searchable-select-list">
+        <ul className="searchable-select-list absolute z-40 mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-[var(--record-border)] bg-[var(--bg-modal)] p-1 shadow-xl backdrop-blur">
           {filtered.length === 0 ? (
-            <li className="searchable-select-empty">Sin resultados</li>
+            <li className="searchable-select-empty px-3 py-2 text-sm text-[var(--text-muted)]">Sin resultados</li>
           ) : (
             filtered.map((o) => (
               <li
                 key={o.value}
-                className={"searchable-select-option" + (o.value === value ? " selected" : "")}
+                className={cn(
+                  "searchable-select-option cursor-pointer rounded-lg px-3 py-2 text-sm text-[var(--text-main)] transition hover:bg-[var(--bg-hover)]",
+                  o.value === value && "selected bg-[var(--accent-soft)] text-[var(--accent-strong)]"
+                )}
                 onMouseDown={(e) => { e.preventDefault(); handleSelect(o.value); }}
               >
                 {o.label}

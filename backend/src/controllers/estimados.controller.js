@@ -2,6 +2,8 @@ const db = require("../db/sqlite");
 const { validateNumber, validateString, validateDate, validateEnum } = require("../utils/validation");
 const logger = require("../utils/logger");
 
+const TEXT_MAX_LENGTH = 10000;
+
 // ============================
 // Validar ID
 // ============================
@@ -67,8 +69,8 @@ function createEstimado(req, res) {
       validMonto = validateNumber(monto, "monto", false);
       if (moneda) validateEnum(moneda, "moneda", ["USD", "EUR", "MXN", "PAB", "COP"], false);
       if (estado) validateEnum(estado, "estado", ["borrador", "enviado", "aceptado", "rechazado"], false);
-      validateString(descripcion_trabajo, "descripcion_trabajo", 2000, false);
-      validateString(notas_adicionales, "notas_adicionales", 2000, false);
+      validateString(descripcion_trabajo, "descripcion_trabajo", TEXT_MAX_LENGTH, false);
+      validateString(notas_adicionales, "notas_adicionales", TEXT_MAX_LENGTH, false);
     } catch (err) {
       return res.status(400).json({ message: err.message });
     }
@@ -163,8 +165,8 @@ const {
       validMonto = validateNumber(monto, "monto", false);
       if (moneda) validateEnum(moneda, "moneda", ["USD", "EUR", "MXN", "PAB", "COP"], false);
       if (estado) validateEnum(estado, "estado", ["borrador", "enviado", "aceptado", "rechazado"], false);
-      validateString(descripcion_trabajo, "descripcion_trabajo", 2000, false);
-      validateString(notas_adicionales, "notas_adicionales", 2000, false);
+      validateString(descripcion_trabajo, "descripcion_trabajo", TEXT_MAX_LENGTH, false);
+      validateString(notas_adicionales, "notas_adicionales", TEXT_MAX_LENGTH, false);
     } catch (err) {
       return res.status(400).json({ message: err.message });
     }

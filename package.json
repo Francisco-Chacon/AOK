@@ -12,7 +12,11 @@
   "dev:electron": "cd electron && npm run dev",       
   "build": "cd frontend && npm run build",
   "build:electron": "cd electron && npm run build",   
-  "dist": "npm run build && cd electron && npm run dist"
+  "dist": "npm run build && cd electron && npm run dist",
+  "test": "npm run test:back && npm run test:front && npm run test:electron",
+  "test:back": "cd backend && npm test",
+  "test:front": "cd frontend && npm test",
+  "test:electron": "cd electron && npm test"
 }
 ,
   "devDependencies": {
