@@ -3,6 +3,7 @@ import api from "../api/apiClient";
 import Modal from "../components/Modal";
 import SearchableSelect from "../components/SearchableSelect";
 import ProposalPreview from "./ProposalsPage/ProposalPreview";
+import { SkeletonCard } from "../components/Skeleton";
 import { useLanguage } from "../i18n/LanguageContext";
 import { t } from "../i18n/translations";
 
@@ -212,7 +213,9 @@ const ProposalsPage = () => {
           </div>
 
           {loading ? (
-            <p className="muted">{t(lang, "cargando")}</p>
+            <div className="flex flex-col gap-3">
+              {[1,2,3].map(i => <SkeletonCard key={i} />)}
+            </div>
           ) : filteredEstimados.length === 0 ? (
             <p className="muted">{t(lang, "sin_resultados")}</p>
           ) : (

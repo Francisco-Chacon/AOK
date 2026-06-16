@@ -15,6 +15,50 @@
   to { transform: rotate(360deg); }
 }
 
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200px 0; }
+  100% { background-position: calc(200px + 100%) 0; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Focus visible global */
+:focus-visible {
+  outline: 2px solid rgb(var(--ring));
+  outline-offset: 2px;
+}
+
+button:focus:not(:focus-visible),
+a:focus:not(:focus-visible),
+[tabindex]:focus:not(:focus-visible) {
+  outline: none;
+}
+
 :root,
 :root[data-theme="light"] {
   /* Tokens base */
@@ -158,7 +202,7 @@ body,
 }
 
 body {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+  font-family: "Fira Sans", system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
     "Segoe UI", sans-serif;
   background: var(--gradient-surface);
   color: var(--text-main);
@@ -173,6 +217,8 @@ body {
   grid-template-columns: 220px minmax(0, 1fr);
   grid-template-rows: 100vh;
   transition: grid-template-columns 0.25s ease;
+  /* Performance: promote to own layer */
+  will-change: grid-template-columns;
 }
 
 .app-shell--ai-open {
@@ -1220,6 +1266,8 @@ button.btn-danger-ghost {
   box-shadow: 0 0 0 2px rgb(var(--background)), 0 0 0 4px rgb(var(--destructive));
 }
 
+
+
 .btn-icon {
   border-radius: var(--radius-sm);
   border: none;
@@ -1283,10 +1331,12 @@ button.btn-danger-ghost {
   inset: 0;
   background: var(--overlay);
   backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 40;
+  animation: fadeIn 0.15s ease-out;
 }
 
 .modal {

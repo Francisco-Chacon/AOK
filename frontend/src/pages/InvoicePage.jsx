@@ -4,6 +4,7 @@ import api from "../api/apiClient";
 import Modal from "../components/Modal";
 import SearchableSelect from "../components/SearchableSelect";
 import InvoiceScreen from "./InvoicePage/InvoiceScreen";
+import { SkeletonCard } from "../components/Skeleton";
 import { useLanguage } from "../i18n/LanguageContext";
 import { t } from "../i18n/translations";
 import { sanitizeHtml } from "../utils/sanitize";
@@ -238,7 +239,9 @@ const InvoicePage = () => {
       </div>
 
       {loading ? (
-        <p className="muted">{t(lang, "cargando")}</p>
+        <div className="flex flex-col gap-3">
+          {[1,2,3].map(i => <SkeletonCard key={i} />)}
+        </div>
       ) : filtradas.length === 0 ? (
         <p className="muted">{t(lang, "sin_resultados")}</p>
       ) : (
@@ -318,10 +321,18 @@ const InvoicePage = () => {
                     <span>{t(lang, "precio_unit")}</span>
                     <input className="input input-price" type="number" step="0.01" value={item.precio} onChange={e => handleItemChange(i, "precio", e.target.value)} />
                   </div>
-                  <button type="button" className="btn-remove-item" onClick={() => removeItem(i)}>×</button>
+                  <button type="button" className="btn-remove-item" onClick={() => removeItem(i)}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M18 6 6 18 M6 6l12 12" />
+                    </svg>
+                  </button>
                 </div>
               ))}
-              <button type="button" className="btn-add-item" onClick={addItem} style={{ marginTop: "0.5rem" }}>+</button>
+              <button type="button" className="btn-add-item" onClick={addItem} style={{ marginTop: "0.5rem" }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 5v14 M5 12h14" />
+                </svg>
+              </button>
             </div>
 
             <div className="items-form-footer">

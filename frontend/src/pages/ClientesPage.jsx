@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import api from "../api/apiClient";
 import Modal from "../components/Modal";
+import { SkeletonCard, SkeletonStats } from "../components/Skeleton";
 import { useLanguage } from "../i18n/LanguageContext";
 import { t } from "../i18n/translations";
 
@@ -237,7 +238,10 @@ const ClientesPage = () => {
       </div>
 
       {loading ? (
-        <p className="muted">{t(lang, "cargando")}</p>
+        <>
+          <SkeletonStats />
+          {[1,2,3].map(i => <SkeletonCard key={i} />)}
+        </>
       ) : filtrados.length === 0 ? (
         <p className="muted">{t(lang, "sin_resultados")}</p>
       ) : (
@@ -393,11 +397,13 @@ const ClientesPage = () => {
           {t(lang, "seguro_eliminar_cliente")}
           {clienteToDelete?.nombre ? ` "${clienteToDelete.nombre}"` : ""}?
         </p>
-        {recibosCount > 0 && (
-          <p style={{ color: "var(--accent-warning)", marginTop: "0.5rem" }}>
-            ⚠️ Este cliente tiene {recibosCount} recibo(s) asociado(s). 
-            Al eliminarlo también se eliminarán todos sus recibos.
-          </p>
+          {recibosCount > 0 && (
+          <div style={{ display: "flex", gap: "0.5rem", alignItems: "flex-start", color: "var(--accent-warning)", marginTop: "0.5rem", fontSize: "0.9rem" }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: "1px" }}>
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z M12 9v4 M12 17h.01" />
+            </svg>
+            <span>Este cliente tiene {recibosCount} recibo(s) asociado(s). Al eliminarlo también se eliminarán todos sus recibos.</span>
+          </div>
         )}
         <div className="form-actions" style={{ marginTop: "1rem" }}>
           <button

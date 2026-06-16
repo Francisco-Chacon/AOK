@@ -76,7 +76,7 @@ const AppContent = () => {
           online={online}
           onOpenAi={() => setAiOpen((v) => !v)}
         />
-        <main className="app-main min-h-0 flex-1 overflow-y-auto px-6 py-7">{renderPage()}</main>
+        <main className="app-main min-h-0 flex-1 overflow-y-auto px-6 py-7" style={{ animation: "fadeIn 0.25s ease-out" }}>{renderPage()}</main>
         <StatusBar online={online} aiConnected={online} />
       </div>
 

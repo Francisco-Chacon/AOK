@@ -41,7 +41,7 @@ const Sidebar = ({ activePage, onChangePage }) => {
   };
 
   return (
-    <aside className={cn("sidebar flex h-screen w-[220px] shrink-0 flex-col border-r border-white/10 bg-[#09090b] text-white", menuOpen && "sidebar--open")}>
+    <aside className={cn("sidebar flex h-screen w-[220px] shrink-0 flex-col border-r border-white/10 bg-[var(--bg-sidebar)] text-white", menuOpen && "sidebar--open")}>
       <div className="sidebar-header flex items-center gap-3 border-b border-white/10 px-4 py-4">
         <img src="/logo.png" alt="Logo" className="sidebar-logo-img h-10 w-10 rounded-xl object-contain" />
         <div>
@@ -54,6 +54,7 @@ const Sidebar = ({ activePage, onChangePage }) => {
         {NAV_ITEMS.map((item) => (
           <button
             key={item.id}
+            title={t(lang, item.labelKey)}
             className={cn(
               "sidebar-link flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-white/70 transition hover:bg-white/10 hover:text-white",
               activePage === item.id && "sidebar-link--active bg-white/15 text-white shadow-sm"

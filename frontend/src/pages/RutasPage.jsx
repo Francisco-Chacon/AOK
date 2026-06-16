@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import api from "../api/apiClient";
 import Modal from "../components/Modal";
 import SearchableSelect from "../components/SearchableSelect";
+import { SkeletonCard } from "../components/Skeleton";
 import { useLanguage } from "../i18n/LanguageContext";
 import { t } from "../i18n/translations";
 
@@ -236,7 +237,9 @@ const RutasPage = () => {
       </div>
 
       {loading ? (
-        <p className="muted">{t(lang, "cargando")}</p>
+        <div className="flex flex-col gap-3">
+          {[1,2,3].map(i => <SkeletonCard key={i} />)}
+        </div>
       ) : visitasFiltradas.length === 0 ? (
         <p className="muted">
           {diaActivo === "todos"
