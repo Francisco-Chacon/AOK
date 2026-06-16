@@ -42,6 +42,21 @@
 - **Datos de empresa hardcodeados**: facturas y hojas de ruta usan "MAKE IT TO HAPPEN LLC" (PO Box 18670, SLC, UT 84118). Las claves `empresa_*` en i18n están vacías (se usan valores fallback).
 - Salida de build: `backend/public/` (config `outDir` de Vite). Está en `.gitignore`.
 
+## Historial de Cambios Recientes
+
+| Commit | Descripción |
+|--------|-------------|
+| `c64615e` | Refactor InvoicePage, RouteSheetPage y EstimadosPage a layout split-panel (sidebar + preview) |
+| `eed8fde` | Mejora de estilos de select |
+| `57e58cd` | Modal detalle cliente con avatar, badge y SVGs |
+| `02de592` | Modal crear/editar cliente con SVGs, avatar y layout limpio |
+| `283a4f3` | Traducción faltante `facturas_page_subtitle` |
+| `bebf0cc` | SearchBar, bordes de estado, toasts success en CRUD, modales delete con SVGs |
+| `e79f8c3` | Sistema de toasts, reemplazo de alerts, skeletons, EmptyState, ErrorBoundary |
+| `5b1ddec` | Google Fonts, design tokens, animaciones, dark mode |
+| `8ec08c3` | Migración completa de emojis a SVGs |
+| `70b56ce` | Componente SearchBar + migración en todos los módulos |
+
 ## Build del .exe portátil (para distribuir al cliente)
 
 El .exe incluye el backend completo, Node.js portátil y el frontend compilado. **El cliente no necesita instalar nada**.
