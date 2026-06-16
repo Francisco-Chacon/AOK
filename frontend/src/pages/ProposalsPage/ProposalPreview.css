@@ -66,6 +66,7 @@
   border: 1px solid #555;
   padding: 4px 8px;
   height: 24px;
+  color: #1e293b;
 }
 
 .proposal-info-table strong {
@@ -155,6 +156,15 @@
   .proposal-description {
     min-height: auto;
   }
+}
+
+/* Force white background for invoice/route sheet inside proposal preview */
+.proposal-page .invoice-page,
+.proposal-page .route-sheet-page {
+  background: #ffffff !important;
+  color: #1e293b !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px !important;
 }
 
 @media (max-width: 720px) {

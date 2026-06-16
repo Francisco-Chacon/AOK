@@ -8,7 +8,7 @@ import { useToast } from "../components/Toast";
 import { useLanguage } from "../i18n/LanguageContext";
 import { t } from "../i18n/translations";
 import { sanitizeHtml } from "../utils/sanitize";
-import ProposalPreview from "./ProposalsPage/ProposalPreview";
+import "./ProposalsPage/ProposalPreview.css";
 
 const MONEDAS = ["USD", "EUR", "MXN", "PAB", "COP"];
 
@@ -90,26 +90,6 @@ const EstimadosPage = () => {
     setModalOpen(true);
   };
 
-  const getItemsFromDescripcion = (descripcion, monto) => {
-    if (!descripcion) return [];
-    const lines = descripcion.split("\n").filter((line) => line.trim());
-    return lines.map((line) => {
-      const match = line.match(/^(\d+)x\s+(.+)\s+\(\$([\d.]+)\s+c\/u\)$/);
-      if (match) {
-        return {
-          cantidad: parseInt(match[1]),
-          descripcion: match[2],
-          precio_unitario: parseFloat(match[3]),
-        };
-      }
-      return {
-        cantidad: 1,
-        descripcion: line,
-        precio_unitario: monto || 0,
-      };
-    });
-  };
-
   const openEditModal = (e) => {
     setEditingEstimado(e);
     setForm({
@@ -121,7 +101,7 @@ const EstimadosPage = () => {
       descripcion_trabajo: e.notas_adicionales || "",
       estado: e.estado || "borrador",
     });
-    const itemsArray = getItemsFromDescripcion(e.descripcion_trabajo, e.monto, e.moneda).map(item => ({
+    const itemsArray = getItemsFromDescripcion(e.descripcion_trabajo, e.monto, e.moneda).map((item) => ({
       ...item,
       total: item.cantidad * item.precio_unitario,
     }));
@@ -223,20 +203,25 @@ const EstimadosPage = () => {
     }
   };
 
-  const filtrados = estimados.filter((e) => {
-    if (filterEstado !== "todos" && e.estado !== filterEstado) return false;
-    if (!debouncedQuery) return true;
-    const q = debouncedQuery.toLowerCase();
-    return (
-      (e.cliente_nombre || "").toLowerCase().includes(q) ||
-      (e.direccion_trabajo || "").toLowerCase().includes(q) ||
-      (e.descripcion_trabajo || "").toLowerCase().includes(q) ||
-      (e.estado || "").toLowerCase().includes(q) ||
-      String(e.monto || "").toLowerCase().includes(q)
-    );
-  });
-
-  const selectedEstimado = estimados.find((e) => e.id === selectedId) || filtrados[0] || null;
+  const getItemsFromDescripcion = (descripcion, monto) => {
+    if (!descripcion) return [];
+    const lines = descripcion.split("\n").filter((line) => line.trim());
+    return lines.map((line) => {
+      const match = line.match(/^(\d+)x\s+(.+)\s+\(\$([\d.]+)\s+c\/u\)$/);
+      if (match) {
+        return {
+          cantidad: parseInt(match[1]),
+          descripcion: match[2],
+          precio_unitario: parseFloat(match[3]),
+        };
+      }
+      return {
+        cantidad: 1,
+        descripcion: line,
+        precio_unitario: monto || 0,
+      };
+    });
+  };
 
   const printStatement = (estimado) => {
     const items = getItemsFromDescripcion(estimado.descripcion_trabajo, estimado.monto, estimado.moneda);
@@ -321,7 +306,7 @@ const EstimadosPage = () => {
       </tr>
     </thead>
     <tbody>
-      ${items.length === 0 ? `<tr><td colspan="4" style="color:#999;text-align:center">${t(lang, "sin_materials")}</td></tr>` : items.map(item => `
+      ${items.length === 0 ? `<tr><td colspan="4" style="color:#999;text-align:center">${t(lang, "sin_materials")}</td></tr>` : items.map((item) => `
       <tr>
         <td>${s(item.descripcion)}</td>
         <td class="col-cantidad">${item.cantidad}</td>
@@ -365,6 +350,21 @@ const EstimadosPage = () => {
     printWindow.document.close();
   };
 
+  const filtrados = estimados.filter((e) => {
+    if (filterEstado !== "todos" && e.estado !== filterEstado) return false;
+    if (!debouncedQuery) return true;
+    const q = debouncedQuery.toLowerCase();
+    return (
+      (e.cliente_nombre || "").toLowerCase().includes(q) ||
+      (e.direccion_trabajo || "").toLowerCase().includes(q) ||
+      (e.descripcion_trabajo || "").toLowerCase().includes(q) ||
+      (e.estado || "").toLowerCase().includes(q) ||
+      String(e.monto || "").toLowerCase().includes(q)
+    );
+  });
+
+  const selectedEstimado = estimados.find((e) => e.id === selectedId) || filtrados[0] || null;
+
   return (
     <div className="page page--proposal mx-auto w-full max-w-[1380px]">
       <header className="page-header mb-6 flex items-center justify-between gap-4 rounded-3xl border border-[var(--record-border)] bg-[var(--bg-panel)] px-5 py-5 shadow-[var(--shadow-soft)] backdrop-blur">
@@ -380,9 +380,6 @@ const EstimadosPage = () => {
               </button>
               <button className="btn-danger-ghost" onClick={() => askDelete(selectedEstimado)}>
                 {t(lang, "eliminar")}
-              </button>
-              <button className="btn-outline" onClick={() => printStatement(selectedEstimado)}>
-                {t(lang, "imprimir")}
               </button>
             </>
           )}
@@ -434,7 +431,16 @@ const EstimadosPage = () => {
 
         <section className="proposal-preview-panel">
           {selectedEstimado ? (
-            <ProposalPreview estimado={selectedEstimado} />
+            <div className="proposal-page-wrapper">
+              <div className="proposal-toolbar proposal-toolbar--end">
+                <button className="btn-primary" onClick={() => printStatement(selectedEstimado)}>
+                  {t(lang, "imprimir")}
+                </button>
+              </div>
+              <div className="proposal-page">
+                <EstimadoPDF estimado={selectedEstimado} lang={lang} />
+              </div>
+            </div>
           ) : (
             <div className="card flex justify-between gap-5 rounded-xl border border-[var(--record-border)] bg-[var(--bg-card)] p-5 shadow-[var(--record-shadow)]">
               <p className="muted">{t(lang, "sin_resultados")}</p>
@@ -594,6 +600,113 @@ const EstimadosPage = () => {
           </button>
         </div>
       </Modal>
+    </div>
+  );
+};
+
+/* ---------- Inline PDF preview (original StatementModal style) ---------- */
+const getItems = (descripcion, monto) => {
+  if (!descripcion) return [];
+  const lines = descripcion.split("\n").filter((l) => l.trim());
+  return lines.map((line) => {
+    const match = line.match(/^(\d+)x\s+(.+)\s+\(\$([\d.]+)\s+c\/u\)$/);
+    if (match) {
+      return { cantidad: parseInt(match[1]), descripcion: match[2], precio_unitario: parseFloat(match[3]) };
+    }
+    return { cantidad: 1, descripcion: line, precio_unitario: monto || 0 };
+  });
+};
+
+const EstimadoPDF = ({ estimado, lang }) => {
+  const items = getItems(estimado.descripcion_trabajo, estimado.monto);
+  const storedTotal = Number(estimado.monto || 0);
+  const itemsSubtotal = items.reduce((sum, item) => sum + item.cantidad * item.precio_unitario, 0);
+  const subtotal = itemsSubtotal || (storedTotal ? storedTotal / 1.07 : 0);
+  const tax = subtotal * 0.07;
+  const total = storedTotal || subtotal + tax;
+  const validUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const te = (k) => t(lang, k);
+
+  return (
+    <div style={{ fontFamily: "Arial, sans-serif", color: "#333", maxWidth: "100%", margin: "0 auto" }}>
+      <div style={{ textAlign: "center", marginBottom: "20px", paddingBottom: "20px", borderBottom: "2px solid #333" }}>
+        <img src="/logo.png" alt="Logo" style={{ width: "560px", maxWidth: "100%", height: "auto", display: "block", margin: "0 auto" }} />
+      </div>
+
+      <div style={{ textAlign: "center", margin: "30px 0" }}>
+        <h1 style={{ fontSize: "28px", fontWeight: "bold", letterSpacing: "0.05em" }}>{te("estimado").toUpperCase()}</h1>
+      </div>
+
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "30px" }}>
+        <div style={{ width: "45%" }}>
+          <div style={{ fontSize: "11px", color: "#777", textTransform: "uppercase", marginBottom: "2px" }}>{te("cliente")}</div>
+          <div style={{ fontSize: "14px", fontWeight: "bold", marginBottom: "8px" }}>{estimado.cliente_nombre || te("cliente_sin_nombre")}</div>
+          <div style={{ fontSize: "11px", color: "#777", textTransform: "uppercase", marginBottom: "2px" }}>{te("direccion")}</div>
+          <div style={{ fontSize: "14px", fontWeight: "bold", marginBottom: "8px" }}>{estimado.direccion_trabajo || te("sin_direccion")}</div>
+        </div>
+        <div style={{ width: "45%", textAlign: "right" }}>
+          <div style={{ fontSize: "11px", color: "#777", textTransform: "uppercase", marginBottom: "2px" }}>{te("numero_estimado")}</div>
+          <div style={{ fontSize: "14px", fontWeight: "bold", marginBottom: "8px" }}>#{estimado.id || "N/A"}</div>
+          <div style={{ fontSize: "11px", color: "#777", textTransform: "uppercase", marginBottom: "2px" }}>{te("fecha")}</div>
+          <div style={{ fontSize: "14px", fontWeight: "bold", marginBottom: "8px" }}>{estimado.fecha?.slice(0, 10) || ""}</div>
+          <div style={{ fontSize: "11px", color: "#777", textTransform: "uppercase", marginBottom: "2px" }}>{te("valido_hasta")}</div>
+          <div style={{ fontSize: "14px", fontWeight: "bold" }}>{validUntil}</div>
+        </div>
+      </div>
+
+      <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}>
+        <thead>
+          <tr style={{ background: "#f5f5f5" }}>
+            <th style={{ border: "1px solid #333", padding: "10px 12px", textAlign: "left", fontSize: "12px", color: "#111" }}>{te("descripcion")}</th>
+            <th style={{ border: "1px solid #333", padding: "10px 12px", textAlign: "right", fontSize: "12px", width: "80px", color: "#111" }}>{te("cantidad")}</th>
+            <th style={{ border: "1px solid #333", padding: "10px 12px", textAlign: "right", fontSize: "12px", width: "80px", color: "#111" }}>{te("precio_unit")}</th>
+            <th style={{ border: "1px solid #333", padding: "10px 12px", textAlign: "right", fontSize: "12px", width: "80px", color: "#111" }}>{te("total")}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.length === 0 ? (
+            <tr><td colSpan={4} style={{ color: "#999", textAlign: "center", padding: "10px", fontSize: "13px", border: "1px solid #333" }}>{te("sin_materials")}</td></tr>
+          ) : items.map((item, idx) => (
+            <tr key={idx}>
+              <td style={{ border: "1px solid #333", padding: "10px 12px", fontSize: "13px", color: "#111" }}>{item.descripcion}</td>
+              <td style={{ border: "1px solid #333", padding: "10px 12px", textAlign: "right", fontSize: "13px", color: "#111" }}>{item.cantidad}</td>
+              <td style={{ border: "1px solid #333", padding: "10px 12px", textAlign: "right", fontSize: "13px", color: "#111" }}>{estimado.moneda} {Number(item.precio_unitario).toFixed(2)}</td>
+              <td style={{ border: "1px solid #333", padding: "10px 12px", textAlign: "right", fontSize: "13px", color: "#111" }}>{estimado.moneda} {Number(item.cantidad * item.precio_unitario).toFixed(2)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "20px" }}>
+        <table style={{ width: "200px", borderCollapse: "collapse" }}>
+          <tbody>
+            <tr>
+              <td style={{ padding: "6px 10px", textAlign: "right", fontWeight: "bold", border: "none", fontSize: "13px", color: "#111" }}>{te("subtotal")}:</td>
+              <td style={{ padding: "6px 10px", textAlign: "right", border: "none", fontSize: "13px", color: "#111" }}>{estimado.moneda} {subtotal.toFixed(2)}</td>
+            </tr>
+            <tr>
+              <td style={{ padding: "6px 10px", textAlign: "right", fontWeight: "bold", border: "none", fontSize: "13px", color: "#111" }}>{te("impuesto_nombre")}:</td>
+              <td style={{ padding: "6px 10px", textAlign: "right", border: "none", fontSize: "13px", color: "#111" }}>{estimado.moneda} {tax.toFixed(2)}</td>
+            </tr>
+            <tr>
+              <td style={{ padding: "6px 10px", textAlign: "right", fontWeight: "bold", fontSize: "16px", borderTop: "2px solid #333", color: "#111" }}>{te("total")}:</td>
+              <td style={{ padding: "6px 10px", textAlign: "right", fontWeight: "bold", fontSize: "16px", borderTop: "2px solid #333", color: "#111" }}>{estimado.moneda} {total.toFixed(2)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      {estimado.notas_adicionales?.trim() && (
+        <div style={{ marginTop: "20px", padding: "12px", background: "#f9f9f9", borderRadius: "4px" }}>
+          <div style={{ fontWeight: "bold", marginBottom: "4px", fontSize: "12px" }}>{te("notas_adicionales")}</div>
+          <p style={{ fontSize: "12px", margin: 0 }}>{estimado.notas_adicionales}</p>
+        </div>
+      )}
+
+      <div style={{ marginTop: "40px", paddingTop: "20px", borderTop: "1px solid #ccc" }}>
+        <p style={{ fontSize: "12px", color: "#666", textAlign: "center", margin: 0 }}>{te("footer_mensaje_1")}</p>
+        <p style={{ fontSize: "12px", color: "#666", textAlign: "center", margin: 0 }}>{te("footer_mensaje_2")}</p>
+      </div>
     </div>
   );
 };

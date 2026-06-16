@@ -2,13 +2,77 @@ import React, { useEffect, useState } from "react";
 import api from "../api/apiClient";
 import Modal from "../components/Modal";
 import SearchableSelect from "../components/SearchableSelect";
-import InvoiceScreen from "./InvoicePage/InvoiceScreen";
 import SearchBar from "../components/SearchBar";
 import { SkeletonCard } from "../components/Skeleton";
 import { useToast } from "../components/Toast";
 import { useLanguage } from "../i18n/LanguageContext";
 import { t } from "../i18n/translations";
 import { sanitizeHtml } from "../utils/sanitize";
+import "./ProposalsPage/ProposalPreview.css";
+
+const InvoicePrintPreview = ({ invoice, lang }) => {
+  const invoiceItems = invoice.items || [];
+  const invoiceTotal = invoiceItems.reduce((sum, item) => sum + (Number(item.precio) || 0) * (Number(item.cantidad) || 1), 0);
+  const rows = invoiceItems.length > 0 ? invoiceItems : Array.from({ length: 5 }, () => ({}));
+  const ti = (k) => t(lang, k);
+
+  return (
+    <div style={{ fontFamily: "Arial, sans-serif", color: "#111", maxWidth: "100%", margin: "0 auto" }}>
+      <div style={{ textAlign: "center", marginBottom: "8px" }}>
+        <img src="/logo.png" alt="Company logo" style={{ width: "560px", maxWidth: "100%", height: "auto", display: "block", margin: "0 auto" }} />
+      </div>
+      <h2 style={{ textAlign: "center", margin: "10px 0", fontSize: "24px", fontWeight: 500 }}>{ti("print_invoice_title")}</h2>
+      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <tbody>
+          <tr>                <td style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "13px", width: "110px", fontWeight: "bold", color: "#111" }}>{ti("print_invoice_customer")}</td><td style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "13px", color: "#111" }}>{invoice.cliente_nombre || ""}</td></tr>
+          <tr><td style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "13px", fontWeight: "bold", color: "#111" }}>{ti("print_invoice_address")}</td><td style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "13px", color: "#111" }}>{invoice.cliente_direccion || ""}</td></tr>
+          <tr><td style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "13px", fontWeight: "bold", color: "#111" }}>{ti("print_invoice_email")}</td><td style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "13px", color: "#111" }}>{invoice.cliente_email || ""}</td></tr>
+          <tr><td style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "13px", fontWeight: "bold", color: "#111" }}>{ti("print_invoice_phone")}</td><td style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "13px", color: "#111" }}>{invoice.cliente_telefono || ""}</td></tr>
+        </tbody>
+      </table>
+      <div style={{ border: "1px solid #333", borderTop: "0", textAlign: "center", padding: "8px", fontSize: "12px" }}>{ti("print_invoice_section_label")}</div>
+      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <thead>
+          <tr>
+            <th style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "12px", background: "#eee", textAlign: "left", width: "85px", color: "#111" }}>{ti("print_invoice_date")}</th>
+            <th style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "12px", background: "#eee", textAlign: "left", color: "#111" }}>{ti("print_invoice_desc")}</th>
+            <th style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "12px", background: "#eee", textAlign: "right", width: "55px", color: "#111" }}>{ti("print_invoice_qty")}</th>
+            <th style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "12px", background: "#eee", textAlign: "right", width: "95px", color: "#111" }}>{ti("print_invoice_unit")}</th>
+            <th style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "12px", background: "#eee", textAlign: "right", width: "95px", color: "#111" }}>{ti("print_invoice_amount")}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((item, idx) => {
+            const qty = Number(item.cantidad) || (item.descripcion ? 1 : 0);
+            const price = Number(item.precio) || 0;
+            const amount = qty * price;
+            return (
+              <tr key={idx}>
+                <td style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "13px", verticalAlign: "top", color: "#111" }}>{item.fecha || ""}</td>
+                <td style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "13px", verticalAlign: "top", color: "#111" }}>{item.descripcion || ""}</td>
+                <td style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "13px", verticalAlign: "top", textAlign: "right", color: "#111" }}>{qty || ""}</td>
+                <td style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "13px", verticalAlign: "top", textAlign: "right", color: "#111" }}>{item.descripcion ? `$${price.toFixed(2)}` : ""}</td>
+                <td style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "13px", verticalAlign: "top", textAlign: "right", color: "#111" }}>{item.descripcion ? `$${amount.toFixed(2)}` : ""}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <div style={{ marginTop: "10px", textAlign: "right", fontSize: "14px", padding: "6px 0", fontWeight: 700 }}>
+        <strong>{ti("print_invoice_total")}</strong> ${invoiceTotal.toFixed(2)}
+      </div>
+      {invoice.nota ? (
+        <div style={{ marginTop: "8px", fontSize: "12px", border: "1px solid #333", padding: "6px 8px" }}>
+          <strong>{ti("print_invoice_note")}</strong> {invoice.nota}
+        </div>
+      ) : null}
+      <div style={{ marginTop: "180px", fontSize: "12px", color: "#555" }}>
+        <p style={{ margin: "6px 0" }}>{ti("print_invoice_hour_rate")}</p>
+        <p style={{ margin: "6px 0" }}>{ti("print_invoice_footer")}</p>
+      </div>
+    </div>
+  );
+};
 
 const InvoicePage = () => {
   const { lang } = useLanguage();
@@ -154,11 +218,12 @@ const InvoicePage = () => {
     const invoiceTotal = invoiceItems.reduce((sum, item) => sum + (Number(item.precio) || 0) * (Number(item.cantidad) || 1), 0);
     const rows = invoiceItems.length > 0 ? invoiceItems : Array.from({ length: 5 }, () => ({}));
     const s = sanitizeHtml;
+    const ti = (k) => t(lang, k);
 
     printWindow.document.write(`<!DOCTYPE html>
 <html>
 <head>
-  <title>Invoice - ${s(invoice.cliente_nombre || "")}</title>
+  <title>${ti("print_invoice_title")} - ${s(invoice.cliente_nombre || "")}</title>
   <style>
     * { box-sizing: border-box; }
     body { margin: 0; background: #fff; color: #111; font-family: Arial, Helvetica, sans-serif; }
@@ -189,16 +254,16 @@ const InvoicePage = () => {
     <div class="invoice-header">
       <img src="${window.location.origin}/logo.png" alt="Company logo" class="invoice-logo" />
     </div>
-    <h2 class="invoice-title">Invoice</h2>
+    <h2 class="invoice-title">${ti("print_invoice_title")}</h2>
     <table class="invoice-info-table"><tbody>
-      <tr><td><strong>Customer:</strong></td><td>${s(invoice.cliente_nombre || "")}</td></tr>
-      <tr><td><strong>Address:</strong></td><td>${s(invoice.cliente_direccion || "")}</td></tr>
-      <tr><td><strong>E-mail:</strong></td><td>${s(invoice.cliente_email || "")}</td></tr>
-      <tr><td><strong>Phone:</strong></td><td>${s(invoice.cliente_telefono || "")}</td></tr>
+      <tr><td><strong>${ti("print_invoice_customer")}</strong></td><td>${s(invoice.cliente_nombre || "")}</td></tr>
+      <tr><td><strong>${ti("print_invoice_address")}</strong></td><td>${s(invoice.cliente_direccion || "")}</td></tr>
+      <tr><td><strong>${ti("print_invoice_email")}</strong></td><td>${s(invoice.cliente_email || "")}</td></tr>
+      <tr><td><strong>${ti("print_invoice_phone")}</strong></td><td>${s(invoice.cliente_telefono || "")}</td></tr>
     </tbody></table>
-    <div class="invoice-section-label">Description of the job that was done</div>
+    <div class="invoice-section-label">${ti("print_invoice_section_label")}</div>
     <table class="invoice-job-table">
-      <thead><tr><th>Date</th><th>Description</th><th>Qty</th><th>Unit</th><th>Amount</th></tr></thead>
+      <thead><tr><th>${ti("print_invoice_date")}</th><th>${ti("print_invoice_desc")}</th><th>${ti("print_invoice_qty")}</th><th>${ti("print_invoice_unit")}</th><th>${ti("print_invoice_amount")}</th></tr></thead>
       <tbody>${rows.map((item) => {
         const qty = Number(item.cantidad) || (item.descripcion ? 1 : 0);
         const price = Number(item.precio) || 0;
@@ -206,11 +271,11 @@ const InvoicePage = () => {
         return `<tr><td>${s(item.fecha || "")}</td><td>${s(item.descripcion || "")}</td><td>${qty || ""}</td><td>${item.descripcion ? `$${price.toFixed(2)}` : ""}</td><td>${item.descripcion ? `$${amount.toFixed(2)}` : ""}</td></tr>`;
       }).join("")}</tbody>
     </table>
-    <div class="invoice-total-row"><strong>Total:</strong> $${invoiceTotal.toFixed(2)}</div>
-    ${invoice.nota ? `<div class="invoice-note"><strong>Note:</strong> ${s(invoice.nota)}</div>` : ""}
+    <div class="invoice-total-row"><strong>${ti("print_invoice_total")}</strong> $${invoiceTotal.toFixed(2)}</div>
+    ${invoice.nota ? `<div class="invoice-note"><strong>${ti("print_invoice_note")}</strong> ${s(invoice.nota)}</div>` : ""}
     <div class="invoice-footer-note">
-      <p>Hour Rate $</p>
-      <p>Invoice must be paid within the next 10 business days. Customers with accounts over 30 days past due are subject to termination of service. Additional fees apply.</p>
+      <p>${ti("print_invoice_hour_rate")}</p>
+      <p>${ti("print_invoice_footer")}</p>
     </div>
   </div>
   <script>window.onload = function() { window.print(); }</script>
@@ -234,9 +299,6 @@ const InvoicePage = () => {
               </button>
               <button className="btn-danger-ghost" onClick={() => askDelete(selectedFactura)}>
                 {t(lang, "eliminar")}
-              </button>
-              <button className="btn-outline" onClick={() => selectedFactura && printInvoice(selectedFactura)}>
-                {t(lang, "imprimir")}
               </button>
             </>
           )}
@@ -277,7 +339,16 @@ const InvoicePage = () => {
 
         <section className="proposal-preview-panel">
           {selectedFactura ? (
-            <InvoiceScreen data={selectedFactura} />
+            <div className="proposal-page-wrapper">
+              <div className="proposal-toolbar proposal-toolbar--end">
+                <button className="btn-primary" onClick={() => printInvoice(selectedFactura)}>
+                  {t(lang, "imprimir")}
+                </button>
+              </div>
+              <div className="proposal-page">
+                <InvoicePrintPreview invoice={selectedFactura} lang={lang} />
+              </div>
+            </div>
           ) : (
             <div className="card flex justify-between gap-5 rounded-xl border border-[var(--record-border)] bg-[var(--bg-card)] p-5 shadow-[var(--record-shadow)]">
               <p className="muted">{t(lang, "sin_resultados")}</p>

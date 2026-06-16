@@ -2,13 +2,62 @@ import React, { useEffect, useState } from "react";
 import api from "../api/apiClient";
 import Modal from "../components/Modal";
 import SearchableSelect from "../components/SearchableSelect";
-import RouteSheetScreen from "./RouteSheetPage/RouteSheetScreen";
 import SearchBar from "../components/SearchBar";
 import { SkeletonCard } from "../components/Skeleton";
 import { useToast } from "../components/Toast";
 import { useLanguage } from "../i18n/LanguageContext";
 import { t } from "../i18n/translations";
 import { sanitizeHtml } from "../utils/sanitize";
+import "./ProposalsPage/ProposalPreview.css";
+
+const RouteSheetPrintPreview = ({ data, lang }) => {
+  const clientes = data.clientes || [];
+  const rows = clientes.length > 0
+    ? [...clientes, ...Array.from({ length: Math.max(0, 8 - clientes.length) }, () => ({}))]
+    : Array.from({ length: 8 }, () => ({}));
+  const trs = (k) => t(lang, k);
+
+  return (
+    <div style={{ fontFamily: "Arial, sans-serif", color: "#111", maxWidth: "100%", margin: "0 auto" }}>
+      <div style={{ textAlign: "center", marginBottom: "8px" }}>
+        <img src="/logo.png" alt="Company logo" style={{ width: "560px", maxWidth: "100%", height: "auto", display: "block", margin: "0 auto" }} />
+      </div>
+      <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "6px" }}>
+        <tbody>
+          <tr>
+            <td style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "13px", verticalAlign: "top", width: "32%", color: "#111" }}><strong>{trs("print_routesheet_date")}</strong> {data.fecha || ""}</td>
+            <td style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "13px", verticalAlign: "top", width: "36%", color: "#111" }}><strong>{trs("print_routesheet_driver")}</strong> {data.conductor || ""}</td>
+            <td style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "13px", verticalAlign: "top", width: "32%", color: "#111" }}><strong>{trs("print_routesheet_truck")}</strong> {data.camion || ""}</td>
+          </tr>
+        </tbody>
+      </table>
+      <h2 style={{ textAlign: "center", margin: "10px 0", fontSize: "24px", fontWeight: 500 }}>{trs("print_routesheet_title")}</h2>
+      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <thead>
+          <tr>
+            <th style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "12px", background: "#eee", textAlign: "left", width: "25%", color: "#111" }}>{trs("print_routesheet_customer")}</th>
+            <th style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "12px", background: "#eee", textAlign: "left", width: "12%", color: "#111" }}>{trs("print_routesheet_in")}</th>
+            <th style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "12px", background: "#eee", textAlign: "left", width: "12%", color: "#111" }}>{trs("print_routesheet_out")}</th>
+            <th style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "12px", background: "#eee", textAlign: "left", width: "51%", color: "#111" }}>{trs("print_routesheet_desc")}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((c, idx) => (
+            <tr key={idx}>
+              <td style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "13px", verticalAlign: "top", height: "66px", color: "#111" }}>
+                {c.cliente_nombre ? <div style={{ fontWeight: 700, marginBottom: "3px", color: "#111" }}>{c.cliente_nombre}</div> : null}
+                {c.cliente_direccion ? <div style={{ fontSize: "11px", lineHeight: 1.25, color: "#333" }}>{c.cliente_direccion}</div> : null}
+              </td>
+              <td style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "13px", verticalAlign: "top", color: "#111" }}>{c.hora_entrada || ""}</td>
+              <td style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "13px", verticalAlign: "top", color: "#111" }}>{c.hora_salida || ""}</td>
+              <td style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "13px", verticalAlign: "top", color: "#111" }}>{c.descripcion || ""}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
 
 const RouteSheetPage = () => {
   const { lang } = useLanguage();
@@ -164,6 +213,7 @@ const RouteSheetPage = () => {
     if (!printWindow) return;
 
     const s = sanitizeHtml;
+    const trs = (k) => t(lang, k);
     const rows = routeSheet.clientes?.length > 0
       ? [...routeSheet.clientes, ...Array.from({ length: Math.max(0, 8 - routeSheet.clientes.length) }, () => ({}))]
       : Array.from({ length: 8 }, () => ({}));
@@ -171,7 +221,7 @@ const RouteSheetPage = () => {
     printWindow.document.write(`<!DOCTYPE html>
 <html>
 <head>
-  <title>Route Sheet - ${s(routeSheet.fecha || "")}</title>
+  <title>${trs("print_routesheet_title")} - ${s(routeSheet.fecha || "")}</title>
   <style>
     * { box-sizing: border-box; }
     body { margin: 0; background: #fff; color: #111; font-family: Arial, Helvetica, sans-serif; }
@@ -204,13 +254,13 @@ const RouteSheetPage = () => {
       <img src="${window.location.origin}/logo.png" alt="Company logo" class="invoice-logo" />
     </div>
     <table class="route-top-table"><tbody><tr>
-      <td><strong>Date:</strong> ${s(routeSheet.fecha || "")}</td>
-      <td><strong>Driver/helper:</strong> ${s(routeSheet.conductor || "")}</td>
-      <td><strong>Truck:</strong> ${s(routeSheet.camion || "")}</td>
+      <td><strong>${trs("print_routesheet_date")}</strong> ${s(routeSheet.fecha || "")}</td>
+      <td><strong>${trs("print_routesheet_driver")}</strong> ${s(routeSheet.conductor || "")}</td>
+      <td><strong>${trs("print_routesheet_truck")}</strong> ${s(routeSheet.camion || "")}</td>
     </tr></tbody></table>
-    <h2 class="invoice-title">Route Sheet</h2>
+    <h2 class="invoice-title">${trs("print_routesheet_title")}</h2>
     <table class="route-table">
-      <thead><tr><th>Customer</th><th>In</th><th>Out</th><th>Description</th></tr></thead>
+      <thead><tr><th>${trs("print_routesheet_customer")}</th><th>${trs("print_routesheet_in")}</th><th>${trs("print_routesheet_out")}</th><th>${trs("print_routesheet_desc")}</th></tr></thead>
       <tbody>${rows.map((c) => `<tr><td>${c.cliente_nombre ? `<div class="route-customer-name">${s(c.cliente_nombre)}</div>` : ""}${c.cliente_direccion ? `<div class="route-customer-address">${s(c.cliente_direccion)}</div>` : ""}</td><td>${s(c.hora_entrada || "")}</td><td>${s(c.hora_salida || "")}</td><td>${s(c.descripcion || "")}</td></tr>`).join("")}</tbody>
     </table>
   </div>
@@ -236,11 +286,6 @@ const RouteSheetPage = () => {
               <button className="btn-danger-ghost" onClick={() => askDelete(selectedHoja)}>
                 {t(lang, "eliminar")}
               </button>
-              {previewData && (
-                <button className="btn-outline" onClick={() => printRouteSheet(previewData)}>
-                  {t(lang, "imprimir")}
-                </button>
-              )}
             </>
           )}
           <button className="btn-primary" onClick={openNewModal}>
@@ -284,7 +329,16 @@ const RouteSheetPage = () => {
               {[1,2].map(i => <SkeletonCard key={i} />)}
             </div>
           ) : previewData ? (
-            <RouteSheetScreen data={previewData} />
+            <div className="proposal-page-wrapper">
+              <div className="proposal-toolbar proposal-toolbar--end">
+                <button className="btn-primary" onClick={() => printRouteSheet(previewData)}>
+                  {t(lang, "imprimir")}
+                </button>
+              </div>
+              <div className="proposal-page">
+                <RouteSheetPrintPreview data={previewData} lang={lang} />
+              </div>
+            </div>
           ) : (
             <div className="card flex justify-between gap-5 rounded-xl border border-[var(--record-border)] bg-[var(--bg-card)] p-5 shadow-[var(--record-shadow)]">
               <p className="muted">{t(lang, "sin_resultados")}</p>
