@@ -3,7 +3,9 @@ import React, { useEffect, useState } from "react";
 import api from "../api/apiClient";
 import Modal from "../components/Modal";
 import SearchableSelect from "../components/SearchableSelect";
+import SearchBar from "../components/SearchBar";
 import { SkeletonCard } from "../components/Skeleton";
+import { useToast } from "../components/Toast";
 import { useLanguage } from "../i18n/LanguageContext";
 import { t } from "../i18n/translations";
 
@@ -12,6 +14,7 @@ const DIAS_FILTRO = ["todos", ...DIAS];
 
 const RutasPage = () => {
   const { lang } = useLanguage();
+  const toast = useToast();
   const [visitas, setVisitas] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [diaActivo, setDiaActivo] = useState("todos");
@@ -142,14 +145,16 @@ const RutasPage = () => {
     try {
       if (editingVisita) {
         await api.put(`/visitas/${editingVisita.id}`, payload);
+        toast("Visita actualizada correctamente.", "success");
       } else {
         await api.post("/visitas", payload);
+        toast("Visita creada correctamente.", "success");
       }
       setModalOpen(false);
       await loadData();
     } catch (err) {
       console.error("Error guardando visita", err);
-      alert("No se pudo guardar la visita.");
+      toast("No se pudo guardar la visita.", "error");
     }
   };
 
@@ -167,10 +172,11 @@ const RutasPage = () => {
     if (!visitaToDelete) return;
     try {
       await api.delete(`/visitas/${visitaToDelete.id}`);
+      toast("Visita eliminada correctamente.", "success");
       await loadData();
     } catch (err) {
       console.error("Error eliminando visita", err);
-      alert("No se pudo eliminar la visita.");
+      toast("No se pudo eliminar la visita.", "error");
     } finally {
       setConfirmDeleteOpen(false);
       setVisitaToDelete(null);
@@ -210,11 +216,10 @@ const RutasPage = () => {
       </section>
 
       <div className="page-toolbar mb-5 flex items-center justify-between gap-4">
-        <input
-          className="input search-bar w-full max-w-sm rounded-xl border border-[var(--record-border)] bg-[var(--bg-input)] px-3 py-2 text-sm text-[var(--text-main)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-[var(--accent-strong)] focus:ring-2 focus:ring-[rgba(var(--primary),0.16)]"
-          placeholder={t(lang, "busqueda")}
+        <SearchBar
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder={t(lang, "busqueda")}
         />
         <div className="pill-group">
           {DIAS_FILTRO.map((diaKey) => (
@@ -392,25 +397,25 @@ const RutasPage = () => {
         title={t(lang, "confirmar_eliminar")}
         onClose={cancelDelete}
       >
-        <p>
-          {t(lang, "seguro_eliminar_visita")}
-          {visitaToDelete?.cliente_nombre
-            ? ` de "${visitaToDelete.cliente_nombre}"`
-            : ""}?
-        </p>
-        <div className="form-actions" style={{ marginTop: "1rem" }}>
-          <button
-            type="button"
-            className="btn-ghost"
-            onClick={cancelDelete}
-          >
-            {t(lang, "cancelar")}
-          </button>
-          <button
-            type="button"
-            className="btn btn-danger"
-            onClick={confirmDelete}
-          >
+        <div className="flex flex-col items-center gap-4 py-2 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--danger-soft)]">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[rgb(var(--destructive))]">
+              <path d="M3 6h18 M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2 M10 11v6 M14 11v6" />
+            </svg>
+          </div>
+          <p className="font-semibold text-[var(--text-main)]">
+            {t(lang, "seguro_eliminar_visita")}
+            {visitaToDelete?.cliente_nombre
+              ? <span className="font-bold"> de "{visitaToDelete.cliente_nombre}"</span>
+              : ""}?
+          </p>
+        </div>
+        <div className="mt-6 flex justify-end gap-3">
+          <button type="button" className="btn-ghost" onClick={cancelDelete}>{t(lang, "cancelar")}</button>
+          <button type="button" className="btn btn-danger" onClick={confirmDelete}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 6h18 M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+            </svg>
             {t(lang, "si_eliminar")}
           </button>
         </div>

@@ -3,12 +3,16 @@ import React, { useEffect, useState } from "react";
 import api from "../api/apiClient";
 import Modal from "../components/Modal";
 import SearchableSelect from "../components/SearchableSelect";
+import EmptyState from "../components/EmptyState";
+import SearchBar from "../components/SearchBar";
 import { SkeletonCard } from "../components/Skeleton";
+import { useToast } from "../components/Toast";
 import { useLanguage } from "../i18n/LanguageContext";
 import { t } from "../i18n/translations";
 
 const RecibosPage = () => {
   const { lang } = useLanguage();
+  const toast = useToast();
   const [recibos, setRecibos] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [filter, setFilter] = useState("todos");
@@ -131,14 +135,16 @@ const RecibosPage = () => {
     try {
       if (editingRecibo) {
         await api.put(`/recibos/${editingRecibo.id}`, payload);
+        toast("Recibo actualizado correctamente.", "success");
       } else {
         await api.post("/recibos", payload);
+        toast("Recibo creado correctamente.", "success");
       }
       setModalOpen(false);
       await loadData();
     } catch (err) {
       console.error("Error guardando recibo", err);
-      alert("No se pudo guardar el recibo.");
+      toast("No se pudo guardar el recibo.", "error");
     }
   };
 
@@ -157,10 +163,11 @@ const RecibosPage = () => {
     if (!reciboToDelete) return;
     try {
       await api.delete(`/recibos/${reciboToDelete.id}`);
+      toast("Recibo eliminado correctamente.", "success");
       await loadData();
     } catch (err) {
       console.error("Error eliminando recibo", err);
-      alert("No se pudo eliminar el recibo.");
+      toast("No se pudo eliminar el recibo.", "error");
     } finally {
       setConfirmDeleteOpen(false);
       setReciboToDelete(null);
@@ -201,11 +208,10 @@ const RecibosPage = () => {
       </section>
 
       <div className="page-toolbar mb-5 flex items-center justify-between gap-4">
-        <input
-          className="input search-bar w-full max-w-sm rounded-xl border border-[var(--record-border)] bg-[var(--bg-input)] px-3 py-2 text-sm text-[var(--text-main)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-[var(--accent-strong)] focus:ring-2 focus:ring-[rgba(var(--primary),0.16)]"
-          placeholder={t(lang, "busqueda")}
+        <SearchBar
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder={t(lang, "busqueda")}
         />
         <div className="pill-group">
           {[
@@ -230,7 +236,11 @@ const RecibosPage = () => {
           {[1,2,3].map(i => <SkeletonCard key={i} />)}
         </div>
       ) : filtrados.length === 0 ? (
-        <p className="muted">{t(lang, "sin_resultados")}</p>
+        <EmptyState
+          svg="M7 3h10a2 2 0 0 1 2 2v16l-3-2-3 2-3-2-3 2V5a2 2 0 0 1 2-2 M10 8h6 M10 12h6 M10 16h3"
+          title={t(lang, "sin_resultados")}
+          description={t(lang, "recibos_page_subtitle")}
+        />
       ) : (
         <div className="list flex flex-col gap-3">
           {filtrados.map((r) => (
@@ -385,27 +395,26 @@ const RecibosPage = () => {
         title={t(lang, "confirmar_eliminar")}
         onClose={cancelDelete}
       >
-        <p>
-          {t(lang, "seguro_eliminar_recibo")}
-          {reciboToDelete?.codigo || (reciboToDelete && `REC-${reciboToDelete.id}`)}
-          {reciboToDelete?.cliente_nombre
-            ? ` de "${reciboToDelete.cliente_nombre}"`
-            : ""}
-          ?
-        </p>
-        <div className="form-actions" style={{ marginTop: "1rem" }}>
-          <button
-            type="button"
-            className="btn-ghost"
-            onClick={cancelDelete}
-          >
-            {t(lang, "cancelar")}
-          </button>
-          <button
-            type="button"
-            className="btn btn-danger"
-            onClick={confirmDelete}
-          >
+        <div className="flex flex-col items-center gap-4 py-2 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--danger-soft)]">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[rgb(var(--destructive))]">
+              <path d="M3 6h18 M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2 M10 11v6 M14 11v6" />
+            </svg>
+          </div>
+          <p className="font-semibold text-[var(--text-main)]">
+            {t(lang, "seguro_eliminar_recibo")}
+            <span className="font-bold">{reciboToDelete?.codigo || (reciboToDelete && `REC-${reciboToDelete.id}`)}</span>
+            {reciboToDelete?.cliente_nombre
+              ? <span> de "{reciboToDelete.cliente_nombre}"</span>
+              : ""}?
+          </p>
+        </div>
+        <div className="mt-6 flex justify-end gap-3">
+          <button type="button" className="btn-ghost" onClick={cancelDelete}>{t(lang, "cancelar")}</button>
+          <button type="button" className="btn btn-danger" onClick={confirmDelete}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 6h18 M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+            </svg>
             {t(lang, "si_eliminar")}
           </button>
         </div>

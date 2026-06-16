@@ -2,8 +2,10 @@ import React, { useEffect, useState } from "react";
 import api from "../api/apiClient";
 import Modal from "../components/Modal";
 import SearchableSelect from "../components/SearchableSelect";
+import SearchBar from "../components/SearchBar";
 import ProposalPreview from "./ProposalsPage/ProposalPreview";
 import { SkeletonCard } from "../components/Skeleton";
+import { useToast } from "../components/Toast";
 import { useLanguage } from "../i18n/LanguageContext";
 import { t } from "../i18n/translations";
 
@@ -11,6 +13,7 @@ const MONEDAS = ["USD", "EUR", "MXN", "PAB", "COP"];
 
 const ProposalsPage = () => {
   const { lang } = useLanguage();
+  const toast = useToast();
   const [estimados, setEstimados] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
@@ -108,12 +111,13 @@ const ProposalsPage = () => {
 
     try {
       await api.delete(`/estimados/${proposalToDelete.id}`);
+      toast("Propuesta eliminada correctamente.", "success");
       setConfirmDeleteOpen(false);
       setProposalToDelete(null);
       await loadData();
     } catch (err) {
       console.error("Error eliminando proposal", err);
-      alert("No se pudo eliminar el proposal.");
+      toast("No se pudo eliminar la propuesta.", "error");
     }
   };
 
@@ -146,18 +150,23 @@ const ProposalsPage = () => {
     };
 
     try {
-      const res = editingProposal
-        ? await api.put(`/estimados/${editingProposal.id}`, payload)
-        : await api.post("/estimados", payload);
+      let res;
+      if (editingProposal) {
+        await api.put(`/estimados/${editingProposal.id}`, payload);
+        toast("Propuesta actualizada correctamente.", "success");
+      } else {
+        res = await api.post("/estimados", payload);
+        toast("Propuesta creada correctamente.", "success");
+      }
       setModalOpen(false);
       setEditingProposal(null);
       await loadData();
-      if (res.data?.id || editingProposal?.id) {
-        setSelectedId(res.data?.id || editingProposal.id);
+      if (res?.data?.id || editingProposal?.id) {
+        setSelectedId(res?.data?.id || editingProposal.id);
       }
     } catch (err) {
       console.error("Error guardando proposal", err);
-      alert(err.response?.data?.message || "No se pudo guardar el proposal.");
+      toast(err.response?.data?.message || "No se pudo guardar la propuesta.", "error");
     }
   };
 
@@ -204,11 +213,10 @@ const ProposalsPage = () => {
       <div className="proposal-layout">
         <aside className="proposal-selector">
           <div className="proposal-selector-header">
-            <input
-              className="input search-bar w-full max-w-sm rounded-xl border border-[var(--record-border)] bg-[var(--bg-input)] px-3 py-2 text-sm text-[var(--text-main)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-[var(--accent-strong)] focus:ring-2 focus:ring-[rgba(var(--primary),0.16)]"
-              placeholder={t(lang, "busqueda")}
+            <SearchBar
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={t(lang, "busqueda")}
             />
           </div>
 
@@ -385,14 +393,24 @@ const ProposalsPage = () => {
         title={t(lang, "confirmar_eliminar")}
         onClose={() => setConfirmDeleteOpen(false)}
       >
-        <p>
-          {t(lang, "seguro_eliminar_estimado")} {proposalToDelete?.cliente_nombre || ""}?
-        </p>
-        <div className="form-actions" style={{ marginTop: "1rem" }}>
+        <div className="flex flex-col items-center gap-4 py-2 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--danger-soft)]">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[rgb(var(--destructive))]">
+              <path d="M3 6h18 M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2 M10 11v6 M14 11v6" />
+            </svg>
+          </div>
+          <p className="font-semibold text-[var(--text-main)]">
+            {t(lang, "seguro_eliminar_estimado")} <span className="font-bold">{proposalToDelete?.cliente_nombre || ""}</span>?
+          </p>
+        </div>
+        <div className="mt-6 flex justify-end gap-3">
           <button type="button" className="btn-ghost" onClick={() => setConfirmDeleteOpen(false)}>
             {t(lang, "cancelar")}
           </button>
           <button type="button" className="btn btn-danger" onClick={confirmDelete}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 6h18 M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+            </svg>
             {t(lang, "si_eliminar")}
           </button>
         </div>

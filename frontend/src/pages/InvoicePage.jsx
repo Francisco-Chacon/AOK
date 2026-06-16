@@ -4,13 +4,17 @@ import api from "../api/apiClient";
 import Modal from "../components/Modal";
 import SearchableSelect from "../components/SearchableSelect";
 import InvoiceScreen from "./InvoicePage/InvoiceScreen";
+import EmptyState from "../components/EmptyState";
+import SearchBar from "../components/SearchBar";
 import { SkeletonCard } from "../components/Skeleton";
+import { useToast } from "../components/Toast";
 import { useLanguage } from "../i18n/LanguageContext";
 import { t } from "../i18n/translations";
 import { sanitizeHtml } from "../utils/sanitize";
 
 const InvoicePage = () => {
   const { lang } = useLanguage();
+  const toast = useToast();
   const [facturas, setFacturas] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -128,14 +132,16 @@ const InvoicePage = () => {
     try {
       if (editingFactura) {
         await api.put(`/facturas/${editingFactura.id}`, payload);
+        toast("Factura actualizada correctamente.", "success");
       } else {
         await api.post("/facturas", payload);
+        toast("Factura creada correctamente.", "success");
       }
       setModalOpen(false);
       await loadData();
     } catch (err) {
       console.error(err);
-      alert("Error saving invoice.");
+      toast("Error al guardar la factura.", "error");
     }
   };
 
@@ -144,6 +150,7 @@ const InvoicePage = () => {
     if (!facturaToDelete) return;
     try {
       await api.delete(`/facturas/${facturaToDelete.id}`);
+      toast("Factura eliminada correctamente.", "success");
       await loadData();
     } catch (err) { console.error(err); }
     finally { setConfirmDeleteOpen(false); setFacturaToDelete(null); }
@@ -235,7 +242,7 @@ const InvoicePage = () => {
       </header>
 
       <div className="page-toolbar mb-5 flex items-center justify-between gap-4">
-        <input className="input search-bar w-full max-w-sm rounded-xl border border-[var(--record-border)] bg-[var(--bg-input)] px-3 py-2 text-sm text-[var(--text-main)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-[var(--accent-strong)] focus:ring-2 focus:ring-[rgba(var(--primary),0.16)]" placeholder={t(lang, "busqueda")} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+        <SearchBar value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder={t(lang, "busqueda")} />
       </div>
 
       {loading ? (
@@ -243,7 +250,11 @@ const InvoicePage = () => {
           {[1,2,3].map(i => <SkeletonCard key={i} />)}
         </div>
       ) : filtradas.length === 0 ? (
-        <p className="muted">{t(lang, "sin_resultados")}</p>
+        <EmptyState
+          svg="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M8 13h8 M8 17h5"
+          title={t(lang, "sin_resultados")}
+          description={t(lang, "facturas_page_subtitle")}
+        />
       ) : (
         <div className="list flex flex-col gap-3">
           {filtradas.map(f => (
@@ -363,10 +374,22 @@ const InvoicePage = () => {
 
       {/* Confirm delete */}
       <Modal open={confirmDeleteOpen} title={t(lang, "confirmar_eliminar")} onClose={() => setConfirmDeleteOpen(false)}>
-        <p>{t(lang, "seguro_eliminar_factura")} INV-{facturaToDelete?.id}?</p>
-        <div className="form-actions">
+        <div className="flex flex-col items-center gap-4 py-2 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--danger-soft)]">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[rgb(var(--destructive))]">
+              <path d="M3 6h18 M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2 M10 11v6 M14 11v6" />
+            </svg>
+          </div>
+          <p className="font-semibold text-[var(--text-main)]">{t(lang, "seguro_eliminar_factura")} INV-{facturaToDelete?.id}?</p>
+        </div>
+        <div className="mt-6 flex justify-end gap-3">
           <button className="btn-ghost" onClick={() => setConfirmDeleteOpen(false)}>{t(lang, "cancelar")}</button>
-          <button className="btn btn-danger" onClick={confirmDelete}>{t(lang, "si_eliminar")}</button>
+          <button className="btn btn-danger" onClick={confirmDelete}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 6h18 M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+            </svg>
+            {t(lang, "si_eliminar")}
+          </button>
         </div>
       </Modal>
     </div>

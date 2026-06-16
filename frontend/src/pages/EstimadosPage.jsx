@@ -3,7 +3,10 @@ import React, { useEffect, useState } from "react";
 import api from "../api/apiClient";
 import Modal from "../components/Modal";
 import SearchableSelect from "../components/SearchableSelect";
+import EmptyState from "../components/EmptyState";
+import SearchBar from "../components/SearchBar";
 import { SkeletonCard } from "../components/Skeleton";
+import { useToast } from "../components/Toast";
 import { useLanguage } from "../i18n/LanguageContext";
 import { t } from "../i18n/translations";
 import { sanitizeHtml } from "../utils/sanitize";
@@ -12,6 +15,7 @@ const MONEDAS = ["USD", "EUR", "MXN", "PAB", "COP"];
 
 const EstimadosPage = () => {
   const { lang } = useLanguage();
+  const toast = useToast();
   const [estimados, setEstimados] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [filterEstado, setFilterEstado] = useState("todos");
@@ -264,7 +268,7 @@ const EstimadosPage = () => {
 
   const addItem = () => {
     if (!newItem.descripcion || !newItem.precio_unitario) {
-      alert("Por favor completa descripción y precio unitario");
+      toast("Completá descripción y precio unitario", "warning");
       return;
     }
     const item = {
@@ -310,14 +314,16 @@ const EstimadosPage = () => {
     try {
       if (editingEstimado) {
         await api.put(`/estimados/${editingEstimado.id}`, payload);
+        toast("Estimado actualizado correctamente.", "success");
       } else {
         await api.post("/estimados", payload);
+        toast("Estimado creado correctamente.", "success");
       }
       setModalOpen(false);
       await loadData();
     } catch (err) {
       console.error("Error guardando estimado", err);
-      alert("No se pudo guardar el estimado.");
+      toast("No se pudo guardar el estimado.", "error");
     }
   };
 
@@ -335,10 +341,11 @@ const EstimadosPage = () => {
     if (!estimadoToDelete) return;
     try {
       await api.delete(`/estimados/${estimadoToDelete.id}`);
+      toast("Estimado eliminado correctamente.", "success");
       await loadData();
     } catch (err) {
       console.error("Error eliminando estimado", err);
-      alert("No se pudo eliminar el estimado.");
+      toast("No se pudo eliminar el estimado.", "error");
     } finally {
       setConfirmDeleteOpen(false);
       setEstimadoToDelete(null);
@@ -498,11 +505,10 @@ const renderStatementView = () => {
         </section>
 
         <div className="page-toolbar mb-5 flex items-center justify-between gap-4">
-          <input
-            className="input search-bar w-full max-w-sm rounded-xl border border-[var(--record-border)] bg-[var(--bg-input)] px-3 py-2 text-sm text-[var(--text-main)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-[var(--accent-strong)] focus:ring-2 focus:ring-[rgba(var(--primary),0.16)]"
-            placeholder={t(lang, "busqueda")}
+          <SearchBar
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={t(lang, "busqueda")}
           />
         </div>
 
@@ -531,7 +537,11 @@ const renderStatementView = () => {
             {[1,2,3].map(i => <SkeletonCard key={i} />)}
           </div>
         ) : filtrados.length === 0 ? (
-          <p className="muted">{t(lang, "sin_resultados")}</p>
+          <EmptyState
+            svg="M12 2v20 M17 5H9.5a3.5 3.5 0 0 0 0 7H14a3.5 3.5 0 0 1 0 7H6"
+            title={t(lang, "sin_resultados")}
+            description={t(lang, "estimados_page_subtitle")}
+          />
         ) : (
           <div className="list flex flex-col gap-3">
             {filtrados.map((e) => (
@@ -879,26 +889,25 @@ const renderStatementView = () => {
         title={t(lang, "confirmar_eliminar")}
         onClose={cancelDelete}
       >
-        <p>
-          {t(lang, "seguro_eliminar_estimado")}
-          {estimadoToDelete?.cliente_nombre
-            ? ` de "${estimadoToDelete.cliente_nombre}" `
-            : ""}
-          ?
-        </p>
-        <div className="form-actions" style={{ marginTop: "1rem" }}>
-          <button
-            type="button"
-            className="btn-ghost"
-            onClick={cancelDelete}
-          >
-            {t(lang, "cancelar")}
-          </button>
-          <button
-            type="button"
-            className="btn btn-danger"
-            onClick={confirmDelete}
-          >
+        <div className="flex flex-col items-center gap-4 py-2 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--danger-soft)]">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[rgb(var(--destructive))]">
+              <path d="M3 6h18 M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2 M10 11v6 M14 11v6" />
+            </svg>
+          </div>
+          <p className="font-semibold text-[var(--text-main)]">
+            {t(lang, "seguro_eliminar_estimado")}
+            {estimadoToDelete?.cliente_nombre
+              ? <span className="font-bold"> de "{estimadoToDelete.cliente_nombre}"</span>
+              : ""}?
+          </p>
+        </div>
+        <div className="mt-6 flex justify-end gap-3">
+          <button type="button" className="btn-ghost" onClick={cancelDelete}>{t(lang, "cancelar")}</button>
+          <button type="button" className="btn btn-danger" onClick={confirmDelete}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 6h18 M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+            </svg>
             {t(lang, "si_eliminar")}
           </button>
         </div>

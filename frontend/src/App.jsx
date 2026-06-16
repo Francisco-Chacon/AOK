@@ -5,6 +5,7 @@ import Topbar from "./components/Topbar";
 import StatusBar from "./components/StatusBar";
 import ErrorBoundary from "./components/ErrorBoundary";
 import AiPanel from "./components/AiPanel";
+import { ToastProvider } from "./components/Toast";
 import { cn } from "./utils/cn";
 
 import ClientesPage from "./pages/ClientesPage";
@@ -91,7 +92,9 @@ const App = () => {
   return (
     <ErrorBoundary>
       <LanguageProvider>
-        <AppContent />
+        <ToastProvider>
+          <AppContent />
+        </ToastProvider>
       </LanguageProvider>
     </ErrorBoundary>
   );

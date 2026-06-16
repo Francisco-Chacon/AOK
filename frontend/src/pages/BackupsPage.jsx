@@ -1,6 +1,7 @@
 // frontend/src/pages/BackupsPage.jsx
 import React, { useEffect, useState } from "react";
 import Modal from "../components/Modal";
+import SearchBar from "../components/SearchBar";
 import { useLanguage } from "../i18n/LanguageContext";
 import { t } from "../i18n/translations";
 import api from "../api/apiClient";
@@ -303,11 +304,10 @@ const BackupsPage = () => {
       </section>
 
       <div className="page-toolbar backups-search-toolbar mb-5 mt-6 flex items-center justify-between gap-4">
-        <input
-          className="input search-bar w-full max-w-sm rounded-xl border border-[var(--record-border)] bg-[var(--bg-input)] px-3 py-2 text-sm text-[var(--text-main)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-[var(--accent-strong)] focus:ring-2 focus:ring-[rgba(var(--primary),0.16)]"
-          placeholder={t(lang, "busqueda")}
+        <SearchBar
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder={t(lang, "busqueda")}
         />
       </div>
 
@@ -443,26 +443,30 @@ const BackupsPage = () => {
         title={t(lang, "confirmar_eliminar_backup")}
         onClose={cancelDelete}
       >
-        <p>
-          {t(lang, "seguro_eliminar_backup")}
-          <strong>{backupToDelete}</strong>. {t(lang, "seguro_eliminar_backup_desc")}
-        </p>
-        <div className="form-actions" style={{ marginTop: "1rem" }}>
-          <button
-            type="button"
-            className="btn-ghost"
-            onClick={cancelDelete}
-            disabled={loadingDelete}
-          >
-            {t(lang, "cancelar")}
-          </button>
-          <button
-            type="button"
-            className="btn btn-danger"
-            onClick={confirmDelete}
-            disabled={loadingDelete}
-          >
-            {loadingDelete ? t(lang, "eliminando") : t(lang, "si_eliminar")}
+        <div className="flex flex-col items-center gap-4 py-2 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--danger-soft)]">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[rgb(var(--destructive))]">
+              <path d="M3 6h18 M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2 M10 11v6 M14 11v6" />
+            </svg>
+          </div>
+          <p className="font-semibold text-[var(--text-main)]">
+            {t(lang, "seguro_eliminar_backup")}
+            <strong>{backupToDelete}</strong>. {t(lang, "seguro_eliminar_backup_desc")}
+          </p>
+        </div>
+        <div className="mt-6 flex justify-end gap-3">
+          <button type="button" className="btn-ghost" onClick={cancelDelete} disabled={loadingDelete}>{t(lang, "cancelar")}</button>
+          <button type="button" className="btn btn-danger" onClick={confirmDelete} disabled={loadingDelete}>
+            {loadingDelete ? (
+              <>{t(lang, "eliminando")}...</>
+            ) : (
+              <>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 6h18 M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                </svg>
+                {t(lang, "si_eliminar")}
+              </>
+            )}
           </button>
         </div>
       </Modal>

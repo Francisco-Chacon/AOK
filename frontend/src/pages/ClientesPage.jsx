@@ -2,12 +2,16 @@
 import React, { useEffect, useState } from "react";
 import api from "../api/apiClient";
 import Modal from "../components/Modal";
+import EmptyState from "../components/EmptyState";
+import SearchBar from "../components/SearchBar";
 import { SkeletonCard, SkeletonStats } from "../components/Skeleton";
+import { useToast } from "../components/Toast";
 import { useLanguage } from "../i18n/LanguageContext";
 import { t } from "../i18n/translations";
 
 const ClientesPage = () => {
   const { lang } = useLanguage();
+  const toast = useToast();
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterEstado, setFilterEstado] = useState("todos");
@@ -31,11 +35,11 @@ const ClientesPage = () => {
     estado: "activo",
   });
 
-  // 🔴 Confirmación de borrado
+  // Confirmación de borrado
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [clienteToDelete, setClienteToDelete] = useState(null);
 
-  // 🔵 Detalle al hacer click en la card
+  // Detalle al hacer click en la card
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [clienteDetalle, setClienteDetalle] = useState(null);
 
@@ -89,7 +93,7 @@ const ClientesPage = () => {
     setModalOpen(true);
   };
 
-  // 🔵 Abrir / cerrar detalle
+  // Abrir / cerrar detalle
   const openDetails = (cliente) => {
     setClienteDetalle(cliente);
     setDetailsOpen(true);
@@ -112,18 +116,20 @@ const ClientesPage = () => {
     try {
       if (editingCliente) {
         await api.put(`/clientes/${editingCliente.id}`, form);
+        toast("Cliente actualizado correctamente.", "success");
       } else {
         await api.post("/clientes", form);
+        toast("Cliente creado correctamente.", "success");
       }
       setModalOpen(false);
       await loadClientes();
     } catch (err) {
       console.error("Error guardando cliente", err);
-      alert("Error al guardar el cliente.");
+      toast("Error al guardar el cliente.", "error");
     }
   };
 
-  // 🔴 Flujo de borrado con modal propio
+  // Flujo de borrado con modal propio
   const [recibosCount, setRecibosCount] = useState(0);
 
   const askDelete = async (cliente) => {
@@ -148,10 +154,11 @@ const ClientesPage = () => {
     if (!clienteToDelete) return;
     try {
       await api.delete(`/clientes/${clienteToDelete.id}`);
+      toast("Cliente eliminado correctamente.", "success");
       await loadClientes();
     } catch (err) {
       console.error("Error eliminando cliente", err);
-      alert("No se pudo eliminar el cliente.");
+      toast("No se pudo eliminar el cliente.", "error");
     } finally {
       setConfirmDeleteOpen(false);
       setClienteToDelete(null);
@@ -211,11 +218,10 @@ const ClientesPage = () => {
       </section>
 
       <div className="page-toolbar mb-5 flex items-center justify-between gap-4">
-        <input
-          className="input search-bar w-full max-w-sm rounded-xl border border-[var(--record-border)] bg-[var(--bg-input)] px-3 py-2 text-sm text-[var(--text-main)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-[var(--accent-strong)] focus:ring-2 focus:ring-[rgba(var(--primary),0.16)]"
-          placeholder={t(lang, "busqueda")}
+        <SearchBar
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder={t(lang, "busqueda")}
         />
         <div className="pill-group">
           {[
@@ -243,13 +249,17 @@ const ClientesPage = () => {
           {[1,2,3].map(i => <SkeletonCard key={i} />)}
         </>
       ) : filtrados.length === 0 ? (
-        <p className="muted">{t(lang, "sin_resultados")}</p>
+        <EmptyState
+          svg="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8 M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75"
+          title={t(lang, "sin_resultados")}
+          description={t(lang, "clientes_page_subtitle")}
+        />
       ) : (
         <div className="list flex flex-col gap-3">
           {filtrados.map((c) => (
             <article
               key={c.id}
-              className="card card--clickable flex cursor-pointer justify-between gap-5 rounded-xl border border-[var(--record-border)] bg-[var(--bg-card)] p-5 shadow-[var(--record-shadow)] transition hover:-translate-y-0.5 hover:border-[var(--record-border-strong)] hover:shadow-[var(--record-shadow-hover)]"
+              className={`card card--clickable flex cursor-pointer justify-between gap-5 rounded-xl border border-[var(--record-border)] bg-[var(--bg-card)] p-5 shadow-[var(--record-shadow)] transition hover:-translate-y-0.5 hover:border-[var(--record-border-strong)] hover:shadow-[var(--record-shadow-hover)] ${c.estado ? `card--status-${c.estado}` : ''}`}
               onClick={() => openDetails(c)}
             >
               <div className="card-main flex flex-col gap-1">
@@ -393,31 +403,30 @@ const ClientesPage = () => {
         title={t(lang, "confirmar_eliminar")}
         onClose={cancelDelete}
       >
-        <p>
-          {t(lang, "seguro_eliminar_cliente")}
-          {clienteToDelete?.nombre ? ` "${clienteToDelete.nombre}"` : ""}?
-        </p>
-          {recibosCount > 0 && (
-          <div style={{ display: "flex", gap: "0.5rem", alignItems: "flex-start", color: "var(--accent-warning)", marginTop: "0.5rem", fontSize: "0.9rem" }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: "1px" }}>
-              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z M12 9v4 M12 17h.01" />
+        <div className="flex flex-col items-center gap-4 py-2 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--danger-soft)]">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[rgb(var(--destructive))]">
+              <path d="M3 6h18 M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2 M10 11v6 M14 11v6" />
             </svg>
-            <span>Este cliente tiene {recibosCount} recibo(s) asociado(s). Al eliminarlo también se eliminarán todos sus recibos.</span>
           </div>
-        )}
-        <div className="form-actions" style={{ marginTop: "1rem" }}>
-          <button
-            type="button"
-            className="btn-ghost"
-            onClick={cancelDelete}
-          >
-            {t(lang, "cancelar")}
-          </button>
-          <button
-            type="button"
-            className="btn btn-danger"
-            onClick={confirmDelete}
-          >
+          <div>
+            <p className="font-semibold text-[var(--text-main)]">
+              {t(lang, "seguro_eliminar_cliente")}
+              {clienteToDelete?.nombre ? <span className="font-bold"> "{clienteToDelete.nombre}"</span> : ""}?
+            </p>
+            {recibosCount > 0 && (
+              <p className="mt-2 text-sm text-[rgb(var(--warning))]">
+                Este cliente tiene <strong>{recibosCount}</strong> recibo(s) asociado(s). Al eliminarlo también se eliminarán todos sus recibos.
+              </p>
+            )}
+          </div>
+        </div>
+        <div className="mt-6 flex justify-end gap-3">
+          <button type="button" className="btn-ghost" onClick={cancelDelete}>{t(lang, "cancelar")}</button>
+          <button type="button" className="btn btn-danger" onClick={confirmDelete}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 6h18 M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+            </svg>
             {t(lang, "si_eliminar")}
           </button>
         </div>
