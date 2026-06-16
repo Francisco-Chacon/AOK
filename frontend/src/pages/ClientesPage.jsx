@@ -320,77 +320,82 @@ const ClientesPage = () => {
         title={editingCliente ? t(lang, "editar_cliente_title") : t(lang, "nuevo_cliente_title")}
         onClose={() => setModalOpen(false)}
       >
-        <form className="form-grid grid grid-cols-1 gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
-          <label className="form-field">
-            <span>{t(lang, "nombre")}</span>
-            <input
-              className="input"
-              name="nombre"
-              value={form.nombre}
-              onChange={handleChange}
-              required
-            />
-          </label>
-          <label className="form-field">
-            <span>{t(lang, "direccion")}</span>
-            <input
-              className="input"
-              name="direccion"
-              value={form.direccion}
-              onChange={handleChange}
-            />
-          </label>
-          <label className="form-field">
-            <span>{t(lang, "telefono")}</span>
-            <input
-              className="input"
-              name="telefono"
-              value={form.telefono}
-              onChange={handleChange}
-            />
-          </label>
-          <label className="form-field">
-            <span>{t(lang, "email")}</span>
-            <input
-              className="input"
-              type="email"
-              name="email"
-              value={form.email}
-              onChange={handleChange}
-            />
-          </label>
-          <label className="form-field">
-            <span>{t(lang, "servicio_principal")}</span>
-            <input
-              className="input"
-              name="servicio_principal"
-              value={form.servicio_principal}
-              onChange={handleChange}
-            />
-          </label>
-          <label className="form-field">
-            <span>{t(lang, "estado")}</span>
-            <select
-              className="input"
-              name="estado"
-              value={form.estado}
-              onChange={handleChange}
-            >
-              <option value="activo">{t(lang, "activo")}</option>
-              <option value="pendiente">{t(lang, "pendiente")}</option>
-              <option value="inactivo">{t(lang, "inactivo")}</option>
-            </select>
-          </label>
+        <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[var(--primary-soft)]">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[rgb(var(--primary))]">
+              <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2 M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z" />
+            </svg>
+          </div>
 
-          <div className="form-actions">
-            <button
-              type="button"
-              className="btn-ghost"
-              onClick={() => setModalOpen(false)}
-            >
+          <div className="form-grid grid grid-cols-1 gap-x-5 gap-y-5 md:grid-cols-2">
+            <label className="form-field">
+              <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+                </svg>
+                {t(lang, "nombre")}
+              </span>
+              <input className="input" name="nombre" value={form.nombre} onChange={handleChange} required />
+            </label>
+            <label className="form-field">
+              <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
+                </svg>
+                {t(lang, "direccion")}
+              </span>
+              <input className="input" name="direccion" value={form.direccion} onChange={handleChange} />
+            </label>
+            <label className="form-field">
+              <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                </svg>
+                {t(lang, "telefono")}
+              </span>
+              <input className="input" name="telefono" value={form.telefono} onChange={handleChange} />
+            </label>
+            <label className="form-field">
+              <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="4" width="20" height="16" rx="2" /><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                </svg>
+                {t(lang, "email")}
+              </span>
+              <input className="input" type="email" name="email" value={form.email} onChange={handleChange} />
+            </label>
+            <label className="form-field">
+              <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="16 3 21 3 21 8" /><line x1="4" y1="20" x2="21" y2="3" /><polyline points="21 16 21 21 16 21" /><line x1="15" y1="15" x2="21" y2="21" /><line x1="4" y1="4" x2="9" y2="9" />
+                </svg>
+                {t(lang, "servicio_principal")}
+              </span>
+              <input className="input" name="servicio_principal" value={form.servicio_principal} onChange={handleChange} />
+            </label>
+            <label className="form-field">
+              <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" /><path d="M12 16v-4 M12 8h.01" />
+                </svg>
+                {t(lang, "estado")}
+              </span>
+              <select className="input" name="estado" value={form.estado} onChange={handleChange}>
+                <option value="activo">{t(lang, "activo")}</option>
+                <option value="pendiente">{t(lang, "pendiente")}</option>
+                <option value="inactivo">{t(lang, "inactivo")}</option>
+              </select>
+            </label>
+          </div>
+
+          <div className="flex items-center justify-end gap-3 border-t border-[var(--record-border)] pt-5">
+            <button type="button" className="btn-ghost px-5 py-2.5" onClick={() => setModalOpen(false)}>
               {t(lang, "cancelar")}
             </button>
-            <button type="submit" className="btn-primary">
+            <button type="submit" className="btn-primary px-6 py-2.5">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1.5 inline-block">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z M17 21v-8H7v8 M7 3v5h8" />
+              </svg>
               {t(lang, "guardar")}
             </button>
           </div>
