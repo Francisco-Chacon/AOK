@@ -8,10 +8,23 @@ let backendProcess;
 
 const isDev = !app.isPackaged;
 
+function getBackendDir() {
+  return isDev
+    ? path.join(__dirname, "..", "backend")
+    : path.join(process.resourcesPath, "backend");
+}
+
+function getNodePath() {
+  if (isDev) return "node";
+  return path.join(process.resourcesPath, "node-bin", "win-x64", "node.exe");
+}
+
 function startBackend() {
-  const backendPath = path.join(__dirname, "..", "backend", "src", "server.js");
-  backendProcess = spawn("node", [backendPath], {
-    cwd: path.join(__dirname, "..", "backend"),
+  const backendDir = getBackendDir();
+  const nodePath = getNodePath();
+  const backendPath = path.join(backendDir, "src", "server.js");
+  backendProcess = spawn(nodePath, [backendPath], {
+    cwd: backendDir,
     stdio: "inherit",
     shell: true,
   });
@@ -46,7 +59,7 @@ function createWindow() {
 
   const startUrl = isDev
     ? "http://localhost:5173"
-    : `file://${path.join(__dirname, "..", "backend", "public", "index.html")}`;
+    : `file://${path.join(process.resourcesPath, "backend", "public", "index.html")}`;
 
   mainWindow.loadURL(startUrl);
 

@@ -17,6 +17,7 @@
 | `npm run dev:electron` | Abre ventana Electron, lanza backend como proceso hijo |
 | `npm run dist` | `npm run build` + empaqueta Electron .exe portátil |
 | `cd backend && npm run init-db` | Crea tablas si faltan (se ejecuta automáticamente al iniciar backend) |
+| `npm run dist:full` | Instala deps backend + build frontend + empaqueta .exe |
 
 ## Detalles del Servidor de Desarrollo
 
@@ -40,6 +41,27 @@
 - **No hay tests ni CI** en el repositorio.
 - **Datos de empresa hardcodeados**: facturas y hojas de ruta usan "MAKE IT TO HAPPEN LLC" (PO Box 18670, SLC, UT 84118). Las claves `empresa_*` en i18n están vacías (se usan valores fallback).
 - Salida de build: `backend/public/` (config `outDir` de Vite). Está en `.gitignore`.
+
+## Build del .exe portátil (para distribuir al cliente)
+
+El .exe incluye el backend completo, Node.js portátil y el frontend compilado. **El cliente no necesita instalar nada**.
+
+```bash
+# 1. Asegurar dependencias del backend
+cd backend && npm install && cd ..
+
+# 2. Build + empaquetado
+npm run dist
+```
+
+El .exe se genera en `electron/dist/SistemaGestion*.exe`.
+
+### Cómo funciona en producción
+- El .exe incluye un `node.exe` portátil (v24.11.0) en `resources/node-bin/win-x64/`
+- El backend completo se copia a `resources/backend/`
+- Electron ejecuta el backend con su propio `node.exe` incluido, sin depender del sistema
+- La base de datos SQLite se crea automáticamente al primer inicio en `resources/backend/data/`
+- Los backups se guardan en `resources/backend/data/backups/`
 
 ## Verificación
 

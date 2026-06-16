@@ -25,6 +25,23 @@
     "win": {
       "target": "portable",
       "icon": "build/icon.ico"
-    }
+    },
+    "extraResources": [
+      {
+        "from": "node-bin",
+        "to": "node-bin",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "../backend",
+        "to": "backend",
+        "filter": [
+          "**/*",
+          "!data/**",
+          "!.env"
+        ]
+      }
+    ],
+    "asarUnpack": ["node-bin/**"]
   }
 }
