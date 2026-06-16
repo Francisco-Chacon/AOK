@@ -13,3 +13,5 @@ Thumbs.db
 dist/
 build/
 backend/.env
+backend/src/.env
+backend/src/data/
