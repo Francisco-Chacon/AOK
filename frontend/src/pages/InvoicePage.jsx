@@ -1,10 +1,8 @@
-// src/pages/InvoicePage.jsx
 import React, { useEffect, useState } from "react";
 import api from "../api/apiClient";
 import Modal from "../components/Modal";
 import SearchableSelect from "../components/SearchableSelect";
 import InvoiceScreen from "./InvoicePage/InvoiceScreen";
-import EmptyState from "../components/EmptyState";
 import SearchBar from "../components/SearchBar";
 import { SkeletonCard } from "../components/Skeleton";
 import { useToast } from "../components/Toast";
@@ -19,11 +17,10 @@ const InvoicePage = () => {
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedId, setSelectedId] = useState(null);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingFactura, setEditingFactura] = useState(null);
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewData, setPreviewData] = useState(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [facturaToDelete, setFacturaToDelete] = useState(null);
 
@@ -42,8 +39,10 @@ const InvoicePage = () => {
         api.get("/facturas"),
         api.get("/clientes"),
       ]);
-      setFacturas(resFacturas.data || []);
+      const data = resFacturas.data || [];
+      setFacturas(data);
       setClientes(resClientes.data || []);
+      setSelectedId((current) => data.some((f) => f.id === current) ? current : data[0]?.id || null);
     } catch (err) {
       console.error(err);
     } finally {
@@ -52,10 +51,7 @@ const InvoicePage = () => {
   };
 
   useEffect(() => {
-    Promise.all([api.get("/facturas"), api.get("/clientes")]).then(([resFacturas, resClientes]) => {
-      setFacturas(resFacturas.data || []);
-      setClientes(resClientes.data || []);
-    }).catch(console.error).finally(() => setLoading(false));
+    loadData();
   }, []);
 
   const filtradas = facturas.filter(f => {
@@ -67,6 +63,8 @@ const InvoicePage = () => {
       (f.estado || "").toLowerCase().includes(q)
     );
   });
+
+  const selectedFactura = facturas.find((f) => f.id === selectedId) || filtradas[0] || null;
 
   const openNewModal = () => {
     setEditingFactura(null);
@@ -90,16 +88,6 @@ const InvoicePage = () => {
       precio: i.precio || "",
     })) : [{ fecha: "", descripcion: "", cantidad: 1, precio: "" }]);
     setModalOpen(true);
-  };
-
-  const openPreview = async (f) => {
-    try {
-      const res = await api.get(`/facturas/${f.id}`);
-      setPreviewData(res.data);
-      setPreviewOpen(true);
-    } catch (err) {
-      console.error(err);
-    }
   };
 
   const handleChange = (e) => {
@@ -232,56 +220,74 @@ const InvoicePage = () => {
   };
 
   return (
-    <div className="page mx-auto w-full max-w-6xl">
+    <div className="page page--proposal mx-auto w-full max-w-[1380px]">
       <header className="page-header mb-6 flex items-center justify-between gap-4 rounded-3xl border border-[var(--record-border)] bg-[var(--bg-panel)] px-5 py-5 shadow-[var(--shadow-soft)] backdrop-blur">
         <div className="page-header-main flex flex-col gap-1">
           <h2 className="page-title text-3xl font-bold tracking-[-0.035em] text-[var(--text-main)]">{t(lang, "facturas")}</h2>
           <p className="page-subtitle text-sm text-[var(--text-muted)]">{t(lang, "facturas_page_subtitle")}</p>
         </div>
-        <button className="btn-primary" onClick={openNewModal}>+ {t(lang, "nueva_factura")}</button>
+        <div className="page-header-actions flex flex-wrap items-center justify-end gap-2">
+          {selectedFactura && (
+            <>
+              <button className="btn-ghost" onClick={() => openEditModal(selectedFactura)}>
+                {t(lang, "editar")}
+              </button>
+              <button className="btn-danger-ghost" onClick={() => askDelete(selectedFactura)}>
+                {t(lang, "eliminar")}
+              </button>
+              <button className="btn-outline" onClick={() => selectedFactura && printInvoice(selectedFactura)}>
+                {t(lang, "imprimir")}
+              </button>
+            </>
+          )}
+          <button className="btn-primary" onClick={openNewModal}>
+            + {t(lang, "nueva_factura")}
+          </button>
+        </div>
       </header>
 
-      <div className="page-toolbar mb-5 flex items-center justify-between gap-4">
-        <SearchBar value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder={t(lang, "busqueda")} />
+      <div className="proposal-layout">
+        <aside className="proposal-selector">
+          <div className="proposal-selector-header">
+            <SearchBar value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder={t(lang, "busqueda")} />
+          </div>
+
+          {loading ? (
+            <div className="flex flex-col gap-3">
+              {[1,2,3].map(i => <SkeletonCard key={i} />)}
+            </div>
+          ) : filtradas.length === 0 ? (
+            <p className="muted">{t(lang, "sin_resultados")}</p>
+          ) : (
+            <div className="proposal-selector-list">
+              {filtradas.map(f => (
+                <button
+                  key={f.id}
+                  className={"proposal-selector-card" + (selectedFactura?.id === f.id ? " proposal-selector-card--active" : "")}
+                  onClick={() => setSelectedId(f.id)}
+                >
+                  <span className="proposal-selector-name">INV-{f.id} — {f.cliente_nombre || t(lang, "cliente_sin_nombre")}</span>
+                  <span className="proposal-selector-meta">{f.fecha?.slice(0, 10)}</span>
+                  <span className="proposal-selector-meta">${(f.items || []).reduce((s, i) => s + (Number(i.precio) || 0) * (Number(i.cantidad) || 1), 0).toFixed(2)}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </aside>
+
+        <section className="proposal-preview-panel">
+          {selectedFactura ? (
+            <InvoiceScreen data={selectedFactura} />
+          ) : (
+            <div className="card flex justify-between gap-5 rounded-xl border border-[var(--record-border)] bg-[var(--bg-card)] p-5 shadow-[var(--record-shadow)]">
+              <p className="muted">{t(lang, "sin_resultados")}</p>
+            </div>
+          )}
+        </section>
       </div>
 
-      {loading ? (
-        <div className="flex flex-col gap-3">
-          {[1,2,3].map(i => <SkeletonCard key={i} />)}
-        </div>
-      ) : filtradas.length === 0 ? (
-        <EmptyState
-          svg="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M8 13h8 M8 17h5"
-          title={t(lang, "sin_resultados")}
-          description={t(lang, "facturas_page_subtitle")}
-        />
-      ) : (
-        <div className="list flex flex-col gap-3">
-          {filtradas.map(f => (
-            <article key={f.id} className="card card--clickable flex cursor-pointer justify-between gap-5 rounded-xl border border-[var(--record-border)] bg-[var(--bg-card)] p-5 shadow-[var(--record-shadow)] transition hover:-translate-y-0.5 hover:border-[var(--record-border-strong)] hover:shadow-[var(--record-shadow-hover)]" onClick={() => openPreview(f)}>
-              <div className="card-main flex flex-col gap-1">
-                <div className="badge-row flex items-center gap-1.5">
-                  <span className="badge badge-soft">INV-{f.id}</span>
-                  <span className={`badge ${f.estado === "pagado" ? "badge-success" : f.estado === "pendiente" ? "badge-warning" : "badge-muted"}`}>{f.estado}</span>
-                </div>
-                <h3 className="card-title">{f.cliente_nombre || t(lang, "cliente_sin_nombre")}</h3>
-                <p className="card-text muted">{f.nota ? f.nota.slice(0, 120) + (f.nota.length > 120 ? "…" : "") : ""}</p>
-              </div>
-              <div className="card-meta flex min-w-40 flex-col items-end gap-1.5">
-                <p className="card-text"><strong>{t(lang, "fecha")}:</strong> {f.fecha?.slice(0, 10)}</p>
-                <p className="card-text"><strong>{t(lang, "monto")}:</strong> ${(f.items || []).reduce((s, i) => s + (Number(i.precio) || 0) * (Number(i.cantidad) || 1), 0).toFixed(2)}</p>
-                <div className="card-actions">
-                  <button className="btn-ghost" onClick={e => { e.stopPropagation(); openEditModal(f); }}>{t(lang, "editar")}</button>
-                  <button className="btn-danger-ghost" onClick={e => { e.stopPropagation(); askDelete(f); }}>{t(lang, "eliminar")}</button>
-                </div>
-              </div>
-            </article>
-          ))}
-        </div>
-      )}
-
       {/* Modal create/edit */}
-      <Modal open={modalOpen} title={editingFactura ? t(lang, "editar_factura_title") : t(lang, "nueva_factura_title")} onClose={() => setModalOpen(false)}>
+      <Modal open={modalOpen} title={editingFactura ? t(lang, "editar_factura_title") : t(lang, "nueva_factura_title")} onClose={() => setModalOpen(false)} wide>
         <form onSubmit={handleSubmit}>
           <div className="form-grid grid grid-cols-1 gap-4 md:grid-cols-2">
             <label className="form-field">
@@ -362,14 +368,6 @@ const InvoicePage = () => {
             <button type="submit" className="btn-primary">{t(lang, "guardar")}</button>
           </div>
         </form>
-      </Modal>
-
-      {/* Preview modal */}
-      <Modal open={previewOpen} title={t(lang, "vista_previa_factura")} onClose={() => setPreviewOpen(false)} wide>
-        <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end", marginBottom: "0.5rem" }}>
-          <button className="btn-outline" onClick={() => previewData && printInvoice(previewData)}>{t(lang, "imprimir")}</button>
-        </div>
-        {previewData && <InvoiceScreen data={previewData} />}
       </Modal>
 
       {/* Confirm delete */}

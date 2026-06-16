@@ -1,10 +1,8 @@
-// src/pages/RouteSheetPage.jsx
 import React, { useEffect, useState } from "react";
 import api from "../api/apiClient";
 import Modal from "../components/Modal";
 import SearchableSelect from "../components/SearchableSelect";
 import RouteSheetScreen from "./RouteSheetPage/RouteSheetScreen";
-import EmptyState from "../components/EmptyState";
 import SearchBar from "../components/SearchBar";
 import { SkeletonCard } from "../components/Skeleton";
 import { useToast } from "../components/Toast";
@@ -19,11 +17,12 @@ const RouteSheetPage = () => {
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedId, setSelectedId] = useState(null);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingHoja, setEditingHoja] = useState(null);
-  const [previewOpen, setPreviewOpen] = useState(false);
   const [previewData, setPreviewData] = useState(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [hojaToDelete, setHojaToDelete] = useState(null);
 
@@ -39,8 +38,10 @@ const RouteSheetPage = () => {
         api.get("/rutas-hojas"),
         api.get("/clientes"),
       ]);
-      setHojas(resHojas.data || []);
+      const data = resHojas.data || [];
+      setHojas(data);
       setClientes(resClientes.data || []);
+      setSelectedId((current) => data.some((h) => h.id === current) ? current : data[0]?.id || null);
     } catch (err) {
       console.error(err);
     } finally {
@@ -49,11 +50,20 @@ const RouteSheetPage = () => {
   };
 
   useEffect(() => {
-    Promise.all([api.get("/rutas-hojas"), api.get("/clientes")]).then(([resHojas, resClientes]) => {
-      setHojas(resHojas.data || []);
-      setClientes(resClientes.data || []);
-    }).catch(console.error).finally(() => setLoading(false));
+    loadData();
   }, []);
+
+  // Fetch full detail when selectedId changes
+  useEffect(() => {
+    if (!selectedId) { setPreviewData(null); return; }
+    let cancelled = false;
+    setPreviewLoading(true);
+    api.get(`/rutas-hojas/${selectedId}`)
+      .then((res) => { if (!cancelled) setPreviewData(res.data); })
+      .catch(console.error)
+      .finally(() => { if (!cancelled) setPreviewLoading(false); });
+    return () => { cancelled = true; };
+  }, [selectedId]);
 
   const filtradas = hojas.filter(h => {
     if (!searchQuery) return true;
@@ -64,6 +74,8 @@ const RouteSheetPage = () => {
       (h.fecha || "").includes(q)
     );
   });
+
+  const selectedHoja = hojas.find((h) => h.id === selectedId) || filtradas[0] || null;
 
   const openNewModal = () => {
     setEditingHoja(null);
@@ -84,16 +96,6 @@ const RouteSheetPage = () => {
       descripcion: c.descripcion || "",
     })) : [{ cliente_id: "", cliente_nombre: "", cliente_direccion: "", hora_entrada: "", hora_salida: "", descripcion: "" }]);
     setModalOpen(true);
-  };
-
-  const openPreview = async (h) => {
-    try {
-      const res = await api.get(`/rutas-hojas/${h.id}`);
-      setPreviewData(res.data);
-      setPreviewOpen(true);
-    } catch (err) {
-      console.error(err);
-    }
   };
 
   const handleChange = (e) => {
@@ -219,56 +221,80 @@ const RouteSheetPage = () => {
   };
 
   return (
-    <div className="page mx-auto w-full max-w-6xl">
+    <div className="page page--proposal mx-auto w-full max-w-[1380px]">
       <header className="page-header mb-6 flex items-center justify-between gap-4 rounded-3xl border border-[var(--record-border)] bg-[var(--bg-panel)] px-5 py-5 shadow-[var(--shadow-soft)] backdrop-blur">
         <div className="page-header-main flex flex-col gap-1">
           <h2 className="page-title text-3xl font-bold tracking-[-0.035em] text-[var(--text-main)]">{t(lang, "rutas_hojas")}</h2>
           <p className="page-subtitle text-sm text-[var(--text-muted)]">{t(lang, "rutas_hojas_page_subtitle")}</p>
         </div>
-        <button className="btn-primary" onClick={openNewModal}>+ {t(lang, "nueva_ruta_hoja")}</button>
+        <div className="page-header-actions flex flex-wrap items-center justify-end gap-2">
+          {selectedHoja && (
+            <>
+              <button className="btn-ghost" onClick={() => openEditModal(selectedHoja)}>
+                {t(lang, "editar")}
+              </button>
+              <button className="btn-danger-ghost" onClick={() => askDelete(selectedHoja)}>
+                {t(lang, "eliminar")}
+              </button>
+              {previewData && (
+                <button className="btn-outline" onClick={() => printRouteSheet(previewData)}>
+                  {t(lang, "imprimir")}
+                </button>
+              )}
+            </>
+          )}
+          <button className="btn-primary" onClick={openNewModal}>
+            + {t(lang, "nueva_ruta_hoja")}
+          </button>
+        </div>
       </header>
 
-      <div className="page-toolbar mb-5 flex items-center justify-between gap-4">
-        <SearchBar value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder={t(lang, "busqueda")} />
+      <div className="proposal-layout">
+        <aside className="proposal-selector">
+          <div className="proposal-selector-header">
+            <SearchBar value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder={t(lang, "busqueda")} />
+          </div>
+
+          {loading ? (
+            <div className="flex flex-col gap-3">
+              {[1,2,3].map(i => <SkeletonCard key={i} />)}
+            </div>
+          ) : filtradas.length === 0 ? (
+            <p className="muted">{t(lang, "sin_resultados")}</p>
+          ) : (
+            <div className="proposal-selector-list">
+              {filtradas.map(h => (
+                <button
+                  key={h.id}
+                  className={"proposal-selector-card" + (selectedHoja?.id === h.id ? " proposal-selector-card--active" : "")}
+                  onClick={() => setSelectedId(h.id)}
+                >
+                  <span className="proposal-selector-name">RS-{h.id} — {h.fecha?.slice(0, 10) || ""}</span>
+                  <span className="proposal-selector-meta">{h.conductor || t(lang, "sin_conductor")}</span>
+                  <span className="proposal-selector-meta">{h.clientes_count || 0} {t(lang, "clientes")}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </aside>
+
+        <section className="proposal-preview-panel">
+          {previewLoading ? (
+            <div className="flex flex-col gap-3">
+              {[1,2].map(i => <SkeletonCard key={i} />)}
+            </div>
+          ) : previewData ? (
+            <RouteSheetScreen data={previewData} />
+          ) : (
+            <div className="card flex justify-between gap-5 rounded-xl border border-[var(--record-border)] bg-[var(--bg-card)] p-5 shadow-[var(--record-shadow)]">
+              <p className="muted">{t(lang, "sin_resultados")}</p>
+            </div>
+          )}
+        </section>
       </div>
 
-      {loading ? (
-        <div className="flex flex-col gap-3">
-          {[1,2,3].map(i => <SkeletonCard key={i} />)}
-        </div>
-      ) : filtradas.length === 0 ? (
-        <EmptyState
-          svg="M3 7h18 M6 3v4 M18 3v4 M5 11h14v10H5z M8 15h4 M8 18h7"
-          title={t(lang, "sin_resultados")}
-          description={t(lang, "rutas_hojas_page_subtitle")}
-        />
-      ) : (
-        <div className="list flex flex-col gap-3">
-          {filtradas.map(h => (
-            <article key={h.id} className="card card--clickable flex cursor-pointer justify-between gap-5 rounded-xl border border-[var(--record-border)] bg-[var(--bg-card)] p-5 shadow-[var(--record-shadow)] transition hover:-translate-y-0.5 hover:border-[var(--record-border-strong)] hover:shadow-[var(--record-shadow-hover)]" onClick={() => openPreview(h)}>
-              <div className="card-main flex flex-col gap-1">
-                <div className="badge-row flex items-center gap-1.5">
-                  <span className="badge badge-soft">RS-{h.id}</span>
-                </div>
-                <h3 className="card-title">{h.fecha?.slice(0, 10) || ""}</h3>
-                <p className="card-text muted">
-                  {h.conductor || t(lang, "sin_conductor")} {h.camion ? `| ${h.camion}` : ""}
-                </p>
-              </div>
-              <div className="card-meta flex min-w-40 flex-col items-end gap-1.5">
-                <p className="card-text"><strong>{t(lang, "clientes")}:</strong> {h.clientes_count || 0}</p>
-                <div className="card-actions">
-                  <button className="btn-ghost" onClick={e => { e.stopPropagation(); openEditModal(h); }}>{t(lang, "editar")}</button>
-                  <button className="btn-danger-ghost" onClick={e => { e.stopPropagation(); askDelete(h); }}>{t(lang, "eliminar")}</button>
-                </div>
-              </div>
-            </article>
-          ))}
-        </div>
-      )}
-
       {/* Modal create/edit */}
-      <Modal open={modalOpen} title={editingHoja ? t(lang, "editar_ruta_hoja_title") : t(lang, "nueva_ruta_hoja_title")} onClose={() => setModalOpen(false)}>
+      <Modal open={modalOpen} title={editingHoja ? t(lang, "editar_ruta_hoja_title") : t(lang, "nueva_ruta_hoja_title")} onClose={() => setModalOpen(false)} wide>
         <form onSubmit={handleSubmit}>
           <div className="form-grid grid grid-cols-1 gap-4 md:grid-cols-2">
             <label className="form-field">
@@ -300,7 +326,9 @@ const RouteSheetPage = () => {
                         placeholder={t(lang, "seleccionar_cliente")}
                       />
                     </div>
-                    <button type="button" className="btn-remove-item" onClick={() => removeCliente(i)}>×</button>
+                    <button type="button" className="btn-remove-item" onClick={() => removeCliente(i)}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18 M6 6l12 12" /></svg>
+                    </button>
                   </div>
                   <div className="items-input-row">
                     <div className="items-input-field">
@@ -318,7 +346,9 @@ const RouteSheetPage = () => {
                   </div>
                 </div>
               ))}
-              <button type="button" className="btn-add-item" onClick={addCliente}>+</button>
+              <button type="button" className="btn-add-item" onClick={addCliente}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14 M5 12h14" /></svg>
+              </button>
             </div>
           </div>
 
@@ -327,14 +357,6 @@ const RouteSheetPage = () => {
             <button type="submit" className="btn-primary">{t(lang, "guardar")}</button>
           </div>
         </form>
-      </Modal>
-
-      {/* Preview modal */}
-      <Modal open={previewOpen} title={t(lang, "vista_previa_ruta_hoja")} onClose={() => setPreviewOpen(false)} wide>
-        <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end", marginBottom: "0.5rem" }}>
-          <button className="btn-outline" onClick={() => previewData && printRouteSheet(previewData)}>{t(lang, "imprimir")}</button>
-        </div>
-        {previewData && <RouteSheetScreen data={previewData} />}
       </Modal>
 
       {/* Confirm delete */}

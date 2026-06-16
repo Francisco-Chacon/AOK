@@ -1,15 +1,14 @@
-// src/pages/EstimadosPage.jsx
 import React, { useEffect, useState } from "react";
 import api from "../api/apiClient";
 import Modal from "../components/Modal";
 import SearchableSelect from "../components/SearchableSelect";
-import EmptyState from "../components/EmptyState";
 import SearchBar from "../components/SearchBar";
 import { SkeletonCard } from "../components/Skeleton";
 import { useToast } from "../components/Toast";
 import { useLanguage } from "../i18n/LanguageContext";
 import { t } from "../i18n/translations";
 import { sanitizeHtml } from "../utils/sanitize";
+import ProposalPreview from "./ProposalsPage/ProposalPreview";
 
 const MONEDAS = ["USD", "EUR", "MXN", "PAB", "COP"];
 
@@ -22,6 +21,7 @@ const EstimadosPage = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [selectedId, setSelectedId] = useState(null);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(searchQuery), 300);
@@ -50,25 +50,23 @@ const EstimadosPage = () => {
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [estimadoToDelete, setEstimadoToDelete] = useState(null);
 
-  const [detailsOpen, setDetailsOpen] = useState(false);
-  const [estimadoDetalle, setEstimadoDetalle] = useState(null);
-
-  const [statementOpen, setStatementOpen] = useState(false);
-  const [estimadoStatement, setEstimadoStatement] = useState(null);
-
-  const [viewMode, setViewMode] = useState("list"); // "list" | "statement"
-
   useEffect(() => {
     api.get("/clientes").then((res) => setClientes(res.data || [])).catch(() => {});
-    api.get("/estimados").then((res) => setEstimados(res.data || [])).catch(() => {}).finally(() => setLoading(false));
+    api.get("/estimados").then((res) => {
+      const data = res.data || [];
+      setEstimados(data);
+      setSelectedId((current) => data.some((e) => e.id === current) ? current : data[0]?.id || null);
+    }).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
   const loadData = async () => {
     setLoading(true);
     try {
       const [resClientes, resEstimados] = await Promise.all([api.get("/clientes"), api.get("/estimados")]);
+      const data = resEstimados.data || [];
       setClientes(resClientes.data || []);
-      setEstimados(resEstimados.data || []);
+      setEstimados(data);
+      setSelectedId((current) => data.some((e) => e.id === current) ? current : data[0]?.id || null);
     } catch (err) {
       console.error("Error cargando datos", err);
     } finally {
@@ -92,6 +90,26 @@ const EstimadosPage = () => {
     setModalOpen(true);
   };
 
+  const getItemsFromDescripcion = (descripcion, monto) => {
+    if (!descripcion) return [];
+    const lines = descripcion.split("\n").filter((line) => line.trim());
+    return lines.map((line) => {
+      const match = line.match(/^(\d+)x\s+(.+)\s+\(\$([\d.]+)\s+c\/u\)$/);
+      if (match) {
+        return {
+          cantidad: parseInt(match[1]),
+          descripcion: match[2],
+          precio_unitario: parseFloat(match[3]),
+        };
+      }
+      return {
+        cantidad: 1,
+        descripcion: line,
+        precio_unitario: monto || 0,
+      };
+    });
+  };
+
   const openEditModal = (e) => {
     setEditingEstimado(e);
     setForm({
@@ -112,20 +130,113 @@ const EstimadosPage = () => {
     setModalOpen(true);
   };
 
-  const closeDetails = () => {
-    setDetailsOpen(false);
-    setEstimadoDetalle(null);
+  const handleChange = (ev) => {
+    const { name, value } = ev.target;
+    setForm((f) => ({ ...f, [name]: value }));
   };
 
-  const openStatement = (e) => {
-    setEstimadoStatement(e);
-    setStatementOpen(true);
+  const handleNewItemChange = (ev) => {
+    const { name, value } = ev.target;
+    setNewItem((item) => ({ ...item, [name]: value }));
   };
 
-  const closeStatement = () => {
-    setStatementOpen(false);
-    setEstimadoStatement(null);
+  const addItem = () => {
+    if (!newItem.descripcion || !newItem.precio_unitario) {
+      toast("Completá descripción y precio unitario", "warning");
+      return;
+    }
+    const item = {
+      ...newItem,
+      cantidad: Number(newItem.cantidad) || 1,
+      precio_unitario: Number(newItem.precio_unitario) || 0,
+      total: (Number(newItem.cantidad) || 1) * (Number(newItem.precio_unitario) || 0),
+    };
+    setItems((prev) => [...prev, item]);
+    setNewItem({ descripcion: "", cantidad: 1, precio_unitario: "" });
   };
+
+  const removeItem = (index) => {
+    setItems((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const calculateSubtotal = () => items.reduce((acc, item) => acc + (item.total || 0), 0);
+
+  const calculateTotal = () => {
+    const subtotal = calculateSubtotal();
+    return subtotal + subtotal * 0.07;
+  };
+
+  const handleSubmit = async (ev) => {
+    ev.preventDefault();
+    const total = calculateTotal();
+    const descripcionItems = items.map((i) => `${i.cantidad}x ${i.descripcion} ($${i.precio_unitario} c/u)`).join("\n");
+    const notasAdicionales = form.descripcion_trabajo || "";
+    const payload = {
+      cliente_id: form.cliente_id,
+      direccion_trabajo: form.direccion_trabajo,
+      fecha: form.fecha,
+      monto: total,
+      moneda: form.moneda,
+      descripcion_trabajo: descripcionItems,
+      notas_adicionales: notasAdicionales,
+      estado: form.estado,
+    };
+
+    try {
+      if (editingEstimado) {
+        await api.put(`/estimados/${editingEstimado.id}`, payload);
+        toast("Estimado actualizado correctamente.", "success");
+      } else {
+        await api.post("/estimados", payload);
+        toast("Estimado creado correctamente.", "success");
+      }
+      setModalOpen(false);
+      await loadData();
+    } catch (err) {
+      console.error("Error guardando estimado", err);
+      toast("No se pudo guardar el estimado.", "error");
+    }
+  };
+
+  const askDelete = (e) => {
+    setEstimadoToDelete(e);
+    setConfirmDeleteOpen(true);
+  };
+
+  const cancelDelete = () => {
+    setConfirmDeleteOpen(false);
+    setEstimadoToDelete(null);
+  };
+
+  const confirmDelete = async () => {
+    if (!estimadoToDelete) return;
+    try {
+      await api.delete(`/estimados/${estimadoToDelete.id}`);
+      toast("Estimado eliminado correctamente.", "success");
+      await loadData();
+    } catch (err) {
+      console.error("Error eliminando estimado", err);
+      toast("No se pudo eliminar el estimado.", "error");
+    } finally {
+      setConfirmDeleteOpen(false);
+      setEstimadoToDelete(null);
+    }
+  };
+
+  const filtrados = estimados.filter((e) => {
+    if (filterEstado !== "todos" && e.estado !== filterEstado) return false;
+    if (!debouncedQuery) return true;
+    const q = debouncedQuery.toLowerCase();
+    return (
+      (e.cliente_nombre || "").toLowerCase().includes(q) ||
+      (e.direccion_trabajo || "").toLowerCase().includes(q) ||
+      (e.descripcion_trabajo || "").toLowerCase().includes(q) ||
+      (e.estado || "").toLowerCase().includes(q) ||
+      String(e.monto || "").toLowerCase().includes(q)
+    );
+  });
+
+  const selectedEstimado = estimados.find((e) => e.id === selectedId) || filtrados[0] || null;
 
   const printStatement = (estimado) => {
     const items = getItemsFromDescripcion(estimado.descripcion_trabajo, estimado.monto, estimado.moneda);
@@ -136,11 +247,11 @@ const EstimadosPage = () => {
     const statementTotal = storedTotal || subtotal + tax;
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
-    
+
     const s = sanitizeHtml;
     const ivaLabel = t(lang, "impuesto_nombre") || "ITBMS (7%)";
     const validUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10); // eslint-disable-line react-hooks/purity
-    
+
     printWindow.document.write(`<!DOCTYPE html>
 <html>
 <head>
@@ -248,404 +359,89 @@ const EstimadosPage = () => {
     <p>${t(lang, "footer_mensaje_2")}</p>
   </div>
 
-  <script>
-    window.onload = function() { window.print(); }
-  </script>
+  <script>window.onload = function() { window.print(); }</script>
 </body>
 </html>`);
     printWindow.document.close();
   };
 
-  const handleChange = (ev) => {
-    const { name, value } = ev.target;
-    setForm((f) => ({ ...f, [name]: value }));
-  };
-
-  const handleNewItemChange = (ev) => {
-    const { name, value } = ev.target;
-    setNewItem((item) => ({ ...item, [name]: value }));
-  };
-
-  const addItem = () => {
-    if (!newItem.descripcion || !newItem.precio_unitario) {
-      toast("Completá descripción y precio unitario", "warning");
-      return;
-    }
-    const item = {
-      ...newItem,
-      cantidad: Number(newItem.cantidad) || 1,
-      precio_unitario: Number(newItem.precio_unitario) || 0,
-      total: (Number(newItem.cantidad) || 1) * (Number(newItem.precio_unitario) || 0),
-    };
-    setItems((prev) => [...prev, item]);
-    setNewItem({ descripcion: "", cantidad: 1, precio_unitario: "" });
-  };
-
-  const removeItem = (index) => {
-    setItems((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const calculateSubtotal = () => {
-    return items.reduce((acc, item) => acc + (item.total || 0), 0);
-  };
-
-  const calculateTotal = () => {
-    const subtotal = calculateSubtotal();
-    const itbms = subtotal * 0.07;
-    return subtotal + itbms;
-  };
-
-  const handleSubmit = async (ev) => {
-    ev.preventDefault();
-    const total = calculateTotal();
-    const descripcionItems = items.map((i) => `${i.cantidad}x ${i.descripcion} ($${i.precio_unitario} c/u)`).join("\n");
-    const notasAdicionales = form.descripcion_trabajo || "";
-    const payload = {
-      cliente_id: form.cliente_id,
-      direccion_trabajo: form.direccion_trabajo,
-      fecha: form.fecha,
-      monto: total,
-      moneda: form.moneda,
-      descripcion_trabajo: descripcionItems,
-      notas_adicionales: notasAdicionales,
-      estado: form.estado,
-    };
-
-    try {
-      if (editingEstimado) {
-        await api.put(`/estimados/${editingEstimado.id}`, payload);
-        toast("Estimado actualizado correctamente.", "success");
-      } else {
-        await api.post("/estimados", payload);
-        toast("Estimado creado correctamente.", "success");
-      }
-      setModalOpen(false);
-      await loadData();
-    } catch (err) {
-      console.error("Error guardando estimado", err);
-      toast("No se pudo guardar el estimado.", "error");
-    }
-  };
-
-  const askDelete = (e) => {
-    setEstimadoToDelete(e);
-    setConfirmDeleteOpen(true);
-  };
-
-  const cancelDelete = () => {
-    setConfirmDeleteOpen(false);
-    setEstimadoToDelete(null);
-  };
-
-  const confirmDelete = async () => {
-    if (!estimadoToDelete) return;
-    try {
-      await api.delete(`/estimados/${estimadoToDelete.id}`);
-      toast("Estimado eliminado correctamente.", "success");
-      await loadData();
-    } catch (err) {
-      console.error("Error eliminando estimado", err);
-      toast("No se pudo eliminar el estimado.", "error");
-    } finally {
-      setConfirmDeleteOpen(false);
-      setEstimadoToDelete(null);
-    }
-  };
-
-  const filtrados = estimados.filter((e) => {
-    if (filterEstado !== "todos" && e.estado !== filterEstado) return false;
-    if (!debouncedQuery) return true;
-    const q = debouncedQuery.toLowerCase();
-    return (
-      (e.cliente_nombre || "").toLowerCase().includes(q) ||
-      (e.direccion_trabajo || "").toLowerCase().includes(q) ||
-      (e.descripcion_trabajo || "").toLowerCase().includes(q) ||
-      (e.estado || "").toLowerCase().includes(q) ||
-      String(e.monto || "").toLowerCase().includes(q)
-    );
-  });
-
-  const totalEstimado = estimados.reduce((acc, e) => acc + (e.monto || 0), 0);
-
-  const getItemsFromDescripcion = (descripcion, monto) => {
-    if (!descripcion) return [];
-    const lines = descripcion.split("\n").filter((line) => line.trim());
-    return lines.map((line) => {
-      const match = line.match(/^(\d+)x\s+(.+)\s+\(\$([\d.]+)\s+c\/u\)$/);
-      if (match) {
-        return {
-          cantidad: parseInt(match[1]),
-          descripcion: match[2],
-          precio_unitario: parseFloat(match[3]),
-        };
-      }
-      return {
-        cantidad: 1,
-        descripcion: line,
-        precio_unitario: monto || 0,
-      };
-    });
-  };
-
-const renderStatementView = () => {
-    return (
-      <div className="statement-list">
-        {filtrados.length === 0 ? (
-          <p className="muted">No hay estimados registrados.</p>
-        ) : (
-          filtrados.map((e) => {
-            const items = getItemsFromDescripcion(e.descripcion_trabajo, e.monto, e.moneda);
-            return (
-            <div key={e.id} className="statement-item">
-              <div className="statement-header">
-                <div className="statement-logo-section">
-                  <img src="/logo.png" alt="Logo" className="statement-logo-img" />
-                  <div className="statement-brand">
-                    <h1 className="statement-title">Sistema de Gestión</h1>
-                    <p className="statement-subtitle">Statement</p>
-                  </div>
-                </div>
-                <div className="statement-date print-date" style={{ display: 'none' }}>
-                  <span>Fecha:</span> {e.fecha?.slice(0, 10)}
-                </div>
-                <button
-                  className="btn-primary print-btn"
-                  onClick={() => printStatement(e)}
-                >
-                  Imprimir
-                </button>
-              </div>
-
-              <div className="statement-cliente-header">
-                <div>
-                  <h3 className="statement-cliente-name">{e.cliente_nombre || "Cliente sin nombre"}</h3>
-                  <p className="statement-cliente-dir">{e.direccion_trabajo || "Sin dirección"}</p>
-                </div>
-                <span className={`badge badge-${e.estado === "aceptado" ? "success" : e.estado === "rechazado" ? "warning" : "soft"}`}>
-                  {e.estado}
-                </span>
-              </div>
-
-              <div className="statement-section">
-                <h2 className="statement-section-title">Materials</h2>
-                <table className="statement-table">
-                  <thead>
-                    <tr>
-                      <th>Descripción</th>
-                      <th>Cantidad</th>
-                      <th>Precio Unit.</th>
-                      <th>Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {items.length === 0 ? (
-                      <tr>
-                        <td colSpan={4} className="muted">Sin materials.</td>
-                      </tr>
-                    ) : (
-                      items.map((item, iidx) => (
-                        <tr key={iidx}>
-                          <td>{item.descripcion}</td>
-                          <td>{item.cantidad}</td>
-                          <td>
-                            {e.moneda} {Number(item.precio_unitario).toFixed(2)}
-                          </td>
-                          <td>
-                            {e.moneda} {Number(item.cantidad * item.precio_unitario).toFixed(2)}
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                  <tfoot>
-                    <tr>
-                      <td colSpan={3} className="items-total-label">Total</td>
-                      <td className="items-total-value">
-                        {e.moneda}{" "}
-                        {Number(e.monto || 0).toFixed(2)}
-                      </td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-
-              {e.notas_adicionales?.trim() && (
-                <div className="detalle-notas">
-                  <span className="detalle-label">Notas Adicionales</span>
-                  <p className="detalle-value">{e.notas_adicionales}</p>
-                </div>
-              )}
-            </div>
-            );
-          })
-        )}
-
-        <div className="statement-footer">
-          <div className="statement-total">
-            <span>Total General:</span>
-            <strong>${totalEstimado.toFixed(2)}</strong>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const renderListView = () => {
-    return (
-      <>
-        <section className="stats-grid">
-          <div className="stat-card">
-            <span className="stat-label">{t(lang, "total_estimado")}</span>
-            <span className="stat-value">${totalEstimado.toFixed(2)}</span>
-          </div>
-          <div className="stat-card">
-            <span className="stat-label">{t(lang, "cantidad_estimados")}</span>
-            <span className="stat-value">{estimados.length}</span>
-          </div>
-        </section>
-
-        <div className="page-toolbar mb-5 flex items-center justify-between gap-4">
-          <SearchBar
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={t(lang, "busqueda")}
-          />
-        </div>
-
-        <div className="page-toolbar mb-5 flex items-center justify-between gap-4">
-          <div className="pill-group flex flex-wrap gap-2">
-            {[
-              { id: "todos", label: t(lang, "todos") },
-              { id: "borrador", label: t(lang, "borrador") },
-              { id: "enviado", label: t(lang, "enviado") },
-              { id: "aceptado", label: t(lang, "aceptado") },
-              { id: "rechazado", label: t(lang, "rechazado") },
-            ].map((opt) => (
-              <button
-                key={opt.id}
-                className={"pill" + (filterEstado === opt.id ? " pill--active" : "")}
-                onClick={() => setFilterEstado(opt.id)}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {loading ? (
-          <div className="flex flex-col gap-3">
-            {[1,2,3].map(i => <SkeletonCard key={i} />)}
-          </div>
-        ) : filtrados.length === 0 ? (
-          <EmptyState
-            svg="M12 2v20 M17 5H9.5a3.5 3.5 0 0 0 0 7H14a3.5 3.5 0 0 1 0 7H6"
-            title={t(lang, "sin_resultados")}
-            description={t(lang, "estimados_page_subtitle")}
-          />
-        ) : (
-          <div className="list flex flex-col gap-3">
-            {filtrados.map((e) => (
-              <article key={e.id} className="card flex justify-between gap-5 rounded-xl border border-[var(--record-border)] bg-[var(--bg-card)] p-5 shadow-[var(--record-shadow)]">
-                <div className="card-main flex flex-col gap-1">
-                  <div className="badge-row flex items-center gap-1.5">
-                    <span className="badge badge-soft">
-                      {e.fecha?.slice(0, 10)}
-                    </span>
-                    <span className="badge badge-soft">
-                      ${Number(e.monto || 0).toFixed(2)}
-                    </span>
-                    <span className="badge badge-soft">{e.moneda}</span>
-                  </div>
-                  <h3 className="card-title">
-                    {e.cliente_nombre || t(lang, "cliente_sin_nombre")}
-                  </h3>
-                  <p className="card-text">{e.direccion_trabajo}</p>
-                  <p className="card-text muted">
-                    {e.descripcion_trabajo?.slice(0, 120)}…
-                  </p>
-                </div>
-                <div className="card-meta flex min-w-40 flex-col items-end gap-1.5">
-                  <span
-                    className={
-                      "badge " +
-                      (e.estado === "aceptado"
-                        ? "badge-success"
-                        : e.estado === "rechazado"
-                        ? "badge-warning"
-                        : e.estado === "enviado"
-                        ? "badge-soft"
-                        : "badge-muted")
-                    }
-                  >
-                    {e.estado}
-                  </span>
-                  <div className="card-actions">
-                    <button
-                      className="btn-ghost"
-                      onClick={(ev) => {
-                        ev.stopPropagation();
-                        openStatement(e);
-                      }}
-                    >
-                      {t(lang, "statement")}
-                    </button>
-                    <button
-                      className="btn-ghost"
-                      onClick={(ev) => {
-                        ev.stopPropagation();
-                        openEditModal(e);
-                      }}
-                    >
-                      {t(lang, "editar")}
-                    </button>
-                    <button
-                      className="btn-danger-ghost"
-                      onClick={(ev) => {
-                        ev.stopPropagation();
-                        askDelete(e);
-                      }}
-                    >
-                      {t(lang, "eliminar")}
-                    </button>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        )}
-      </>
-    );
-  };
-
   return (
-    <div className="page mx-auto w-full max-w-6xl">
+    <div className="page page--proposal mx-auto w-full max-w-[1380px]">
       <header className="page-header mb-6 flex items-center justify-between gap-4 rounded-3xl border border-[var(--record-border)] bg-[var(--bg-panel)] px-5 py-5 shadow-[var(--shadow-soft)] backdrop-blur">
         <div className="page-header-main flex flex-col gap-1">
           <h2 className="page-title text-3xl font-bold tracking-[-0.035em] text-[var(--text-main)]">{t(lang, "estimados")}</h2>
-          <p className="page-subtitle text-sm text-[var(--text-muted)]">
-            {t(lang, "estimados_page_subtitle")}
-          </p>
+          <p className="page-subtitle text-sm text-[var(--text-muted)]">{t(lang, "estimados_page_subtitle")}</p>
         </div>
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          <button
-            className={`pill ${viewMode === "list" ? "pill--active" : ""}`}
-            onClick={() => setViewMode("list")}
-          >
-            {t(lang, "lista")}
-          </button>
-          <button
-            className={`pill ${viewMode === "statement" ? "pill--active" : ""}`}
-            onClick={() => setViewMode("statement")}
-          >
-            {t(lang, "statement")}
-          </button>
+        <div className="page-header-actions flex flex-wrap items-center justify-end gap-2">
+          {selectedEstimado && (
+            <>
+              <button className="btn-ghost" onClick={() => openEditModal(selectedEstimado)}>
+                {t(lang, "editar")}
+              </button>
+              <button className="btn-danger-ghost" onClick={() => askDelete(selectedEstimado)}>
+                {t(lang, "eliminar")}
+              </button>
+              <button className="btn-outline" onClick={() => printStatement(selectedEstimado)}>
+                {t(lang, "imprimir")}
+              </button>
+            </>
+          )}
           <button className="btn-primary" onClick={openNewModal}>
             + {t(lang, "nuevo_estimado")}
           </button>
         </div>
       </header>
 
-      {viewMode === "statement" ? renderStatementView() : renderListView()}
+      <div className="proposal-layout">
+        <aside className="proposal-selector">
+          <div className="proposal-selector-header">
+            <SearchBar value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder={t(lang, "busqueda")} />
+            <div className="pill-group mt-3 flex flex-wrap gap-1.5">
+              {["todos", "borrador", "enviado", "aceptado", "rechazado"].map((opt) => (
+                <button
+                  key={opt}
+                  className={"pill" + (filterEstado === opt ? " pill--active" : "")}
+                  onClick={() => setFilterEstado(opt)}
+                >
+                  {t(lang, opt)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="flex flex-col gap-3">
+              {[1,2,3].map(i => <SkeletonCard key={i} />)}
+            </div>
+          ) : filtrados.length === 0 ? (
+            <p className="muted">{t(lang, "sin_resultados")}</p>
+          ) : (
+            <div className="proposal-selector-list">
+              {filtrados.map((e) => (
+                <button
+                  key={e.id}
+                  className={"proposal-selector-card" + (selectedEstimado?.id === e.id ? " proposal-selector-card--active" : "")}
+                  onClick={() => setSelectedId(e.id)}
+                >
+                  <span className="proposal-selector-name">{e.cliente_nombre || t(lang, "cliente_sin_nombre")}</span>
+                  <span className="proposal-selector-meta">{e.fecha?.slice(0, 10)}</span>
+                  <span className="proposal-selector-meta">{e.moneda} {Number(e.monto || 0).toFixed(2)}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </aside>
+
+        <section className="proposal-preview-panel">
+          {selectedEstimado ? (
+            <ProposalPreview estimado={selectedEstimado} />
+          ) : (
+            <div className="card flex justify-between gap-5 rounded-xl border border-[var(--record-border)] bg-[var(--bg-card)] p-5 shadow-[var(--record-shadow)]">
+              <p className="muted">{t(lang, "sin_resultados")}</p>
+            </div>
+          )}
+        </section>
+      </div>
 
       {/* Modal crear / editar */}
       <Modal
@@ -669,24 +465,11 @@ const renderStatementView = () => {
               </label>
               <label className="form-field">
                 <span>{t(lang, "direccion_trabajo")}</span>
-                <input
-                  className="input"
-                  name="direccion_trabajo"
-                  value={form.direccion_trabajo}
-                  onChange={handleChange}
-                  required
-                />
+                <input className="input" name="direccion_trabajo" value={form.direccion_trabajo} onChange={handleChange} required />
               </label>
               <label className="form-field">
                 <span>{t(lang, "fecha")}</span>
-                <input
-                  className="input"
-                  type="date"
-                  name="fecha"
-                  value={form.fecha}
-                  onChange={handleChange}
-                  required
-                />
+                <input className="input" type="date" name="fecha" value={form.fecha} onChange={handleChange} required />
               </label>
             </div>
           </div>
@@ -696,43 +479,18 @@ const renderStatementView = () => {
             <div className="items-input-row">
               <div className="items-input-field items-input-desc">
                 <span>{t(lang, "descripcion")}</span>
-                <input
-                  className="input"
-                  name="descripcion"
-                  value={newItem.descripcion}
-                  onChange={handleNewItemChange}
-                  placeholder={t(lang, "ejemplo_material")}
-                />
+                <input className="input" name="descripcion" value={newItem.descripcion} onChange={handleNewItemChange} placeholder={t(lang, "ejemplo_material")} />
               </div>
               <div className="items-input-field">
                 <span>{t(lang, "cantidad")}</span>
-                <input
-                  className="input"
-                  type="number"
-                  name="cantidad"
-                  value={newItem.cantidad}
-                  onChange={handleNewItemChange}
-                  min="1"
-                />
+                <input className="input" type="number" name="cantidad" value={newItem.cantidad} onChange={handleNewItemChange} min="1" />
               </div>
               <div className="items-input-field">
                 <span>{t(lang, "precio_unit")}</span>
-                <input
-                  className="input"
-                  type="number"
-                  step="0.01"
-                  name="precio_unitario"
-                  value={newItem.precio_unitario}
-                  onChange={handleNewItemChange}
-                  placeholder="0.00"
-                />
+                <input className="input" type="number" step="0.01" name="precio_unitario" value={newItem.precio_unitario} onChange={handleNewItemChange} placeholder="0.00" />
               </div>
-              <button
-                type="button"
-                className="btn-add-item"
-                onClick={addItem}
-              >
-                +
+              <button type="button" className="btn-add-item" onClick={addItem}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14 M5 12h14" /></svg>
               </button>
             </div>
           </div>
@@ -744,14 +502,7 @@ const renderStatementView = () => {
             ) : (
               <table className="items-table">
                 <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>{t(lang, "descripcion")}</th>
-                    <th>{t(lang, "cantidad")}</th>
-                    <th>{t(lang, "precio_unit")}</th>
-                    <th>{t(lang, "total")}</th>
-                    <th></th>
-                  </tr>
+                  <tr><th>#</th><th>{t(lang, "descripcion")}</th><th>{t(lang, "cantidad")}</th><th>{t(lang, "precio_unit")}</th><th>{t(lang, "total")}</th><th></th></tr>
                 </thead>
                 <tbody>
                   {items.map((item, index) => (
@@ -762,45 +513,17 @@ const renderStatementView = () => {
                       <td>${Number(item.precio_unitario || 0).toFixed(2)}</td>
                       <td>${Number(item.total || (item.cantidad * item.precio_unitario) || 0).toFixed(2)}</td>
                       <td>
-                        <button
-                          type="button"
-                          className="btn-remove-item"
-                          onClick={() => removeItem(index)}
-                        >
-                          ×
+                        <button type="button" className="btn-remove-item" onClick={() => removeItem(index)}>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18 M6 6l12 12" /></svg>
                         </button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
                 <tfoot>
-                  <tr>
-                    <td colSpan={3} className="items-total-label">
-                      {t(lang, "subtotal")}
-                    </td>
-                    <td className="items-total-value">
-                      ${calculateSubtotal().toFixed(2)}
-                    </td>
-                    <td></td>
-                  </tr>
-                  <tr>
-                    <td colSpan={3} className="items-total-label">
-                      {t(lang, "impuesto")} (7%)
-                    </td>
-                    <td className="items-total-value">
-                      ${(calculateSubtotal() * 0.07).toFixed(2)}
-                    </td>
-                    <td></td>
-                  </tr>
-                  <tr>
-                    <td colSpan={3} className="items-total-label">
-                      {t(lang, "total")}
-                    </td>
-                    <td className="items-total-value">
-                      ${calculateTotal().toFixed(2)}
-                    </td>
-                    <td></td>
-                  </tr>
+                  <tr><td colSpan={3} className="items-total-label">{t(lang, "subtotal")}</td><td className="items-total-value">${calculateSubtotal().toFixed(2)}</td><td></td></tr>
+                  <tr><td colSpan={3} className="items-total-label">{t(lang, "impuesto")} (7%)</td><td className="items-total-value">${(calculateSubtotal() * 0.07).toFixed(2)}</td><td></td></tr>
+                  <tr><td colSpan={3} className="items-total-label">{t(lang, "total")}</td><td className="items-total-value">${calculateTotal().toFixed(2)}</td><td></td></tr>
                 </tfoot>
               </table>
             )}
@@ -811,14 +534,7 @@ const renderStatementView = () => {
             <div className="items-form-grid grid grid-cols-1 gap-4 md:grid-cols-2">
               <label className="form-field form-field--full">
                 <span>{t(lang, "descripcion_trabajo")}</span>
-                <textarea
-                  className="input"
-                  name="descripcion_trabajo"
-                  value={form.descripcion_trabajo}
-                  onChange={handleChange}
-                  rows={3}
-                  placeholder={t(lang, "descripcion_trabajo_placeholder")}
-                />
+                <textarea className="input" name="descripcion_trabajo" value={form.descripcion_trabajo} onChange={handleChange} rows={3} placeholder={t(lang, "descripcion_trabajo_placeholder")} />
               </label>
             </div>
           </div>
@@ -827,12 +543,7 @@ const renderStatementView = () => {
             <div className="items-form-footer-left">
               <label className="form-field">
                 <span>{t(lang, "estado")}</span>
-                <select
-                  className="input"
-                  name="estado"
-                  value={form.estado}
-                  onChange={handleChange}
-                >
+                <select className="input" name="estado" value={form.estado} onChange={handleChange}>
                   <option value="borrador">{t(lang, "borrador")}</option>
                   <option value="enviado">{t(lang, "enviado")}</option>
                   <option value="aceptado">{t(lang, "aceptado")}</option>
@@ -841,54 +552,29 @@ const renderStatementView = () => {
               </label>
               <label className="form-field">
                 <span>{t(lang, "moneda")}</span>
-                <select
-                  className="input"
-                  name="moneda"
-                  value={form.moneda}
-                  onChange={handleChange}
-                >
-                  {MONEDAS.map((m) => (
-                    <option key={m} value={m}>{m}</option>
-                  ))}
+                <select className="input" name="moneda" value={form.moneda} onChange={handleChange}>
+                  {MONEDAS.map((m) => (<option key={m} value={m}>{m}</option>))}
                 </select>
               </label>
             </div>
             <div className="items-form-footer-right">
               <div style={{ textAlign: "right" }}>
-                <div className="muted" style={{ fontSize: "0.8rem" }}>
-                  {t(lang, "subtotal")}: ${calculateSubtotal().toFixed(2)} {form.moneda}
-                </div>
-                <div className="muted" style={{ fontSize: "0.8rem" }}>
-                  {t(lang, "impuesto")} (7%): ${(calculateSubtotal() * 0.07).toFixed(2)} {form.moneda}
-                </div>
-                <span className="items-grand-total">
-                  {t(lang, "total")}: ${calculateTotal().toFixed(2)} {form.moneda}
-                </span>
+                <div className="muted" style={{ fontSize: "0.8rem" }}>{t(lang, "subtotal")}: ${calculateSubtotal().toFixed(2)} {form.moneda}</div>
+                <div className="muted" style={{ fontSize: "0.8rem" }}>{t(lang, "impuesto")} (7%): ${(calculateSubtotal() * 0.07).toFixed(2)} {form.moneda}</div>
+                <span className="items-grand-total">{t(lang, "total")}: ${calculateTotal().toFixed(2)} {form.moneda}</span>
               </div>
             </div>
           </div>
 
           <div className="form-actions flex justify-end gap-2">
-            <button
-              type="button"
-              className="btn-ghost"
-              onClick={() => setModalOpen(false)}
-            >
-              {t(lang, "cancelar")}
-            </button>
-            <button type="submit" className="btn-primary">
-              {t(lang, "guardar")}
-            </button>
+            <button type="button" className="btn-ghost" onClick={() => setModalOpen(false)}>{t(lang, "cancelar")}</button>
+            <button type="submit" className="btn-primary">{t(lang, "guardar")}</button>
           </div>
         </form>
       </Modal>
 
       {/* Modal confirmación eliminar */}
-      <Modal
-        open={confirmDeleteOpen}
-        title={t(lang, "confirmar_eliminar")}
-        onClose={cancelDelete}
-      >
+      <Modal open={confirmDeleteOpen} title={t(lang, "confirmar_eliminar")} onClose={cancelDelete}>
         <div className="flex flex-col items-center gap-4 py-2 text-center">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--danger-soft)]">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[rgb(var(--destructive))]">
@@ -897,268 +583,17 @@ const renderStatementView = () => {
           </div>
           <p className="font-semibold text-[var(--text-main)]">
             {t(lang, "seguro_eliminar_estimado")}
-            {estimadoToDelete?.cliente_nombre
-              ? <span className="font-bold"> de "{estimadoToDelete.cliente_nombre}"</span>
-              : ""}?
+            {estimadoToDelete?.cliente_nombre ? <span className="font-bold"> de "{estimadoToDelete.cliente_nombre}"</span> : ""}?
           </p>
         </div>
         <div className="mt-6 flex justify-end gap-3">
           <button type="button" className="btn-ghost" onClick={cancelDelete}>{t(lang, "cancelar")}</button>
           <button type="button" className="btn btn-danger" onClick={confirmDelete}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 6h18 M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-            </svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18 M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
             {t(lang, "si_eliminar")}
           </button>
         </div>
       </Modal>
-
-      {/* Modal detalle de estimado (click en la card) */}
-      <Modal
-        open={detailsOpen}
-        title="Detalle del estimado"
-        onClose={closeDetails}
-        wide
-      >
-        {estimadoDetalle && (
-          <div className="detalle-statement">
-            <div className="statement-header-modal">
-              <div className="statement-logo-section">
-                <img src="/logo.png" alt="Logo" className="statement-logo-img" />
-                <div className="statement-brand">
-                  <h1 className="statement-title">Sistema de Gestión</h1>
-                  <p className="statement-subtitle">Detalle</p>
-                </div>
-              </div>
-              <div className="statement-date print-date" style={{ display: 'none' }}>
-                <span>Fecha:</span> {estimadoDetalle.fecha?.slice(0, 10)}
-              </div>
-              <button
-                type="button"
-                className="btn-primary"
-                onClick={() => printStatement(estimadoDetalle)}
-              >
-                Imprimir
-              </button>
-            </div>
-
-            <div className="detalle-info-grid">
-              <div className="detalle-info-item">
-                <span className="detalle-label">Cliente</span>
-                <span className="detalle-value">{estimadoDetalle.cliente_nombre || "Cliente sin nombre"}</span>
-              </div>
-              <div className="detalle-info-item">
-                <span className="detalle-label">Dirección</span>
-                <span className="detalle-value">{estimadoDetalle.direccion_trabajo || "—"}</span>
-              </div>
-              <div className="detalle-info-item">
-                <span className="detalle-label">Estado</span>
-                <span className={`badge badge-${estimadoDetalle.estado === "aceptado" ? "success" : estimadoDetalle.estado === "rechazado" ? "warning" : "soft"}`}>
-                  {estimadoDetalle.estado}
-                </span>
-              </div>
-            </div>
-
-            <div className="statement-section">
-              <h2 className="statement-section-title">Materials</h2>
-              <table className="statement-table">
-                <thead>
-                  <tr>
-                    <th>Descripción</th>
-                    <th>Cantidad</th>
-                    <th>Precio Unit.</th>
-                    <th>Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(() => {
-                    const items = getItemsFromDescripcion(estimadoDetalle.descripcion_trabajo, estimadoDetalle.monto, estimadoDetalle.moneda);
-                    if (items.length === 0) {
-                      return (
-                        <tr>
-                          <td colSpan={4} className="muted">
-                            No hay materiales registrados.
-                          </td>
-                        </tr>
-                      );
-                    }
-                    return items.map((item, idx) => (
-                      <tr key={idx}>
-                        <td>{item.descripcion}</td>
-                        <td>{item.cantidad}</td>
-                        <td>
-                          {estimadoDetalle.moneda}{" "}
-                          {Number(item.precio_unitario).toFixed(2)}
-                        </td>
-                        <td>
-                          {estimadoDetalle.moneda}{" "}
-                          {Number(item.cantidad * item.precio_unitario).toFixed(2)}
-                        </td>
-                      </tr>
-                    ));
-                  })()}
-                </tbody>
-                <tfoot>
-                  <tr>
-                    <td colSpan={3} className="items-total-label">Total</td>
-                    <td className="items-total-value">
-                      {estimadoDetalle.moneda} {Number(estimadoDetalle.monto || 0).toFixed(2)}
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-
-            {estimadoDetalle.notas_adicionales?.trim() && (
-              <div className="detalle-notas">
-                <span className="detalle-label">Notas Adicionales</span>
-                <p className="detalle-value">{estimadoDetalle.notas_adicionales}</p>
-              </div>
-            )}
-          </div>
-        )}
-      </Modal>
-
-      {/* Modal Statement individual */}
-      <Modal
-        open={statementOpen}
-        title="Statement"
-        onClose={closeStatement}
-        wide
-      >
-        {estimadoStatement && (
-          <div className="statement-modal">
-            <div className="statement-header-modal">
-              <div className="statement-logo-section">
-                <img src="/logo.png" alt="Logo" className="statement-logo-img" />
-                <div className="statement-brand">
-                  <h1 className="statement-title">Sistema de Gestión</h1>
-                  <p className="statement-subtitle">Statement</p>
-                </div>
-              </div>
-              <div className="statement-date print-date" style={{ display: 'none' }}>
-                <span>Fecha:</span> {estimadoStatement.fecha?.slice(0, 10)}
-              </div>
-              <button
-                type="button"
-                className="btn-primary"
-                onClick={() => printStatement(estimadoStatement)}
-              >
-                Imprimir
-              </button>
-            </div>
-
-            <div className="statement-section">
-              <h2 className="statement-section-title">Materials</h2>
-              <table className="statement-table">
-                <thead>
-                  <tr>
-                    <th>Descripción</th>
-                    <th>Cantidad</th>
-                    <th>Precio Unit.</th>
-                    <th>Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(() => {
-                    const items = getItemsFromDescripcion(estimadoStatement.descripcion_trabajo, estimadoStatement.monto, estimadoStatement.moneda);
-                    if (items.length === 0) {
-                      return (
-                        <tr>
-                          <td colSpan={4} className="muted">
-                            No hay materiales registrados.
-                          </td>
-                        </tr>
-                      );
-                    }
-                    return items.map((item, idx) => (
-                      <tr key={idx}>
-                        <td>{item.descripcion}</td>
-                        <td>{item.cantidad}</td>
-                        <td>
-                          {estimadoStatement.moneda}{" "}
-                          {Number(item.precio_unitario).toFixed(2)}
-                        </td>
-                        <td>
-                          {estimadoStatement.moneda}{" "}
-                          {Number(item.cantidad * item.precio_unitario).toFixed(2)}
-                        </td>
-                      </tr>
-                    ));
-                  })()}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="statement-section">
-              <h2 className="statement-section-title">Cliente</h2>
-              <table className="statement-table">
-                <thead>
-                  <tr>
-                    <th>Cliente</th>
-                    <th>Dirección</th>
-                    <th>Estado</th>
-                    <th>Monto</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>
-                      {estimadoStatement.cliente_nombre || "Cliente sin nombre"}
-                    </td>
-                    <td>{estimadoStatement.direccion_trabajo || "—"}</td>
-                    <td>
-                      <span
-                        className={`badge badge-${
-                          estimadoStatement.estado === "aceptado"
-                            ? "success"
-                            : estimadoStatement.estado === "rechazado"
-                            ? "warning"
-                            : "soft"
-                        }`}
-                      >
-                        {estimadoStatement.estado}
-                      </span>
-                    </td>
-                    <td>
-                      {estimadoStatement.moneda}{" "}
-                      {Number(estimadoStatement.monto || 0).toFixed(2)}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <div className="statement-footer">
-              <div className="statement-total">
-                <span>Total:</span>
-                <strong>
-                  {estimadoStatement.moneda}{" "}
-                  {Number(estimadoStatement.monto || 0).toFixed(2)}
-                </strong>
-              </div>
-            </div>
-
-            {estimadoStatement.notas_adicionales && (
-              <div className="detalle-notas">
-                <span className="detalle-label">Notas Adicionales</span>
-                <p className="detalle-value">{estimadoStatement.notas_adicionales}</p>
-              </div>
-            )}
-
-            <div className="form-actions" style={{ marginTop: "1rem" }}>
-              <button
-                type="button"
-                className="btn-ghost"
-                onClick={closeStatement}
-              >
-                Cerrar
-              </button>
-            </div>
-          </div>
-        )}
-      </Modal>
-
     </div>
   );
 };
