@@ -444,37 +444,67 @@ const ClientesPage = () => {
         onClose={closeDetails}
       >
         {clienteDetalle && (
-          <div className="detalle-grid">
-            <div>
-              <p className="detalle-label">{t(lang, "nombre")}</p>
-              <p className="detalle-value">{clienteDetalle.nombre || "—"}</p>
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-col items-center gap-3 border-b border-[var(--record-border)] pb-5">
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[var(--primary-soft)]">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[rgb(var(--primary))]">
+                  <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2 M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z" />
+                </svg>
+              </div>
+              <div className="text-center">
+                <h3 className="text-xl font-bold text-[var(--text-main)]">{clienteDetalle.nombre || "—"}</h3>
+                <span className={`mt-1 inline-block rounded-full px-3 py-0.5 text-xs font-semibold ${
+                  clienteDetalle.estado === "activo" ? "bg-[rgba(var(--success),0.12)] text-[rgb(var(--success))]" :
+                  clienteDetalle.estado === "pendiente" ? "bg-[rgba(var(--warning),0.12)] text-[rgb(var(--warning))]" :
+                  "bg-[var(--bg-hover)] text-[var(--text-muted)]"
+                }`}>
+                  {clienteDetalle.estado || t(lang, "sin_estado")}
+                </span>
+              </div>
             </div>
-            <div>
-              <p className="detalle-label">{t(lang, "telefono")}</p>
-              <p className="detalle-value">
-                {clienteDetalle.telefono || t(lang, "sin_telefono")}
-              </p>
-            </div>
-            <div>
-              <p className="detalle-label">{t(lang, "direccion")}</p>
-              <p className="detalle-value">
-                {clienteDetalle.direccion || t(lang, "sin_direccion")}
-              </p>
-            </div>
-            <div>
-              <p className="detalle-label">{t(lang, "servicio_principal")}</p>
-              <p className="detalle-value">
-                {clienteDetalle.servicio_principal ||
-                  clienteDetalle.tipo_servicio ||
-                  clienteDetalle.servicio ||
-                  t(lang, "sin_servicio")}
-              </p>
-            </div>
-            <div>
-              <p className="detalle-label">{t(lang, "estado")}</p>
-              <p className="detalle-value">
-                {clienteDetalle.estado || t(lang, "sin_estado")}
-              </p>
+
+            <div className="detalle-grid">
+              <div>
+                <p className="detalle-label flex items-center gap-1.5">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                  </svg>
+                  {t(lang, "telefono")}
+                </p>
+                <p className="detalle-value">{clienteDetalle.telefono || t(lang, "sin_telefono")}</p>
+              </div>
+              <div>
+                <p className="detalle-label flex items-center gap-1.5">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="2" y="4" width="20" height="16" rx="2" /><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                  </svg>
+                  Email
+                </p>
+                <p className="detalle-value">{clienteDetalle.email || "—"}</p>
+              </div>
+              <div className="detalle-full">
+                <p className="detalle-label flex items-center gap-1.5">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
+                  </svg>
+                  {t(lang, "direccion")}
+                </p>
+                <p className="detalle-value">{clienteDetalle.direccion || t(lang, "sin_direccion")}</p>
+              </div>
+              <div className="detalle-full">
+                <p className="detalle-label flex items-center gap-1.5">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="16 3 21 3 21 8" /><line x1="4" y1="20" x2="21" y2="3" /><polyline points="21 16 21 21 16 21" /><line x1="15" y1="15" x2="21" y2="21" /><line x1="4" y1="4" x2="9" y2="9" />
+                  </svg>
+                  {t(lang, "servicio_principal")}
+                </p>
+                <p className="detalle-value">
+                  {clienteDetalle.servicio_principal ||
+                    clienteDetalle.tipo_servicio ||
+                    clienteDetalle.servicio ||
+                    t(lang, "sin_servicio")}
+                </p>
+              </div>
             </div>
           </div>
         )}
