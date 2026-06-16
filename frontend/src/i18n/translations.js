@@ -80,6 +80,7 @@ export const translations = {
     rutas_page_subtitle: "Gestión de rutas y servicios.",
     estimados_page_subtitle: "Gestión de estimados para trabajos de pavers y otros.",
     proposals_page_subtitle: "Vista de propuestas formales listas para imprimir o guardar como PDF.",
+    facturas_page_subtitle: "Gestión de facturas con descripción de trabajos.",
     backups_page_subtitle: "Gestión de copias de seguridad de la base de datos.",
     nueva_visita: "Nueva visita",
     nueva_visita_title: "Nueva visita",
