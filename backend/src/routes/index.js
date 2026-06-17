@@ -11,8 +11,10 @@ const rutasRoutes = require("./rutas.routes");
 const rutasHojasRoutes = require("./rutas_hojas.routes");
 const backupsRoutes = require("./backups.routes");
 const aiRoutes = require("./ai.routes");
+const dashboardRoutes = require("./dashboard.routes");
 
 router.use("/clientes", clientesRoutes);
+router.use("/dashboard", dashboardRoutes);
 router.use("/visitas", visitasRoutes);
 router.use("/recibos", recibosRoutes);
 router.use("/estimados", estimadosRoutes);

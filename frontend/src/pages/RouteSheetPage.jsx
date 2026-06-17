@@ -3,11 +3,14 @@ import api from "../api/apiClient";
 import Modal from "../components/Modal";
 import SearchableSelect from "../components/SearchableSelect";
 import SearchBar from "../components/SearchBar";
+import Pagination from "../components/Pagination";
 import { SkeletonCard } from "../components/Skeleton";
 import { useToast } from "../components/Toast";
 import { useLanguage } from "../i18n/LanguageContext";
 import { t } from "../i18n/translations";
 import { sanitizeHtml } from "../utils/sanitize";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 import "./ProposalsPage/ProposalPreview.css";
 
 const RouteSheetPrintPreview = ({ data, lang }) => {
@@ -66,6 +69,9 @@ const RouteSheetPage = () => {
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const LIMIT = 20;
+  const [page, setPage] = useState(1);
+  useEffect(() => { setPage(1); }, [searchQuery]);
   const [selectedId, setSelectedId] = useState(null);
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -123,6 +129,9 @@ const RouteSheetPage = () => {
       (h.fecha || "").includes(q)
     );
   });
+
+  const totalPages = Math.ceil(filtradas.length / LIMIT);
+  const paginated = filtradas.slice((page - 1) * LIMIT, page * LIMIT);
 
   const selectedHoja = hojas.find((h) => h.id === selectedId) || filtradas[0] || null;
 
@@ -270,6 +279,25 @@ const RouteSheetPage = () => {
     printWindow.document.close();
   };
 
+  const exportRouteSheetPDF = async (routeSheet) => {
+    const el = document.querySelector(".proposal-page");
+    if (!el) return;
+    try {
+      const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "letter");
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      const name = (routeSheet.fecha || "hoja_ruta").replace(/[^a-zA-Z0-9]/g, "_");
+      pdf.save(`HojaRuta_${name}.pdf`);
+      toast("PDF exportado correctamente.", "success");
+    } catch (err) {
+      console.error("Error generando PDF", err);
+      toast("Error al generar el PDF.", "error");
+    }
+  };
+
   return (
     <div className="page page--proposal mx-auto w-full max-w-[1380px]">
       <header className="page-header mb-6 flex items-center justify-between gap-4 rounded-3xl border border-[var(--record-border)] bg-[var(--bg-panel)] px-5 py-5 shadow-[var(--shadow-soft)] backdrop-blur">
@@ -308,7 +336,7 @@ const RouteSheetPage = () => {
             <p className="muted">{t(lang, "sin_resultados")}</p>
           ) : (
             <div className="proposal-selector-list">
-              {filtradas.map(h => (
+              {paginated.map(h => (
                 <button
                   key={h.id}
                   className={"proposal-selector-card" + (selectedHoja?.id === h.id ? " proposal-selector-card--active" : "")}
@@ -320,6 +348,9 @@ const RouteSheetPage = () => {
                 </button>
               ))}
             </div>
+          )}
+          {filtradas.length > 0 && (
+            <Pagination page={page} totalPages={totalPages} total={filtradas.length} limit={LIMIT} onPageChange={setPage} />
           )}
         </aside>
 
@@ -333,6 +364,13 @@ const RouteSheetPage = () => {
               <div className="proposal-toolbar proposal-toolbar--end">
                 <button className="btn-primary" onClick={() => printRouteSheet(previewData)}>
                   {t(lang, "imprimir")}
+                </button>
+                <button className="btn-ghost" onClick={() => exportRouteSheetPDF(previewData)}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1.5 inline-block">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" />
+                    <polyline points="10 9 9 9 8 9" />
+                  </svg>
+                  {t(lang, "exportar")}
                 </button>
               </div>
               <div className="proposal-page">

@@ -4,6 +4,7 @@ import api from "../api/apiClient";
 import Modal from "../components/Modal";
 import SearchableSelect from "../components/SearchableSelect";
 import SearchBar from "../components/SearchBar";
+import Pagination from "../components/Pagination";
 import { SkeletonCard } from "../components/Skeleton";
 import { useToast } from "../components/Toast";
 import { useLanguage } from "../i18n/LanguageContext";
@@ -26,6 +27,9 @@ const RutasPage = () => {
     const timer = setTimeout(() => setDebouncedQuery(searchQuery), 300);
     return () => clearTimeout(timer);
   }, [searchQuery]);
+  const LIMIT = 20;
+  const [page, setPage] = useState(1);
+  useEffect(() => { setPage(1); }, [debouncedQuery, diaActivo]);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingVisita, setEditingVisita] = useState(null);
@@ -88,6 +92,9 @@ const RutasPage = () => {
       (v.hora || "").toLowerCase().includes(q)
     );
   });
+
+  const totalPages = Math.ceil(visitasFiltradas.length / LIMIT);
+  const paginated = visitasFiltradas.slice((page - 1) * LIMIT, page * LIMIT);
 
   const openNewModal = () => {
     setEditingVisita(null);
@@ -253,7 +260,7 @@ const RutasPage = () => {
         </p>
       ) : (
         <div className="list flex flex-col gap-3">
-          {visitasFiltradas.map((v) => (
+          {paginated.map((v) => (
             <article
               key={v.id}
               className="card card--wide card--clickable flex cursor-pointer items-center justify-between gap-5 rounded-xl border border-[var(--record-border)] bg-[var(--bg-card)] p-5 shadow-[var(--record-shadow)] transition hover:-translate-y-0.5 hover:border-[var(--record-border-strong)] hover:shadow-[var(--record-shadow-hover)]"
@@ -302,6 +309,10 @@ const RutasPage = () => {
             </article>
           ))}
         </div>
+      )}
+
+      {visitasFiltradas.length > 0 && (
+        <Pagination page={page} totalPages={totalPages} total={visitasFiltradas.length} limit={LIMIT} onPageChange={setPage} />
       )}
 
       <Modal

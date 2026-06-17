@@ -20,6 +20,23 @@
   justify-content: flex-end;
 }
 
+.proposal-toolbar .btn-ghost {
+  background: #ffffff;
+  color: #1e293b;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+}
+
+.proposal-toolbar .btn-ghost:hover {
+  background: #f8fafc;
+  color: #0f172a;
+  border-color: #94a3b8;
+}
+
+.proposal-toolbar .btn-primary {
+  color: #ffffff;
+}
+
 .proposal-page {
   width: min(816px, 100%);
   min-height: 1056px;

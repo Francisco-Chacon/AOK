@@ -8,6 +8,7 @@ import AiPanel from "./components/AiPanel";
 import { ToastProvider } from "./components/Toast";
 import { cn } from "./utils/cn";
 
+import DashboardPage from "./pages/DashboardPage";
 import ClientesPage from "./pages/ClientesPage";
 import RecibosPage from "./pages/RecibosPage";
 import RutasPage from "./pages/RutasPage";
@@ -18,7 +19,7 @@ import InvoicePage from "./pages/InvoicePage";
 import RouteSheetPage from "./pages/RouteSheetPage";
 
 const AppContent = () => {
-  const [activePage, setActivePage] = useState("clientes");
+  const [activePage, setActivePage] = useState("dashboard");
   const [aiOpen, setAiOpen] = useState(false);
   const [online, setOnline] = useState(navigator.onLine);
   const { lang, setLang } = useLanguage();
@@ -52,6 +53,7 @@ const AppContent = () => {
 
   const renderPage = () => {
     switch (activePage) {
+      case "dashboard": return <DashboardPage />;
       case "clientes": return <ClientesPage />;
       case "recibos": return <RecibosPage />;
       case "rutas": return <RutasPage />;
@@ -60,7 +62,7 @@ const AppContent = () => {
       case "estimados": return <EstimadosPage />;
       case "proposals": return <ProposalsPage />;
       case "backups": return <BackupsPage />;
-      default: return <ClientesPage />;
+      default: return <DashboardPage />;
     }
   };
 

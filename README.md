@@ -4,15 +4,17 @@ Aplicación local para gestión de clientes, rutas, visitas, recibos, estimados,
 
 ## Características
 
+- **Dashboard / Inicio**: Vista ejecutiva inicial con KPIs, actividad reciente e ingresos anuales por mes
 - **Clientes**: Registro y gestión de clientes con estado (activo/pendiente/inactivo)
 - **Rutas**: Organización de rutas por día de la semana
 - **Visitas**: Programación de visitas a clientes con fecha, hora y duración
 - **Recibos**: Generación y seguimiento de pagos
-- **Estimados**: Creación de estimados con estados (borrador/enviado/aceptado/rechazado)
-- **Propuestas**: Vista formal imprimible basada en descripción libre y monto manual
-- **Facturas**: Creación, edición, vista previa e impresión de facturas
-- **Hojas de Ruta**: Registro de conductor, camión, clientes, horarios y descripción con impresión
+- **Estimados**: Creación de estimados con estados (borrador/enviado/aceptado/rechazado), vista previa, impresión y exportación PDF
+- **Propuestas**: Vista formal imprimible basada en descripción libre y monto manual, con exportación PDF
+- **Facturas**: Creación, edición, vista previa, impresión y exportación PDF
+- **Hojas de Ruta**: Registro de conductor, camión, clientes, horarios y descripción con impresión/exportación PDF
 - **Backups**: Sistema de respaldo y restauración de la base de datos
+- **Paginación**: Listas principales muestran 20 registros por página para evitar lentitud con muchos datos
 - **Multidioma**: Soporte para Español e Inglés
 - **Responsive UI**: Navegación móvil desplegable vertical y formularios adaptables
 - **Tema claro/oscuro**: Cambio de tema desde el menú lateral
@@ -22,8 +24,9 @@ Aplicación local para gestión de clientes, rutas, visitas, recibos, estimados,
 - **Frontend**: React 18 + Vite (puerto 5173, build output a `backend/public/`)
 - **Backend**: Express.js + SQLite (better-sqlite3) — puerto 4000
 - **Escritorio**: Electron  — ventana 1280×800, lanza backend como proceso hijo
-- **Estilos**: CSS personalizado
+- **Estilos**: CSS personalizado + Tailwind utilities donde aplica
 - **Cliente HTTP**: Axios
+- **PDF en frontend**: `html2canvas` + `jsPDF` para exportar vistas previas a PDF descargable
 - **Guía futura**: Nuevos componentes deben escribirse en TypeScript/TSX; el código JSX existente puede migrarse gradualmente.
 
 ## Requisitos
@@ -110,11 +113,11 @@ sistema_local/
 ├── backend/
 │   ├── src/
 │   │   ├── app.js          # Configuración Express (CORS, static, SPA fallback)
-│   │   ├── controllers/    # Lógica de negocio
+│   │   ├── controllers/    # Lógica de negocio (incluye dashboard.controller.js)
 │   │   ├── db/
 │   │   │   ├── sqlite.js   # Inicialización BD
 │   │   │   └── backups/    # Archivos de respaldo
-│   │   ├── routes/         # Rutas API
+│   │   ├── routes/         # Rutas API (incluye dashboard.routes.js)
 │   │   ├── utils/          # Utilidades (validation, logger, init-db)
 │   │   └── server.js       # Punto de entrada
 │   ├── public/             # Build de React (generado por Vite)
@@ -125,8 +128,8 @@ sistema_local/
 │   │   ├── components/     # Componentes React (Sidebar, Modal, Spinner, etc.)
 │   │   ├── hooks/          # Custom hooks (useDebounce)
 │   │   ├── i18n/           # Traducciones ES/EN
-│   │   ├── pages/          # Vistas: Clientes, Visitas, Recibos, Estimados,
-│   │   │                   #   Propuestas, Facturas, Hojas de Ruta, Backups
+│   │   ├── pages/          # Vistas: Dashboard, Clientes, Visitas, Recibos,
+│   │   │                   #   Estimados, Propuestas, Facturas, Hojas de Ruta, Backups
 │   │   ├── utils/          # Utilidades (sanitize)
 │   │   └── styles.css      # Estilos globales
 │   ├── public/             # Archivos estáticos (favicon, logo)
@@ -144,6 +147,7 @@ sistema_local/
 
 | Recurso | Métodos | Notas |
 |---------|---------|-------|
+| `/api/dashboard` | GET | KPIs, actividad reciente e ingresos anuales. Acepta `?year=YYYY` para filtrar gráfico anual |
 | `/api/clientes` | GET, POST, PUT, DELETE | |
 | `/api/clientes/:id/recibos-count` | GET | Cantidad de recibos de un cliente |
 | `/api/visitas` | GET, POST, PUT, DELETE | |
@@ -151,6 +155,7 @@ sistema_local/
 | `/api/estimados` | GET, POST, PUT, DELETE | |
 | `/api/facturas` | GET, POST, PUT, DELETE | |
 | `/api/facturas/:id` | GET | Factura individual con sus items |
+| `/api/rutas` | GET, POST, PUT, DELETE | Gestión de rutas |
 | `/api/rutas-hojas` | GET, POST, PUT, DELETE | |
 | `/api/rutas-hojas/:id` | GET | Hoja de ruta individual con sus clientes |
 | `/api/backups/create` | POST | |
@@ -161,9 +166,24 @@ sistema_local/
 | `/api/backups/:filename` | DELETE | |
 | `/api/ai/chat` | POST | Chat con asistente IA (requiere `OPENROUTER_API_KEY`) |
 
-> **Nota:** Actualmente **no existe** un endpoint `/api/rutas`. La tabla `rutas` en la BD solo se usa internamente y no tiene API expuesta. Las rutas del sidebar gestionan en realidad las **visitas**.
+### Dashboard API
 
-> **Inconsistencia técnica:** Los endpoints de clientes, visitas y recibos usan el paquete independiente `router`, mientras que estimados, facturas, rutas-hojas y backups usan `express.Router()` estándar.
+`GET /api/dashboard` devuelve:
+
+- `clientes`: total, activos e inactivos
+- `recibos_mes`: cantidad y total pagado del mes actual
+- `facturas_pendientes`: cantidad y total pendiente
+- `estimados`: cantidad y total acumulado
+- `ingresos_mensuales`: arreglo de 12 meses del año seleccionado, incluyendo meses en cero
+- `ingresos_year`: año utilizado para el gráfico
+- `ingresos_years`: años disponibles para el filtro, incluyendo siempre el año actual
+- `actividad_reciente`: últimos recibos creados
+
+Ejemplo:
+
+```http
+GET /api/dashboard?year=2025
+```
 
 ## Base de Datos
 
@@ -214,8 +234,53 @@ No existe una carpeta `assets/` separada; se utiliza `public/` de Vite para serv
 | **Modal** | `src/components/Modal.jsx` | Modal reutilizable con variantes wide y fullscreen |
 | **Spinner / LoadingOverlay** | `src/components/Spinner.jsx` | Indicador de carga (small/medium/large) con overlay |
 | **SearchableSelect** | `src/components/SearchableSelect.jsx` | Select con búsqueda y debounce |
+| **Pagination** | `src/components/Pagination.jsx` | Paginación reutilizable para listas, 20 registros por página por defecto |
 | **ErrorBoundary** | `src/components/ErrorBoundary.jsx` | Captura errores de React con pantalla de fallback y botón de recarga |
 | **useDebounce** | `src/hooks/useDebounce.js` | Hook genérico `useDebounce(value, delay)` |
+
+## Dashboard
+
+El sistema abre por defecto en `DashboardPage.jsx`.
+
+### Qué muestra
+
+- Resumen del mes: recibos pagados del mes actual y cantidad de facturas pendientes
+- KPIs: recibos del mes, clientes activos, facturas pendientes y total de estimados
+- Gráfico anual de ingresos: 12 barras de enero a diciembre, con `$0` en meses sin pagos
+- Filtro por año: dropdown custom que usa `ingresos_years` del backend y conserva el año actual aunque no tenga ingresos
+- Actividad reciente: últimos recibos creados, cliente, código, fecha relativa y monto
+
+### Comportamiento importante
+
+- Si no se envía `year`, el backend usa el último año con recibos registrados; si no hay datos, usa el año actual.
+- El selector permite cambiar el año sin recargar toda la app.
+- El dashboard fuerza el scroll del contenedor principal al inicio al montarse para evitar que abra cortado si el usuario venía de otra página con scroll.
+
+## Paginación
+
+Las páginas principales paginan en frontend para mejorar rendimiento visual con listas grandes.
+
+- Tamaño por página: `20`
+- Componente: `frontend/src/components/Pagination.jsx`
+- Integrado en: Clientes, Recibos, Rutas/Visitas, Facturas, Estimados y Hojas de Ruta
+- La página vuelve a `1` al cambiar búsqueda o filtros
+
+## Exportación PDF
+
+La exportación PDF se genera en el frontend con `html2canvas` + `jsPDF`.
+
+### Documentos con PDF
+
+- Facturas: `InvoicePage.jsx`
+- Estimados: `EstimadosPage.jsx`
+- Hojas de Ruta: `RouteSheetPage.jsx`
+- Propuestas: `ProposalsPage/ProposalPreview.jsx`
+
+### Notas de diseño
+
+- Los documentos de vista previa usan fondo blanco fijo para mantener apariencia profesional en modo claro/oscuro.
+- Los botones dentro de `.proposal-toolbar` tienen estilos específicos para evitar texto blanco sobre fondo claro en modo oscuro.
+- La impresión del navegador se mantiene disponible junto al botón `Exportar`.
 
 ## Electron
 
@@ -235,9 +300,12 @@ Para empaquetar: `npm run build:electron` → genera un `.exe` portable.
 - La navegación de escritorio usa sidebar fijo.
 - En móvil, el menú se convierte en un desplegable vertical para evitar scroll horizontal.
 - Las tarjetas, modales, inputs y botones usan estilos responsive con tema claro/oscuro.
+- El dashboard usa clases CSS específicas (`dash-*`) para mantener layout estable dentro del shell con sidebar/topbar/statusbar.
+- El gráfico del dashboard debe revisarse en navegador; los datos llegan desde `/api/dashboard` y se renderizan como barras HTML/CSS.
 - Los documentos imprimibles de propuestas, facturas y hojas de ruta mantienen fondo blanco y estilos propios para no heredar el tema oscuro.
 - Las propuestas muestran cliente, dirección, teléfono, email, fechas, descripción libre y monto.
 - Facturas y hojas de ruta imprimen en una ventana/documento aislado para evitar imprimir el modal o la app completa.
+- Facturas, estimados, hojas de ruta y propuestas tienen botón `Exportar` para descargar PDF.
 
 ## Verificación Recomendada
 
@@ -250,10 +318,15 @@ npm run build
 
 También se recomienda revisar en navegador:
 
+- Dashboard: gráfico anual, selector de año, KPIs y actividad reciente.
 - Clientes, rutas, recibos, estimados, propuestas, facturas y hojas de ruta.
 - Formularios de crear/editar/eliminar.
+- Paginación en listas con más de 20 elementos.
+- Botones `Imprimir` y `Exportar` en documentos.
 - Vistas previas e impresión.
 - Modo móvil y escritorio.
+
+> **Nota:** `npm run build` es la verificación principal. El lint global puede reportar advertencias/errores heredados en páginas antiguas (por ejemplo `react-hooks/set-state-in-effect`, `react/no-unescaped-entities` y `react-hooks/purity`) que no impiden el build actual.
 
 ## Notas
 

@@ -4,6 +4,7 @@ import api from "../api/apiClient";
 import Modal from "../components/Modal";
 import EmptyState from "../components/EmptyState";
 import SearchBar from "../components/SearchBar";
+import Pagination from "../components/Pagination";
 import { SkeletonCard, SkeletonStats } from "../components/Skeleton";
 import { useToast } from "../components/Toast";
 import { useLanguage } from "../i18n/LanguageContext";
@@ -22,6 +23,9 @@ const ClientesPage = () => {
     const timer = setTimeout(() => setDebouncedQuery(searchQuery), 300);
     return () => clearTimeout(timer);
   }, [searchQuery]);
+  const LIMIT = 20;
+  const [page, setPage] = useState(1);
+  useEffect(() => { setPage(1); }, [debouncedQuery, filterEstado]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingCliente, setEditingCliente] = useState(null);
 
@@ -183,6 +187,8 @@ const ClientesPage = () => {
   const activos = clientes.filter((c) => c.estado === "activo").length;
   const inactivos = clientes.filter((c) => c.estado === "inactivo").length;
   const pendientes = clientes.filter((c) => c.estado === "pendiente").length;
+  const totalPages = Math.ceil(filtrados.length / LIMIT);
+  const paginated = filtrados.slice((page - 1) * LIMIT, page * LIMIT);
 
   return (
 <div className="page mx-auto w-full max-w-6xl">
@@ -256,7 +262,7 @@ const ClientesPage = () => {
         />
       ) : (
         <div className="list flex flex-col gap-3">
-          {filtrados.map((c) => (
+          {paginated.map((c) => (
             <article
               key={c.id}
               className={`card card--clickable flex cursor-pointer justify-between gap-5 rounded-xl border border-[var(--record-border)] bg-[var(--bg-card)] p-5 shadow-[var(--record-shadow)] transition hover:-translate-y-0.5 hover:border-[var(--record-border-strong)] hover:shadow-[var(--record-shadow-hover)] ${c.estado ? `card--status-${c.estado}` : ''}`}
@@ -312,6 +318,10 @@ const ClientesPage = () => {
             </article>
           ))}
         </div>
+      )}
+
+      {filtrados.length > 0 && (
+        <Pagination page={page} totalPages={totalPages} total={filtrados.length} limit={LIMIT} onPageChange={setPage} />
       )}
 
       {/* Modal crear / editar */}

@@ -5,6 +5,7 @@ import Modal from "../components/Modal";
 import SearchableSelect from "../components/SearchableSelect";
 import EmptyState from "../components/EmptyState";
 import SearchBar from "../components/SearchBar";
+import Pagination from "../components/Pagination";
 import { SkeletonCard } from "../components/Skeleton";
 import { useToast } from "../components/Toast";
 import { useLanguage } from "../i18n/LanguageContext";
@@ -24,6 +25,9 @@ const RecibosPage = () => {
     const timer = setTimeout(() => setDebouncedQuery(searchQuery), 300);
     return () => clearTimeout(timer);
   }, [searchQuery]);
+  const LIMIT = 20;
+  const [page, setPage] = useState(1);
+  useEffect(() => { setPage(1); }, [debouncedQuery, filter]);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingRecibo, setEditingRecibo] = useState(null);
@@ -85,6 +89,9 @@ const RecibosPage = () => {
       String(r.monto || "").toLowerCase().includes(q)
     );
   });
+
+  const totalPages = Math.ceil(filtrados.length / LIMIT);
+  const paginated = filtrados.slice((page - 1) * LIMIT, page * LIMIT);
 
   const openNewModal = () => {
     setEditingRecibo(null);
@@ -243,7 +250,7 @@ const RecibosPage = () => {
         />
       ) : (
         <div className="list flex flex-col gap-3">
-          {filtrados.map((r) => (
+          {paginated.map((r) => (
             <article
               key={r.id}
               className="card card--clickable flex cursor-pointer justify-between gap-5 rounded-xl border border-[var(--record-border)] bg-[var(--bg-card)] p-5 shadow-[var(--record-shadow)] transition hover:-translate-y-0.5 hover:border-[var(--record-border-strong)] hover:shadow-[var(--record-shadow-hover)]"
@@ -309,6 +316,10 @@ const RecibosPage = () => {
             </article>
           ))}
         </div>
+      )}
+
+      {filtrados.length > 0 && (
+        <Pagination page={page} totalPages={totalPages} total={filtrados.length} limit={LIMIT} onPageChange={setPage} />
       )}
 
       {/* Modal crear / editar */}

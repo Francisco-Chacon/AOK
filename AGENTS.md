@@ -7,6 +7,8 @@
 - **División de módulos**: backend usa CommonJS (`require`), frontend usa ESM (`import`/`export`).
 - **Router**: Todo el backend usa `express.Router()` (el paquete `router` fue eliminado).
 - **Dirección futura**: componentes nuevos en TypeScript/TSX; JSX existente se puede migrar gradualmente.
+- **Dashboard**: la app abre por defecto en `DashboardPage.jsx`; datos desde `GET /api/dashboard`.
+- **PDF**: exportación en frontend con `html2canvas` + `jsPDF`.
 
 ## Comandos (ejecutar desde la raíz)
 
@@ -26,6 +28,29 @@
 - `npm run dev` (raíz) = concurrently ejecuta ambos. `npm run dev:front` / `npm run dev:back` para un solo servicio.
 - CORS del backend permite cualquier origen `localhost:*`, `127.0.0.1:*`, y `file://` (para modo producción de Electron).
 
+## Funcionalidades Recientes
+
+- **Dashboard / Inicio**
+  - Página: `frontend/src/pages/DashboardPage.jsx`
+  - Endpoint: `GET /api/dashboard`
+  - Controller: `backend/src/controllers/dashboard.controller.js`
+  - Route: `backend/src/routes/dashboard.routes.js`
+  - Muestra KPIs, actividad reciente y gráfico anual de ingresos.
+  - El gráfico usa `?year=YYYY` y devuelve siempre 12 meses (`$0` en meses sin ingresos).
+  - El backend devuelve `ingresos_years`; debe incluir siempre el año actual aunque no tenga datos.
+
+- **Paginación**
+  - Componente: `frontend/src/components/Pagination.jsx`
+  - Tamaño actual: 20 elementos por página.
+  - Integrado en Clientes, Recibos, Rutas/Visitas, Facturas, Estimados y Hojas de Ruta.
+  - La paginación es frontend-only: filtra primero y luego hace `slice`.
+
+- **Exportar PDF**
+  - Dependencias frontend: `html2canvas`, `jspdf`.
+  - Implementado en Facturas, Estimados, Hojas de Ruta y Propuestas.
+  - Archivos principales: `InvoicePage.jsx`, `EstimadosPage.jsx`, `RouteSheetPage.jsx`, `ProposalsPage/ProposalPreview.jsx`.
+  - Los botones de toolbar de documentos (`.proposal-toolbar .btn-ghost`) tienen estilos específicos para verse correctamente en modo oscuro sobre documento blanco.
+
 ## Base de Datos
 
 - **SQLite** en `backend/data/gestion_local.db` (se auto-crea al hacer `require` de `backend/src/db/sqlite.js`).
@@ -41,11 +66,13 @@
 - **No hay tests ni CI** en el repositorio.
 - **Datos de empresa hardcodeados**: facturas y hojas de ruta usan "MAKE IT TO HAPPEN LLC" (PO Box 18670, SLC, UT 84118). Las claves `empresa_*` en i18n están vacías (se usan valores fallback).
 - Salida de build: `backend/public/` (config `outDir` de Vite). Está en `.gitignore`.
+- El lint global puede fallar por deuda existente en páginas antiguas (`react/no-unescaped-entities`, `react-hooks/purity`, `react-hooks/set-state-in-effect`). El build actual pasa.
 
 ## Historial de Cambios Recientes
 
 | Commit | Descripción |
 |--------|-------------|
+| `local` | Dashboard inicial, gráfico anual con filtro por año, paginación en listas y exportación PDF en documentos |
 | `c64615e` | Refactor InvoicePage, RouteSheetPage y EstimadosPage a layout split-panel (sidebar + preview) |
 | `eed8fde` | Mejora de estilos de select |
 | `57e58cd` | Modal detalle cliente con avatar, badge y SVGs |

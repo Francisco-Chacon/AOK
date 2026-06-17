@@ -3,11 +3,14 @@ import api from "../api/apiClient";
 import Modal from "../components/Modal";
 import SearchableSelect from "../components/SearchableSelect";
 import SearchBar from "../components/SearchBar";
+import Pagination from "../components/Pagination";
 import { SkeletonCard } from "../components/Skeleton";
 import { useToast } from "../components/Toast";
 import { useLanguage } from "../i18n/LanguageContext";
 import { t } from "../i18n/translations";
 import { sanitizeHtml } from "../utils/sanitize";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 import "./ProposalsPage/ProposalPreview.css";
 
 const MONEDAS = ["USD", "EUR", "MXN", "PAB", "COP"];
@@ -27,6 +30,9 @@ const EstimadosPage = () => {
     const timer = setTimeout(() => setDebouncedQuery(searchQuery), 300);
     return () => clearTimeout(timer);
   }, [searchQuery]);
+  const LIMIT = 20;
+  const [page, setPage] = useState(1);
+  useEffect(() => { setPage(1); }, [debouncedQuery, filterEstado]);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingEstimado, setEditingEstimado] = useState(null);
@@ -350,6 +356,25 @@ const EstimadosPage = () => {
     printWindow.document.close();
   };
 
+  const exportEstimadoPDF = async (estimado) => {
+    const el = document.querySelector(".proposal-page");
+    if (!el) return;
+    try {
+      const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "letter");
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      const name = (estimado.cliente_nombre || "estimado").replace(/[^a-zA-Z0-9]/g, "_");
+      pdf.save(`Estimado_${name}.pdf`);
+      toast("PDF exportado correctamente.", "success");
+    } catch (err) {
+      console.error("Error generando PDF", err);
+      toast("Error al generar el PDF.", "error");
+    }
+  };
+
   const filtrados = estimados.filter((e) => {
     if (filterEstado !== "todos" && e.estado !== filterEstado) return false;
     if (!debouncedQuery) return true;
@@ -362,6 +387,9 @@ const EstimadosPage = () => {
       String(e.monto || "").toLowerCase().includes(q)
     );
   });
+
+  const totalPages = Math.ceil(filtrados.length / LIMIT);
+  const paginated = filtrados.slice((page - 1) * LIMIT, page * LIMIT);
 
   const selectedEstimado = estimados.find((e) => e.id === selectedId) || filtrados[0] || null;
 
@@ -414,7 +442,7 @@ const EstimadosPage = () => {
             <p className="muted">{t(lang, "sin_resultados")}</p>
           ) : (
             <div className="proposal-selector-list">
-              {filtrados.map((e) => (
+              {paginated.map((e) => (
                 <button
                   key={e.id}
                   className={"proposal-selector-card" + (selectedEstimado?.id === e.id ? " proposal-selector-card--active" : "")}
@@ -427,6 +455,9 @@ const EstimadosPage = () => {
               ))}
             </div>
           )}
+          {filtrados.length > 0 && (
+            <Pagination page={page} totalPages={totalPages} total={filtrados.length} limit={LIMIT} onPageChange={setPage} />
+          )}
         </aside>
 
         <section className="proposal-preview-panel">
@@ -435,6 +466,13 @@ const EstimadosPage = () => {
               <div className="proposal-toolbar proposal-toolbar--end">
                 <button className="btn-primary" onClick={() => printStatement(selectedEstimado)}>
                   {t(lang, "imprimir")}
+                </button>
+                <button className="btn-ghost" onClick={() => exportEstimadoPDF(selectedEstimado)}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1.5 inline-block">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" />
+                    <polyline points="10 9 9 9 8 9" />
+                  </svg>
+                  {t(lang, "exportar")}
                 </button>
               </div>
               <div className="proposal-page">
