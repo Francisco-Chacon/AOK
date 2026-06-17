@@ -1762,6 +1762,82 @@ button.btn-danger-ghost {
   box-shadow: 0 0 0 2px rgb(var(--background)), 0 0 0 4px rgb(var(--destructive));
 }
 
+.btn-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 34px;
+  padding: 0.45rem 0.72rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, color 0.16s ease, transform 0.16s ease;
+}
+
+.btn-action:hover {
+  transform: translateY(-1px);
+}
+
+.btn-action:active {
+  transform: translateY(0);
+}
+
+.btn-action:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgb(var(--background)), 0 0 0 4px rgb(var(--ring));
+}
+
+.btn-action-icon {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+}
+
+.btn-action--edit {
+  color: rgb(var(--primary));
+  background: rgba(var(--primary), 0.08);
+  border-color: rgba(var(--primary), 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.42);
+}
+
+.btn-action--edit:hover {
+  background: rgba(var(--primary), 0.14);
+  border-color: rgba(var(--primary), 0.35);
+  box-shadow: 0 10px 20px rgba(var(--primary), 0.14);
+}
+
+.btn-action--delete {
+  color: rgb(var(--destructive));
+  background: rgba(var(--destructive), 0.08);
+  border-color: rgba(var(--destructive), 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.38);
+}
+
+.btn-action--delete:hover {
+  background: rgba(var(--destructive), 0.14);
+  border-color: rgba(var(--destructive), 0.34);
+  box-shadow: 0 10px 20px rgba(var(--destructive), 0.14);
+}
+
+:root[data-theme="dark"] .btn-action--edit {
+  background: rgba(var(--primary), 0.16);
+  border-color: rgba(var(--primary), 0.28);
+  box-shadow: none;
+}
+
+:root[data-theme="dark"] .btn-action--delete {
+  background: rgba(var(--destructive), 0.15);
+  border-color: rgba(var(--destructive), 0.26);
+  box-shadow: none;
+}
+
 
 
 .btn-icon {
