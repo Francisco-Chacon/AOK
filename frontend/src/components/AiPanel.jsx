@@ -13,10 +13,10 @@ const renderHtml = (text) => {
 };
 
 const SUGGESTIONS = [
-  "¿Cómo agrego un cliente?",
-  "¿Qué campos tiene una factura?",
-  "¿Cómo hago un backup?",
-  "¿Cómo imprimo una propuesta?",
+  "ai_suggest_add_client",
+  "ai_suggest_invoice_fields",
+  "ai_suggest_backup",
+  "ai_suggest_print_proposal",
 ];
 
 const AiPanel = ({ onClose, online }) => {
@@ -61,7 +61,7 @@ const AiPanel = ({ onClose, online }) => {
       if (!res.ok) {
         setMessages((prev) => {
           const copy = [...prev];
-          copy[copy.length - 1] = { role: "assistant", content: "Error al obtener respuesta." };
+          copy[copy.length - 1] = { role: "assistant", content: t(lang, "ai_error_response") };
           return copy;
         });
         return;
@@ -100,7 +100,7 @@ const AiPanel = ({ onClose, online }) => {
     } catch {
       setMessages((prev) => {
         const copy = [...prev];
-        copy[copy.length - 1] = { role: "assistant", content: "Error de conexion. Verifica tu internet." };
+        copy[copy.length - 1] = { role: "assistant", content: t(lang, "ai_error_connection") };
         return copy;
       });
     } finally {
@@ -151,11 +151,11 @@ const AiPanel = ({ onClose, online }) => {
                   key={s}
                   className="ai-suggestion-btn"
                   onClick={() => {
-                    setInput(s);
+                    setInput(t(lang, s));
                     inputRef.current?.focus();
                   }}
                 >
-                  {s}
+                  {t(lang, s)}
                 </button>
               ))}
             </div>

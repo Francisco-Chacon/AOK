@@ -8,16 +8,12 @@ const {
   createCliente,
   updateCliente,
   deleteCliente,
-  getRecibosCount,
 } = require("../controllers/clientes.controller");
 
 // IMPORTANTE: aquí se pasa la FUNCIÓN, SIN paréntesis
 
 // GET /api/clientes
 router.get("/", getAllClientes);
-
-// GET /api/clientes/:id/recibos-count
-router.get("/:id/recibos-count", getRecibosCount);
 
 // POST /api/clientes
 router.post("/", createCliente);

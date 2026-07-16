@@ -8,7 +8,6 @@
     "start": "node src/server.js",
     "dev": "node src/server.js",
     "init-db": "node src/utils/initDb.js",
-    "migrate:add-fecha-visitas": "node src/utils/addFechaToVisitas.js",
     "test": "vitest run"
   },
   "keywords": [],

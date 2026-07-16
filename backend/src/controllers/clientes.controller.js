@@ -234,29 +234,9 @@ function deleteCliente(req, res) {
   }
 }
 
-// ============================
-// GET /api/clientes/:id/recibos-count
-// ============================
-function getRecibosCount(req, res) {
-  try {
-    const { id } = req.params;
-    const validId = validateId(id, res);
-    if (!validId) return;
-
-    const stmt = db.prepare("SELECT COUNT(*) as count FROM recibos WHERE cliente_id = ?");
-    const result = stmt.get(validId);
-
-    res.json({ count: result.count });
-  } catch (err) {
-    logger.error("Error getRecibosCount", { error: err.message });
-    res.status(500).json({ message: "Error al verificar recibos" });
-  }
-}
-
 module.exports = {
   getAllClientes,
   createCliente,
   updateCliente,
   deleteCliente,
-  getRecibosCount,
 };

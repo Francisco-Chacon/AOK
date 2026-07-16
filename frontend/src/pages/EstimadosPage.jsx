@@ -391,7 +391,7 @@ const EstimadosPage = () => {
   const totalPages = Math.ceil(filtrados.length / LIMIT);
   const paginated = filtrados.slice((page - 1) * LIMIT, page * LIMIT);
 
-  const selectedEstimado = estimados.find((e) => e.id === selectedId) || filtrados[0] || null;
+  const selectedEstimado = filtrados.find((e) => e.id === selectedId) || filtrados[0] || null;
 
   return (
     <div className="page page--proposal mx-auto w-full max-w-[1380px]">

@@ -16,3 +16,4 @@ backend/.env
 backend/src/.env
 backend/src/data/
 electron/node-bin/
+.playwright-mcp/

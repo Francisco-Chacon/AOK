@@ -6,7 +6,7 @@ import App from "../App";
 describe("App component", () => {
   it("renderiza sin errores", () => {
     render(<App />);
-    expect(screen.getByText("Sistema de Gestión")).toBeDefined();
+    expect(screen.getByText("MAKE IT TO HAPPEN LLC")).toBeDefined();
   });
 
   it("muestra el sidebar con opciones principales", () => {

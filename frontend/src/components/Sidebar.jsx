@@ -4,10 +4,7 @@ import { t } from "../i18n/translations";
 import { cn } from "../utils/cn";
 
 const ICONS = {
-  dashboard: "M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10",
   clientes: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8 M22 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75",
-  recibos: "M7 3h10a2 2 0 0 1 2 2v16l-3-2-3 2-3-2-3 2V5a2 2 0 0 1 2-2 M10 8h6 M10 12h6 M10 16h3",
-  rutas: "M4 19V5a2 2 0 0 1 2-2h11l3 3v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2 M8 7h7 M8 11h8 M8 15h5",
   facturas: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M8 13h8 M8 17h5",
   "rutas-hojas": "M3 7h18 M6 3v4 M18 3v4 M5 11h14v10H5z M8 15h4 M8 18h7",
   estimados: "M12 2v20 M17 5H9.5a3.5 3.5 0 0 0 0 7H14a3.5 3.5 0 0 1 0 7H6",
@@ -22,10 +19,7 @@ const Icon = ({ name }) => (
 );
 
 const NAV_ITEMS = [
-  { id: "dashboard", icon: "dashboard", labelKey: "dashboard" },
   { id: "clientes", icon: "clientes", labelKey: "clientes" },
-  { id: "recibos", icon: "recibos", labelKey: "recibos" },
-  { id: "rutas", icon: "rutas", labelKey: "rutas" },
   { id: "facturas", icon: "facturas", labelKey: "facturas" },
   { id: "rutas-hojas", icon: "rutas-hojas", labelKey: "rutas_hojas" },
   { id: "estimados", icon: "estimados", labelKey: "estimados" },

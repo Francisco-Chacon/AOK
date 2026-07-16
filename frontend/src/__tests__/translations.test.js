@@ -3,11 +3,11 @@ import { t, translations } from "../i18n/translations";
 
 describe("t() helper", () => {
   it("devuelve el valor en español si la clave existe", () => {
-    expect(t("es", "appName")).toBe("Sistema de Gestión");
+    expect(t("es", "appName")).toBe("MAKE IT TO HAPPEN LLC");
   });
 
   it("devuelve el valor en inglés si la clave existe", () => {
-    expect(t("en", "appName")).toBe("Management System");
+    expect(t("en", "appName")).toBe("MAKE IT TO HAPPEN LLC");
   });
 
   it("devuelve la clave si no existe traducción", () => {

@@ -84,9 +84,10 @@ const InvoicePage = () => {
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [filterEstado, setFilterEstado] = useState("todos");
   const LIMIT = 20;
   const [page, setPage] = useState(1);
-  useEffect(() => { setPage(1); }, [searchQuery]);
+  useEffect(() => { setPage(1); }, [searchQuery, filterEstado]);
   const [selectedId, setSelectedId] = useState(null);
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -125,19 +126,19 @@ const InvoicePage = () => {
   }, []);
 
   const filtradas = facturas.filter(f => {
+    if (filterEstado !== "todos" && f.estado !== filterEstado) return false;
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return (
       (f.cliente_nombre || "").toLowerCase().includes(q) ||
-      (f.nota || "").toLowerCase().includes(q) ||
-      (f.estado || "").toLowerCase().includes(q)
+      (f.nota || "").toLowerCase().includes(q)
     );
   });
 
   const totalPages = Math.ceil(filtradas.length / LIMIT);
   const paginated = filtradas.slice((page - 1) * LIMIT, page * LIMIT);
 
-  const selectedFactura = facturas.find((f) => f.id === selectedId) || filtradas[0] || null;
+  const selectedFactura = filtradas.find((f) => f.id === selectedId) || filtradas[0] || null;
 
   const openNewModal = () => {
     setEditingFactura(null);
@@ -342,6 +343,22 @@ const InvoicePage = () => {
         <aside className="proposal-selector">
           <div className="proposal-selector-header">
             <SearchBar value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder={t(lang, "busqueda")} />
+            <div className="pill-group" style={{ marginTop: "0.5rem" }}>
+              {[
+                { id: "todos", label: t(lang, "todos") },
+                { id: "pendiente", label: t(lang, "pendiente") },
+                { id: "pagado", label: t(lang, "pagado") },
+                { id: "cancelado", label: t(lang, "anulado") },
+              ].map((opt) => (
+                <button
+                  key={opt.id}
+                  className={"pill" + (filterEstado === opt.id ? " pill--active" : "")}
+                  onClick={() => setFilterEstado(opt.id)}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {loading ? (
@@ -419,7 +436,7 @@ const InvoicePage = () => {
               <select className="input" name="estado" value={form.estado} onChange={handleChange}>
                 <option value="pendiente">{t(lang, "pendiente")}</option>
                 <option value="pagado">{t(lang, "pagado")}</option>
-                <option value="cancelado">{t(lang, "cancelado")}</option>
+                <option value="cancelado">{t(lang, "anulado")}</option>
               </select>
             </label>
             <label className="form-field form-field--full">

@@ -24,43 +24,6 @@ db.exec(`
     updated_at    TEXT NOT NULL
   );
 
-  CREATE TABLE IF NOT EXISTS rutas (
-    id            INTEGER PRIMARY KEY AUTOINCREMENT,
-    nombre        TEXT NOT NULL,
-    dia           TEXT NOT NULL,
-    tipo_servicio TEXT,
-    descripcion   TEXT,
-    created_at    TEXT NOT NULL,
-    updated_at    TEXT NOT NULL
-  );
-
-  CREATE TABLE IF NOT EXISTS visitas (
-    id               INTEGER PRIMARY KEY AUTOINCREMENT,
-    cliente_id       INTEGER NOT NULL,
-    fecha            TEXT    NOT NULL,
-    dia_semana       TEXT    NOT NULL,
-    direccion        TEXT    NOT NULL,
-    hora             TEXT    NOT NULL,
-    duracion_minutos INTEGER NOT NULL DEFAULT 60,
-    tipo_servicio    TEXT    DEFAULT '',
-    created_at       TEXT    NOT NULL,
-    updated_at       TEXT    NOT NULL,
-    FOREIGN KEY (cliente_id) REFERENCES clientes(id)
-  );
-
-  CREATE TABLE IF NOT EXISTS recibos (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    cliente_id  INTEGER NOT NULL,
-    fecha       TEXT NOT NULL,
-    monto       REAL NOT NULL DEFAULT 0,
-    estado      TEXT NOT NULL DEFAULT 'pendiente',
-    descripcion TEXT,
-    codigo      TEXT UNIQUE,
-    created_at  TEXT NOT NULL,
-    updated_at  TEXT NOT NULL,
-    FOREIGN KEY (cliente_id) REFERENCES clientes(id) ON DELETE CASCADE
-  );
-
   CREATE TABLE IF NOT EXISTS estimados (
     id                  INTEGER PRIMARY KEY AUTOINCREMENT,
     cliente_id          INTEGER NOT NULL,

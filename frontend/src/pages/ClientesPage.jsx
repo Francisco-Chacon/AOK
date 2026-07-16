@@ -133,17 +133,7 @@ const ClientesPage = () => {
     }
   };
 
-  // Flujo de borrado con modal propio
-  const [recibosCount, setRecibosCount] = useState(0);
-
-  const askDelete = async (cliente) => {
-    try {
-      const res = await api.get(`/clientes/${cliente.id}/recibos-count`);
-      const count = res.data.count || 0;
-      setRecibosCount(count);
-    } catch (err) {
-      setRecibosCount(0);
-    }
+  const askDelete = (cliente) => {
     setClienteToDelete(cliente);
     setConfirmDeleteOpen(true);
   };
@@ -151,7 +141,6 @@ const ClientesPage = () => {
   const cancelDelete = () => {
     setConfirmDeleteOpen(false);
     setClienteToDelete(null);
-    setRecibosCount(0);
   };
 
   const confirmDelete = async () => {
@@ -166,7 +155,6 @@ const ClientesPage = () => {
     } finally {
       setConfirmDeleteOpen(false);
       setClienteToDelete(null);
-      setRecibosCount(0);
     }
   };
 
@@ -431,11 +419,7 @@ const ClientesPage = () => {
               {t(lang, "seguro_eliminar_cliente")}
               {clienteToDelete?.nombre ? <span className="font-bold"> "{clienteToDelete.nombre}"</span> : ""}?
             </p>
-            {recibosCount > 0 && (
-              <p className="mt-2 text-sm text-[rgb(var(--warning))]">
-                Este cliente tiene <strong>{recibosCount}</strong> recibo(s) asociado(s). Al eliminarlo también se eliminarán todos sus recibos.
-              </p>
-            )}
+
           </div>
         </div>
         <div className="mt-6 flex justify-end gap-3">

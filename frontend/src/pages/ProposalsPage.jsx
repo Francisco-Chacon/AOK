@@ -18,6 +18,7 @@ const ProposalsPage = () => {
   const [clientes, setClientes] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [filterEstado, setFilterEstado] = useState("todos");
   const [loading, setLoading] = useState(true);
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -171,6 +172,7 @@ const ProposalsPage = () => {
   };
 
   const filteredEstimados = estimados.filter((estimado) => {
+    if (filterEstado !== "todos" && estimado.estado !== filterEstado) return false;
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase();
     return (
@@ -182,7 +184,7 @@ const ProposalsPage = () => {
   });
 
   const selectedProposal =
-    estimados.find((estimado) => estimado.id === selectedId) ||
+    filteredEstimados.find((estimado) => estimado.id === selectedId) ||
     filteredEstimados[0] ||
     null;
 
@@ -220,6 +222,23 @@ const ProposalsPage = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t(lang, "busqueda")}
             />
+            <div className="pill-group" style={{ marginTop: "0.5rem" }}>
+              {[
+                { id: "todos", label: t(lang, "todos") },
+                { id: "borrador", label: t(lang, "borrador") },
+                { id: "enviado", label: t(lang, "enviado") },
+                { id: "aceptado", label: t(lang, "aceptado") },
+                { id: "rechazado", label: t(lang, "rechazado") },
+              ].map((opt) => (
+                <button
+                  key={opt.id}
+                  className={"pill" + (filterEstado === opt.id ? " pill--active" : "")}
+                  onClick={() => setFilterEstado(opt.id)}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {loading ? (
