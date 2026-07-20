@@ -7,7 +7,10 @@ const TAG_LENGTH = 16;
 const PEPPER = "sg-local-2024-enc-key";
 
 function deriveKey() {
-  const seed = `${os.hostname()}-${os.platform()}-${os.arch()}-${PEPPER}`;
+  const machineId = process.env.RENDER
+    ? (process.env.RENDER_EXTERNAL_URL || "render")
+    : `${os.hostname()}-${os.platform()}-${os.arch()}`;
+  const seed = `${machineId}-${PEPPER}`;
   return crypto.createHash("sha256").update(seed).digest();
 }
 
