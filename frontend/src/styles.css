@@ -541,6 +541,169 @@ body {
 }
 
 /* =============================================
+   MOBILE BOTTOM NAVIGATION
+   ============================================= */
+
+.mobile-bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background: var(--bg-sidebar);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  z-index: 30;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.mobile-bottom-bar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 12px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: color 0.15s;
+  min-width: 0;
+  font-family: inherit;
+}
+
+.mobile-bottom-bar-item:hover,
+.mobile-bottom-bar-item--active {
+  color: rgb(var(--primary));
+}
+
+.mobile-bottom-bar-icon {
+  width: 22px;
+  height: 22px;
+}
+
+.mobile-bottom-bar-item span {
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* Bottom Sheet */
+
+.mobile-bottom-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--overlay);
+  z-index: 50;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.mobile-bottom-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-height: 70vh;
+  background: var(--bg-modal);
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px 20px 0 0;
+  z-index: 51;
+  animation: slideUp 0.25s ease-out;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  overflow-y: auto;
+}
+
+.mobile-bottom-sheet-handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--text-muted);
+  opacity: 0.3;
+  margin: 10px auto 4px;
+}
+
+.mobile-bottom-sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px 12px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.mobile-bottom-sheet-close {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+
+.mobile-bottom-sheet-close:hover {
+  background: var(--bg-hover);
+}
+
+.mobile-bottom-sheet-body {
+  padding: 0 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mobile-bottom-sheet-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 12px;
+  border: none;
+  background: transparent;
+  color: var(--text-main);
+  cursor: pointer;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 500;
+  font-family: inherit;
+  text-align: left;
+  transition: background 0.15s;
+  width: 100%;
+}
+
+.mobile-bottom-sheet-item:hover {
+  background: var(--bg-hover);
+}
+
+.mobile-bottom-sheet-item-icon {
+  width: 20px;
+  height: 20px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.mobile-bottom-sheet-item--active {
+  color: rgb(var(--primary));
+}
+
+.mobile-bottom-sheet-item--active .mobile-bottom-sheet-item-icon {
+  color: rgb(var(--primary));
+}
+
+.mobile-bottom-sheet-divider {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: 8px 0;
+}
+
+/* =============================================
    STATUS BAR
    ============================================= */
 

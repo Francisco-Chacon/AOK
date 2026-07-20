@@ -14,8 +14,8 @@ const ICONS = {
   backups: "M12 3a9 9 0 1 0 9 9h-4 M21 3v6h-6 M12 7v5l3 2",
 };
 
-const Icon = ({ name }) => (
-  <svg className="sidebar-icon h-5 w-5 shrink-0" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+const Icon = ({ name, className = "sidebar-icon h-5 w-5 shrink-0" }) => (
+  <svg className={className} viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d={ICONS[name]} />
   </svg>
 );
@@ -139,6 +139,155 @@ const Sidebar = ({ activePage, onChangePage }) => {
             </div>
           </div>
 
+          <div className="support-card-tagline">
+            {t(lang, "support_tagline")}
+          </div>
+        </div>
+      </Modal>
+    </>
+  );
+};
+
+/* ─── Mobile Bottom Navigation ─── */
+
+const MORE_ICON = "M5 12h.01 M12 12h.01 M19 12h.01";
+
+const MAIN_ITEMS = [
+  { id: "clientes", icon: "clientes", labelKey: "clientes" },
+  { id: "facturas", icon: "facturas", labelKey: "facturas" },
+  { id: "estimados", icon: "estimados", labelKey: "estimados" },
+];
+
+const MORE_ITEMS = [
+  { id: "rutas-hojas", icon: "rutas-hojas", labelKey: "rutas_hojas" },
+  { id: "proposals", icon: "proposals", labelKey: "proposals" },
+  { id: "contracts", icon: "contracts", labelKey: "contracts" },
+  { id: "backups", icon: "backups", labelKey: "backups" },
+];
+
+export const MobileBottomNav = ({ activePage, onChangePage, lang }) => {
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [supportOpen, setSupportOpen] = useState(false);
+
+  const handleNav = (id) => {
+    if (id === "more") {
+      setSheetOpen(true);
+      return;
+    }
+    onChangePage(id);
+  };
+
+  return (
+    <>
+      <nav className="mobile-bottom-bar">
+        {MAIN_ITEMS.map((item) => (
+          <button
+            key={item.id}
+            className={"mobile-bottom-bar-item" + (activePage === item.id ? " mobile-bottom-bar-item--active" : "")}
+            onClick={() => handleNav(item.id)}
+          >
+            <Icon name={item.icon} className="mobile-bottom-bar-icon" />
+            <span>{t(lang, item.labelKey)}</span>
+          </button>
+        ))}
+        <button
+          className="mobile-bottom-bar-item"
+          onClick={() => handleNav("more")}
+        >
+          <svg className="mobile-bottom-bar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d={MORE_ICON} />
+          </svg>
+          <span>{t(lang, "more")}</span>
+        </button>
+      </nav>
+
+      {sheetOpen && (
+        <div className="mobile-bottom-sheet-backdrop" onClick={() => setSheetOpen(false)}>
+          <div className="mobile-bottom-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="mobile-bottom-sheet-handle" />
+            <div className="mobile-bottom-sheet-header">
+              <span>{t(lang, "more")}</span>
+              <button className="mobile-bottom-sheet-close" onClick={() => setSheetOpen(false)}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 6 6 18 M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="mobile-bottom-sheet-body">
+              {MORE_ITEMS.map((item) => (
+                <button
+                  key={item.id}
+                  className={"mobile-bottom-sheet-item" + (activePage === item.id ? " mobile-bottom-sheet-item--active" : "")}
+                  onClick={() => { onChangePage(item.id); setSheetOpen(false); }}
+                >
+                  <Icon name={item.icon} className="mobile-bottom-sheet-item-icon" />
+                  <span>{t(lang, item.labelKey)}</span>
+                </button>
+              ))}
+              <div className="mobile-bottom-sheet-divider" />
+              <button
+                className="mobile-bottom-sheet-item"
+                onClick={() => { setSupportOpen(true); setSheetOpen(false); }}
+              >
+                <svg className="mobile-bottom-sheet-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" /><path d="M12 16v-4 M12 8h.01" />
+                </svg>
+                <span>{t(lang, "support_title")}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <Modal open={supportOpen} onClose={() => setSupportOpen(false)}>
+        <div className="support-card">
+          <button className="support-card-close" onClick={() => setSupportOpen(false)}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 6 6 18 M6 6l12 12" />
+            </svg>
+          </button>
+          <div className="support-card-top">
+            <div className="support-card-avatar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+            </div>
+            <h2>Francisco Chacón</h2>
+            <p className="support-card-role">{t(lang, "support_developer")}</p>
+          </div>
+          <div className="support-card-divider" />
+          <div className="support-card-body">
+            <a href="tel:+50372044924" className="support-card-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+              </svg>
+              <div>
+                <span className="support-card-label">{t(lang, "support_phone")}</span>
+                <span className="support-card-value">+503 7204-4924</span>
+              </div>
+            </a>
+            <a href="mailto:francochacon155@gmail.com" className="support-card-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="4" width="20" height="16" rx="2" />
+                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+              </svg>
+              <div>
+                <span className="support-card-label">{t(lang, "support_email")}</span>
+                <span className="support-card-value">francochacon155@gmail.com</span>
+              </div>
+            </a>
+            <div className="support-card-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                <circle cx="12" cy="10" r="3" />
+              </svg>
+              <div>
+                <span className="support-card-label">{t(lang, "support_location")}</span>
+                <span className="support-card-value">El Salvador</span>
+              </div>
+            </div>
+          </div>
           <div className="support-card-tagline">
             {t(lang, "support_tagline")}
           </div>

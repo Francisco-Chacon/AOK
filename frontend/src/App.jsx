@@ -1,6 +1,6 @@
 import React, { useState, useEffect, Suspense, lazy } from "react";
 import { LanguageProvider, useLanguage } from "./i18n/LanguageContext";
-import Sidebar from "./components/Sidebar";
+import Sidebar, { MobileBottomNav } from "./components/Sidebar";
 import Topbar from "./components/Topbar";
 import StatusBar from "./components/StatusBar";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -23,7 +23,19 @@ const PageFallback = () => (
   </div>
 );
 
+const useMediaQuery = (query) => {
+  const [matches, setMatches] = useState(() => window.matchMedia(query).matches);
+  useEffect(() => {
+    const mql = window.matchMedia(query);
+    const handler = (e) => setMatches(e.matches);
+    mql.addEventListener("change", handler);
+    return () => mql.removeEventListener("change", handler);
+  }, [query]);
+  return matches;
+};
+
 const AppContent = () => {
+  const isMobile = useMediaQuery("(max-width: 640px)");
   const [activePage, setActivePage] = useState("facturas");
   const [aiOpen, setAiOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -71,8 +83,8 @@ const AppContent = () => {
   };
 
   return (
-    <div className={cn("app-shell grid h-screen grid-cols-[220px_minmax(0,1fr)] overflow-hidden transition-[grid-template-columns] duration-200", aiOpen && "app-shell--ai-open grid-cols-[220px_minmax(0,1fr)_340px]")}>
-      <Sidebar activePage={activePage} onChangePage={setActivePage} />
+    <div className={cn("app-shell grid h-screen overflow-hidden", isMobile ? "grid-cols-[1fr]" : "grid-cols-[220px_minmax(0,1fr)]", aiOpen && !isMobile && "app-shell--ai-open grid-cols-[220px_minmax(0,1fr)_340px]")}>
+      {!isMobile && <Sidebar activePage={activePage} onChangePage={setActivePage} />}
 
       <div className="app-main-wrapper flex min-h-0 flex-col overflow-hidden">
         <Topbar
@@ -84,9 +96,17 @@ const AppContent = () => {
           onOpenAi={() => setAiOpen((v) => !v)}
           onOpenSettings={() => setSettingsOpen(true)}
         />
-        <main className="app-main min-h-0 flex-1 overflow-y-auto px-6 py-7" style={{ animation: "fadeIn 0.25s ease-out" }}><Suspense fallback={<PageFallback />}>{renderPage()}</Suspense></main>
+        <main className={cn("app-main min-h-0 flex-1 overflow-y-auto px-6 py-7", isMobile && "pb-24")} style={{ animation: "fadeIn 0.25s ease-out" }}><Suspense fallback={<PageFallback />}>{renderPage()}</Suspense></main>
         <StatusBar online={online} aiConnected={online} />
       </div>
+
+      {isMobile && (
+        <MobileBottomNav
+          activePage={activePage}
+          onChangePage={setActivePage}
+          lang={lang}
+        />
+      )}
 
       {settingsOpen && (
         <SettingsModal onClose={() => setSettingsOpen(false)} />
