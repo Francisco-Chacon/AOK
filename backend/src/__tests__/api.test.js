@@ -118,11 +118,48 @@ describe("RUTAS-HOJAS /api/rutas-hojas", () => {
   });
 });
 
+// ===================== CONTRATOS =====================
+
+describe("CONTRACTS /api/contracts", () => {
+  it("GET devuelve lista vacía", async () => {
+    const res = await request(app).get("/api/contracts");
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([]);
+  });
+});
+
 // ===================== BACKUPS =====================
 
 describe("BACKUPS /api/backups", () => {
   it("falla con 404 en test (no hay BD real)", async () => {
     const res = await request(app).get("/api/backups");
     expect(res.status).toBe(404);
+  });
+});
+
+// ===================== LOG-ERROR =====================
+
+describe("POST /api/log-error", () => {
+  it("acepta un reporte de error", async () => {
+    const res = await request(app)
+      .post("/api/log-error")
+      .send({ message: "test error", stack: "at test (file.js:1)" });
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ ok: true });
+  });
+
+  it("acepta payload vacío", async () => {
+    const res = await request(app).post("/api/log-error").send({});
+    expect(res.status).toBe(200);
+  });
+});
+
+// ===================== SPA FALLBACK =====================
+
+describe("SPA fallback", () => {
+  it("sirve index.html para rutas no-API", async () => {
+    const res = await request(app).get("/some-page");
+    expect(res.status).toBe(200);
+    expect(res.headers["content-type"]).toContain("text/html");
   });
 });

@@ -1,5 +1,6 @@
 // backend/src/controllers/facturas.controller.js
 const db = require("../db/sqlite");
+const logger = require("../utils/logger");
 
 exports.getAll = (req, res) => {
   try {
@@ -24,8 +25,8 @@ exports.getAll = (req, res) => {
 
     res.json(result);
   } catch (err) {
-    console.error("Error get facturas", err);
-    res.status(500).json({ error: err.message });
+    logger.error("Error get facturas", err);
+    res.status(500).json({ message: err.message });
   }
 };
 
@@ -39,7 +40,7 @@ exports.getOne = (req, res) => {
       WHERE f.id = ?
     `).get(req.params.id);
 
-    if (!factura) return res.status(404).json({ error: "No encontrada" });
+    if (!factura) return res.status(404).json({ message: "Factura no encontrada" });
 
     const items = db.prepare(`
       SELECT * FROM facturas_items WHERE factura_id = ? ORDER BY id ASC
@@ -47,20 +48,20 @@ exports.getOne = (req, res) => {
 
     res.json({ ...factura, items });
   } catch (err) {
-    console.error("Error get factura", err);
-    res.status(500).json({ error: err.message });
+    logger.error("Error get factura", err);
+    res.status(500).json({ message: err.message });
   }
 };
 
 exports.create = (req, res) => {
   try {
-    const { cliente_id, fecha, estado, nota, items } = req.body;
+    const { cliente_id, fecha, estado, nota, numero, items } = req.body;
     const now = new Date().toISOString();
 
     const result = db.prepare(`
-      INSERT INTO facturas (cliente_id, fecha, estado, nota, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).run(cliente_id || null, fecha || now.slice(0,10), estado || "pendiente", nota || "", now, now);
+      INSERT INTO facturas (cliente_id, fecha, estado, nota, numero, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(cliente_id ?? null, fecha || now.slice(0,10), estado || "pendiente", nota || "", numero || null, now, now);
 
     const factura_id = result.lastInsertRowid;
 
@@ -85,20 +86,21 @@ exports.create = (req, res) => {
     const factura = db.prepare("SELECT * FROM facturas WHERE id = ?").get(factura_id);
     res.status(201).json(factura);
   } catch (err) {
-    console.error("Error create factura", err);
-    res.status(500).json({ error: err.message });
+    logger.error("Error create factura", err);
+    res.status(500).json({ message: err.message });
   }
 };
 
 exports.update = (req, res) => {
   try {
-    const { cliente_id, fecha, estado, nota, items } = req.body;
+    const { cliente_id, fecha, estado, nota, numero, items } = req.body;
     const now = new Date().toISOString();
+    if (!fecha) return res.status(400).json({ message: "La fecha es requerida" });
 
     db.prepare(`
-      UPDATE facturas SET cliente_id = ?, fecha = ?, estado = ?, nota = ?, updated_at = ?
+      UPDATE facturas SET cliente_id = ?, fecha = ?, estado = ?, nota = ?, numero = ?, updated_at = ?
       WHERE id = ?
-    `).run(cliente_id || null, fecha || "", estado || "pendiente", nota || "", now, req.params.id);
+    `).run(cliente_id ?? null, fecha, estado || "pendiente", nota || "", numero ?? null, now, req.params.id);
 
     db.prepare("DELETE FROM facturas_items WHERE factura_id = ?").run(req.params.id);
 
@@ -122,8 +124,8 @@ exports.update = (req, res) => {
 
     res.json({ id: Number(req.params.id) });
   } catch (err) {
-    console.error("Error update factura", err);
-    res.status(500).json({ error: err.message });
+    logger.error("Error update factura", err);
+    res.status(500).json({ message: err.message });
   }
 };
 
@@ -132,7 +134,7 @@ exports.delete = (req, res) => {
     db.prepare("DELETE FROM facturas WHERE id = ?").run(req.params.id);
     res.json({ ok: true });
   } catch (err) {
-    console.error("Error delete factura", err);
-    res.status(500).json({ error: err.message });
+    logger.error("Error delete factura", err);
+    res.status(500).json({ message: err.message });
   }
 };

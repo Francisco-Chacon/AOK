@@ -4,17 +4,6 @@ const { validateString, validateEnum } = require("../utils/validation");
 const logger = require("../utils/logger");
 
 // ============================
-// Validar ID
-// ============================
-function validateId(id, res) {
-  if (!id || isNaN(Number(id)) || Number(id) <= 0) {
-    res.status(400).json({ message: "ID inválido" });
-    return null;
-  }
-  return Number(id);
-}
-
-// ============================
 // GET /api/clientes
 // ============================
 function getAllClientes(req, res) {
@@ -64,7 +53,7 @@ function createCliente(req, res) {
     try {
       validateString(nombre, "nombre", 200, true);
       tipoServicioFinal =
-        validateString(servicio ?? servicio_principal ?? bodyTipoServicio, "servicio", 100, true);
+        validateString(servicio ?? servicio_principal ?? bodyTipoServicio, "servicio", 100, false);
       validateEnum(estado, "estado", ["activo", "pendiente", "inactivo"], true);
       validateString(direccion, "direccion", 300, false);
       validateString(telefono, "telefono", 20, false);
@@ -98,6 +87,7 @@ function createCliente(req, res) {
           nombre,
           direccion,
           telefono,
+          email,
           tipo_servicio AS servicio,
           estado,
           created_at,
@@ -149,7 +139,7 @@ function updateCliente(req, res) {
     try {
       validateString(nombre, "nombre", 200, true);
       tipoServicioFinal =
-        validateString(servicio ?? servicio_principal ?? bodyTipoServicio, "servicio", 100, true);
+        validateString(servicio ?? servicio_principal ?? bodyTipoServicio, "servicio", 100, false);
       validateEnum(estado, "estado", ["activo", "pendiente", "inactivo"], true);
       validateString(direccion, "direccion", 300, false);
       validateString(telefono, "telefono", 20, false);
@@ -195,6 +185,7 @@ function updateCliente(req, res) {
           nombre,
           direccion,
           telefono,
+          email,
           tipo_servicio AS servicio,
           estado,
           created_at,

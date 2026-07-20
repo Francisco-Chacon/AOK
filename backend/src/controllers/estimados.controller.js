@@ -29,6 +29,7 @@ function getAllEstimados(req, res) {
         e.fecha,
         e.monto,
         e.moneda,
+        e.tasa_impuesto,
         e.descripcion_trabajo,
         e.notas_adicionales,
         e.estado,
@@ -56,6 +57,7 @@ function createEstimado(req, res) {
       fecha,
       monto,
       moneda,
+      tasa_impuesto,
       descripcion_trabajo,
       notas_adicionales,
       estado,
@@ -88,12 +90,13 @@ function createEstimado(req, res) {
         fecha,
         monto,
         moneda,
+        tasa_impuesto,
         descripcion_trabajo,
         notas_adicionales,
         estado,
         created_at,
         updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const result = stmt.run(
@@ -102,6 +105,7 @@ function createEstimado(req, res) {
       fecha,
       validMonto,
       moneda || "USD",
+      Number(tasa_impuesto) || 0.07,
       descripcion_trabajo || "",
       notas_adicionales || "",
       estado || "borrador",
@@ -121,6 +125,7 @@ function createEstimado(req, res) {
           e.fecha,
           e.monto,
           e.moneda,
+          e.tasa_impuesto,
           e.descripcion_trabajo,
           e.notas_adicionales,
           e.estado,
@@ -146,12 +151,13 @@ function updateEstimado(req, res) {
     const validId = validateId(id, res);
     if (!validId) return;
 
-const {
+    const {
       cliente_id,
       direccion_trabajo,
       fecha,
       monto,
       moneda,
+      tasa_impuesto,
       descripcion_trabajo,
       notas_adicionales,
       estado,
@@ -180,6 +186,7 @@ const {
         fecha              = ?,
         monto              = ?,
         moneda             = ?,
+        tasa_impuesto      = ?,
         descripcion_trabajo= ?,
         notas_adicionales = ?,
         estado             = ?,
@@ -193,6 +200,7 @@ const {
       fecha,
       validMonto,
       moneda || "USD",
+      Number(tasa_impuesto) || 0.07,
       descripcion_trabajo || "",
       notas_adicionales || "",
       estado || "borrador",
@@ -216,6 +224,7 @@ const {
           e.fecha,
           e.monto,
           e.moneda,
+          e.tasa_impuesto,
           e.descripcion_trabajo,
           e.notas_adicionales,
           e.estado,

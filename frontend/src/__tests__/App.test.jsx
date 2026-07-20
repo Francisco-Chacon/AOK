@@ -12,7 +12,8 @@ describe("App component", () => {
   it("muestra el sidebar con opciones principales", () => {
     render(<App />);
     expect(screen.getAllByText("Clientes").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("Recibos").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("Facturas").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Estimados").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Contratos").length).toBeGreaterThanOrEqual(1);
   });
 });

@@ -1,33 +1,33 @@
 # Sistema de Gestión Local
 
-Aplicación local para gestión de clientes, rutas, visitas, recibos, estimados, propuestas, facturas y hojas de ruta de servicios.
+Aplicación local para gestión de clientes, estimados, propuestas, facturas, hojas de ruta, contratos y respaldos.
 
 ## Características
 
-- **Dashboard / Inicio**: Vista ejecutiva inicial con KPIs, actividad reciente e ingresos anuales por mes
-- **Clientes**: Registro y gestión de clientes con estado (activo/pendiente/inactivo)
-- **Rutas**: Organización de rutas por día de la semana
-- **Visitas**: Programación de visitas a clientes con fecha, hora y duración
-- **Recibos**: Generación y seguimiento de pagos
-- **Estimados**: Creación de estimados con estados (borrador/enviado/aceptado/rechazado), vista previa, impresión y exportación PDF
-- **Propuestas**: Vista formal imprimible basada en descripción libre y monto manual, con exportación PDF
-- **Facturas**: Creación, edición, vista previa, impresión y exportación PDF
-- **Hojas de Ruta**: Registro de conductor, camión, clientes, horarios y descripción con impresión/exportación PDF
-- **Backups**: Sistema de respaldo y restauración de la base de datos
-- **Paginación**: Listas principales muestran 20 registros por página para evitar lentitud con muchos datos
-- **Multidioma**: Soporte para Español e Inglés
-- **Responsive UI**: Navegación móvil desplegable vertical y formularios adaptables
-- **Tema claro/oscuro**: Cambio de tema desde el menú lateral
+
+- **Clientes**: Registro con nombre, dirección, teléfono (selector de código de país con banderas), email y estado (activo/pendiente/inactivo). Validación inline (no bloqueante) de teléfono y email.
+- **Estimados**: Materiales (descripción, cantidad, precio unitario), selector de tasa de impuesto (7%, 15%, 25%), monedas (USD/EUR/MXN/PAB/COP), estados (borrador/enviado/aceptado/rechazado), vista previa y PDF
+- **Propuestas**: Documento formal imprimible generado a partir de un estimado, con exportación PDF
+- **Facturas**: Formulario simplificado con un solo ítem, número de factura editable, vista previa tipo "Proposal", estados (pendiente/pagado/anulado), impresión y PDF
+- **Hojas de Ruta**: Planificación con conductor, camión, fecha y múltiples clientes con horarios. Vista previa y PDF
+- **Contratos**: Módulo completo con cliente, fechas de inicio/fin, descripción, monto, vista previa con firmas y exportación PDF
+- **Backups**: Crear, listar, descargar, subir, restaurar y eliminar respaldos de la base de datos
+- **Asistente IA**: Chat integrado con IA para ayudar al usuario a usar el sistema
+- **Soporte Técnico**: Botón en la sidebar que abre un modal tipo tarjeta de presentación con datos del desarrollador
+- **Paginación**: Listas con 20 registros por página
+- **Multidioma**: Español e Inglés
+- **Tema claro/oscuro**: Alternable desde la barra superior
+- **Toasts**: Notificaciones de éxito/error en acciones CRUD
 
 ## Tecnologías
 
-- **Frontend**: React 18 + Vite (puerto 5173, build output a `backend/public/`)
+- **Frontend**: React 18 + Vite (puerto 5173, build a `backend/public/`)
 - **Backend**: Express.js + SQLite (better-sqlite3) — puerto 4000
-- **Escritorio**: Electron  — ventana 1280×800, lanza backend como proceso hijo
-- **Estilos**: CSS personalizado + Tailwind utilities donde aplica
+- **Escritorio**: Electron — ventana 1280×800, lanza backend como proceso hijo
+- **Estilos**: CSS personalizado + Tailwind utilities
 - **Cliente HTTP**: Axios
-- **PDF en frontend**: `html2canvas` + `jsPDF` para exportar vistas previas a PDF descargable
-- **Guía futura**: Nuevos componentes deben escribirse en TypeScript/TSX; el código JSX existente puede migrarse gradualmente.
+- **PDF**: `html2canvas` + `jsPDF` (generado en frontend)
+- **Guía futura**: Nuevos componentes en TypeScript/TSX; JSX existente migrable gradualmente.
 
 ## Requisitos
 
@@ -37,7 +37,6 @@ Aplicación local para gestión de clientes, rutas, visitas, recibos, estimados,
 ## Instalación
 
 ```bash
-# Instalar dependencias
 npm install
 cd frontend && npm install
 cd ../backend && npm install
@@ -46,13 +45,13 @@ cd ..
 
 ## Uso
 
-### Desarrollo (modo concurrently)
+### Desarrollo
 
 ```bash
 npm run dev
 ```
 
-Inicia el servidor backend (puerto 4000) y el frontend de desarrollo simultaneamente.
+Inicia backend (puerto 4000) y frontend (Vite :5173) simultáneamente. Las peticiones a `/api` se proxyan al backend.
 
 ### Producción
 
@@ -60,51 +59,43 @@ Inicia el servidor backend (puerto 4000) y el frontend de desarrollo simultaneam
 npm run build
 ```
 
-Compila el frontend y sirve los archivos estáticos desde el backend.
+Compila frontend a `backend/public/` y se sirve como estático.
 
-### Iniciar solo el backend
+### Variables de Entorno
 
-```bash
-cd backend
-npm run dev
-```
+| Variable | Descripción | Default |
+|----------|-------------|---------|
+| `PORT` | Puerto del backend | `4000` |
+| `NODE_ENV` | Entorno (`development`, `production`) | `development` |
+| `VITE_API_URL` | URL base API (frontend) | `http://localhost:4000/api` |
 
-## Variables de Entorno
+## Scripts
 
-| Variable | Descripción | Valor por defecto |
-|----------|-------------|-------------------|
-| `PORT` | Puerto del servidor backend | `4000` |
-| `NODE_ENV` | Entorno de ejecución (`development`, `production`) | `development` |
-| `VITE_API_URL` | URL base de la API (frontend) | `http://localhost:4000/api` |
-| `OPENROUTER_API_KEY` | API key para el asistente IA | — |
+### Raíz
 
-No se requieren archivos `.env` obligatorios; los valores por defecto funcionan para desarrollo local. Si deseas personalizar, crea un archivo `.env` en la raíz del backend y `.env.local` en `frontend/`.
-
-## Scripts npm
-
-### Raíz (`package.json`)
 | Script | Descripción |
 |--------|-------------|
-| `npm run dev` | Inicia backend + frontend en concurrently |
-| `npm run build` | Compila frontend y sirve desde backend |
-| `npm run dev:electron` | Inicia Electron en modo desarrollo |
-| `npm run build:electron` | Compila la app de Electron con electron-builder |
-| `npm run dist` | Ejecuta `build` + empaqueta Electron (.exe portable) |
+| `npm run dev` | Backend + frontend en concurrently |
+| `npm run build` | Compila frontend |
+| `npm run dev:electron` | Electron modo desarrollo |
+| `npm run dist` | `build` + empaqueta .exe portable |
+| `npm run dist:full` | Instala deps backend + build frontend + empaqueta .exe |
 
 ### Backend (`cd backend`)
+
 | Script | Descripción |
 |--------|-------------|
-| `npm run dev` | Inicia servidor con node plano en puerto 4000 |
+| `npm run dev` | `node src/server.js` (puerto 4000) |
 | `npm start` | `node src/server.js` |
-| `npm run init-db` | Inicializa BD con tablas básicas |
-| `npm run migrate:add-fecha-visitas` | Agrega columna `fecha` a tabla `visitas` |
+| `npm run init-db` | Inicializa BD |
 
 ### Frontend (`cd frontend`)
+
 | Script | Descripción |
 |--------|-------------|
-| `npm run dev` | Servidor de desarrollo Vite (puerto 5173) |
+| `npm run dev` | Servidor Vite (:5173) |
 | `npm run build` | Compila a `../backend/public/` |
-| `npm run preview` | Previsualiza build de producción localmente |
+| `npm run preview` | Vista previa del build |
 
 ## Estructura del Proyecto
 
@@ -112,34 +103,34 @@ No se requieren archivos `.env` obligatorios; los valores por defecto funcionan 
 sistema_local/
 ├── backend/
 │   ├── src/
-│   │   ├── app.js          # Configuración Express (CORS, static, SPA fallback)
-│   │   ├── controllers/    # Lógica de negocio (incluye dashboard.controller.js)
+│   │   ├── app.js              # Express (helmet, morgan, CORS, SPA fallback, error handler)
+│   │   ├── controllers/        # clientes, facturas, estimados, contratos, etc.
 │   │   ├── db/
-│   │   │   ├── sqlite.js   # Inicialización BD
-│   │   │   └── backups/    # Archivos de respaldo
-│   │   ├── routes/         # Rutas API (incluye dashboard.routes.js)
-│   │   ├── utils/          # Utilidades (validation, logger, init-db)
-│   │   └── server.js       # Punto de entrada
-│   ├── public/             # Build de React (generado por Vite)
-│   └── data/               # Base de datos SQLite
+│   │   │   ├── sqlite.js       # Init BD + migraciones automáticas
+│   │   │   └── backups/        # Archivos de respaldo
+│   │   ├── routes/             # Express Router (clientes, facturas, etc.)
+│   │   ├── ai/                 # queryTools.js (consultas offline SQLite)
+│   │   ├── utils/              # validation, logger, init-db, crypto (AES-256-GCM)
+│   │   └── server.js           # Entry point
+│   ├── public/                 # Build de React (generado)
+│   └── data/                   # SQLite DB
 ├── frontend/
 │   ├── src/
-│   │   ├── api/            # Cliente Axios
-│   │   ├── components/     # Componentes React (Sidebar, Modal, Spinner, etc.)
-│   │   ├── hooks/          # Custom hooks (useDebounce)
-│   │   ├── i18n/           # Traducciones ES/EN
-│   │   ├── pages/          # Vistas: Dashboard, Clientes, Visitas, Recibos,
-│   │   │                   #   Estimados, Propuestas, Facturas, Hojas de Ruta, Backups
-│   │   ├── utils/          # Utilidades (sanitize)
-│   │   └── styles.css      # Estilos globales
-│   ├── public/             # Archivos estáticos (favicon, logo)
-│   └── vite.config.js      # Puerto 5173, build output -> backend/public
+│   │   ├── api/                # Axios client
+│   │   ├── components/         # Sidebar, Modal, Pagination, Spinner, etc.
+│   │   ├── hooks/              # useDebounce
+│   │   ├── i18n/               # Traducciones ES/EN
+│   │   ├── pages/              # Clientes, Estimados, Propuestas,
+│   │   │                       # Facturas, Hojas de Ruta, Contratos, Backups
+│   │   ├── utils/              # sanitize, validate
+│   │   └── styles.css          # Estilos globales
+│   └── public/                 # favicon, logo
 ├── electron/
-│   ├── main.js             # Proceso principal (spawn backend, BrowserWindow)
-│   ├── preload.js          # API expuesta al renderer
-│   └── package.json        # Config electron-builder (target portable)
-├── AGENTS.md               # Contexto para asistentes de IA
-├── .gitignore              # Ignora node_modules, backend/data/, backend/public/, dist/
+│   ├── main.js                 # Proceso principal (spawn backend, BrowserWindow)
+│   ├── preload.js              # API expuesta al renderer
+│   └── package.json            # electron-builder config
+├── AGENTS.md                   # Contexto para asistentes de IA
+├── .gitignore
 └── package.json
 ```
 
@@ -147,196 +138,119 @@ sistema_local/
 
 | Recurso | Métodos | Notas |
 |---------|---------|-------|
-| `/api/dashboard` | GET | KPIs, actividad reciente e ingresos anuales. Acepta `?year=YYYY` para filtrar gráfico anual |
 | `/api/clientes` | GET, POST, PUT, DELETE | |
-| `/api/clientes/:id/recibos-count` | GET | Cantidad de recibos de un cliente |
-| `/api/visitas` | GET, POST, PUT, DELETE | |
-| `/api/recibos` | GET, POST, PUT, DELETE | |
-| `/api/estimados` | GET, POST, PUT, DELETE | |
+| `/api/estimados` | GET, POST, PUT, DELETE | Incluye `tasa_impuesto` |
+| `/api/proposals` | GET, POST, PUT, DELETE | |
 | `/api/facturas` | GET, POST, PUT, DELETE | |
-| `/api/facturas/:id` | GET | Factura individual con sus items |
-| `/api/rutas` | GET, POST, PUT, DELETE | Gestión de rutas |
+| `/api/facturas/:id` | GET | Con sus items |
 | `/api/rutas-hojas` | GET, POST, PUT, DELETE | |
-| `/api/rutas-hojas/:id` | GET | Hoja de ruta individual con sus clientes |
+| `/api/rutas-hojas/:id` | GET | Con clientes |
+| `/api/contracts` | GET, POST, PUT, DELETE | |
 | `/api/backups/create` | POST | |
 | `/api/backups/list` | GET | |
 | `/api/backups/download/:filename` | GET | |
-| `/api/backups/upload` | POST | Sube archivo .db (multer, límite 50MB) |
+| `/api/backups/upload` | POST | Multer, límite 50MB |
 | `/api/backups/restore` | POST | |
 | `/api/backups/:filename` | DELETE | |
-| `/api/ai/chat` | POST | Chat con asistente IA (requiere `OPENROUTER_API_KEY`) |
-
-### Dashboard API
-
-`GET /api/dashboard` devuelve:
-
-- `clientes`: total, activos e inactivos
-- `recibos_mes`: cantidad y total pagado del mes actual
-- `facturas_pendientes`: cantidad y total pendiente
-- `estimados`: cantidad y total acumulado
-- `ingresos_mensuales`: arreglo de 12 meses del año seleccionado, incluyendo meses en cero
-- `ingresos_year`: año utilizado para el gráfico
-- `ingresos_years`: años disponibles para el filtro, incluyendo siempre el año actual
-- `actividad_reciente`: últimos recibos creados
-
-Ejemplo:
-
-```http
-GET /api/dashboard?year=2025
-```
+| `/api/ai/chat` | POST | Chat asistente IA |
+| `/api/config/openrouter-key` | GET, PUT | Configurar API key (cifrada) |
+| `/api/log-error` | POST | Reporte de errores del frontend |
 
 ## Base de Datos
 
-La base de datos SQLite se encuentra en:
-`backend/data/gestion_local.db`
+`backend/data/gestion_local.db` (SQLite, se auto-crea al iniciar el backend).
 
 ### Tablas
 
-| Tabla | Columnas clave | Notas |
-|-------|----------------|-------|
-| `clientes` | id, nombre, dirección, teléfono, email, estado (activo/pendiente/inactivo), fecha_creación | |
-| `rutas` | id, nombre, día_semana | Sin endpoint API |
-| `visitas` | id, id_cliente, fecha, hora, duración, notas | Columna `fecha` agregada por migración |
-| `recibos` | id, id_cliente, monto, fecha, estado, codigo (único, ej. `REC-XXX-XXXX`) | |
-| `estimados` | id, id_cliente, monto, moneda (USD/EUR/MXN/PAB/COP), estado (borrador/enviado/aceptado/rechazado), notas_adicionales | |
-| `facturas` | id, id_cliente, monto, nota, fecha, fecha_vencimiento, estado | |
-| `facturas_items` | id_factura, fecha, descripción, cantidad, precio | Items línea de cada factura |
-| `rutas_hojas` | id, conductor, camión, fecha | |
-| `rutas_hojas_clientes` | id_hoja, id_cliente, cliente_dirección, hora_entrada, hora_salida, descripción | |
+| Tabla | Columnas clave |
+|-------|----------------|
+| `clientes` | id, nombre, dirección, teléfono, email, estado, fecha_creación |
+| `estimados` | id, id_cliente, materiales, moneda, estado, notas_adicionales, tasa_impuesto |
+| `propuestas` | id, id_estimado, monto_total, moneda, estado, notas |
+| `facturas` | id, id_cliente, monto, descripcion, fecha, estado, numero |
+| `facturas_items` | id_factura, descripción, cantidad, precio |
+| `rutas_hojas` | id, conductor, camión, fecha |
+| `rutas_hojas_clientes` | id_hoja, id_cliente, hora_entrada, hora_salida, descripción |
+| `contracts` | id, cliente_id, fecha_inicio, fecha_fin, descripcion, monto |
+| `config` | key, value | Almacena API key cifrada |
 
-### Configuración
-
-La base de datos se inicializa automáticamente al iniciar el backend mediante `backend/src/db/sqlite.js`. No requiere migraciones manuales. Los backups se almacenan en `backend/data/backups/`.
-
-> **Nota:** Actualmente no hay archivos de esquema (`schema.sql`) ni sistema de migraciones formales. Existen scripts de utilidad en `backend/src/utils/` para tareas puntuales (`initDb.js`, `addFechaToVisitas.js`).
-
-> ⚠️ **BD duplicada:** Existe una copia de la base de datos en `backend/src/data/gestion_local.db` que parece ser un residuo. La BD principal es `backend/data/gestion_local.db`.
-
-## Assets y Recursos Multimedia
-
-Los recursos estáticos (imágenes, iconos, favicon) se encuentran en `frontend/public/`:
-
-- `favicon.ico` — Icono de la aplicación
-- `logo.png` — Logo de la empresa/sistema
-
-No existe una carpeta `assets/` separada; se utiliza `public/` de Vite para servir archivos estáticos.
-
-## Documentación Adicional
-
-- **AGENTS.md** — Guía de contexto para asistentes de IA (OpenCode)
-- **API Docs** — Pendiente de generar. Los endpoints actuales están listados en la sección [API Endpoints](#api-endpoints) de este documento. Se recomienda crear `docs/api.md` con ejemplos de peticiones/respuestas.
-
-## Componentes Principales (Frontend)
+## Componentes Principales
 
 | Componente | Archivo | Función |
 |------------|---------|---------|
-| **Sidebar** | `src/components/Sidebar.jsx` | Navegación con iconos SVG, menú móvil desplegable, toggle tema, selector de idioma |
-| **Modal** | `src/components/Modal.jsx` | Modal reutilizable con variantes wide y fullscreen |
-| **Spinner / LoadingOverlay** | `src/components/Spinner.jsx` | Indicador de carga (small/medium/large) con overlay |
-| **SearchableSelect** | `src/components/SearchableSelect.jsx` | Select con búsqueda y debounce |
-| **Pagination** | `src/components/Pagination.jsx` | Paginación reutilizable para listas, 20 registros por página por defecto |
-| **ErrorBoundary** | `src/components/ErrorBoundary.jsx` | Captura errores de React con pantalla de fallback y botón de recarga |
-| **useDebounce** | `src/hooks/useDebounce.js` | Hook genérico `useDebounce(value, delay)` |
+| Sidebar | `Sidebar.jsx` | Navegación con iconos SVG, botón soporte técnico con modal |
+| Modal | `Modal.jsx` | Modal reutilizable (wide, fullscreen, header opcional) |
+| Spinner | `Spinner.jsx` | Indicador de carga (small/medium/large) |
+| SearchableSelect | `SearchableSelect.jsx` | Select con búsqueda |
+| Pagination | `Pagination.jsx` | Paginación, 20 por página |
+| ErrorBoundary | `ErrorBoundary.jsx` | Captura errores con fallback |
+| SearchBar | `SearchBar.jsx` | Barra de búsqueda con icono |
+| EmptyState | `EmptyState.jsx` | Estado vacío para listas |
 
-## Dashboard
+## Funcionalidades Detalladas
 
-El sistema abre por defecto en `DashboardPage.jsx`.
+### Clientes
+- Teléfono con selector de código de país (17 países con banderas: US, MX, SV, GT, HN, NI, CR, PA, DO, CU, CO, PE, EC, VE, AR, CL, ES)
+- Validación inline de email y teléfono (no bloquea guardado, muestra sugerencia en rojo)
+- Modal detalle con avatar y badge de estado
+- "Servicio Principal" fue eliminado del sistema
 
-### Qué muestra
+### Estimados
+- Tabla de materiales con descripción, cantidad, precio unitario
+- **Selector de tasa de impuesto**: 7%, 15% o 25% — se refleja en subtotal, impuesto (con etiqueta del %) y total
+- Monedas: USD, EUR, MXN, PAB, COP
+- Vista previa con split-panel y exportación PDF
 
-- Resumen del mes: recibos pagados del mes actual y cantidad de facturas pendientes
-- KPIs: recibos del mes, clientes activos, facturas pendientes y total de estimados
-- Gráfico anual de ingresos: 12 barras de enero a diciembre, con `$0` en meses sin pagos
-- Filtro por año: dropdown custom que usa `ingresos_years` del backend y conserva el año actual aunque no tenga ingresos
-- Actividad reciente: últimos recibos creados, cliente, código, fecha relativa y monto
+### Facturas
+- Número de factura editable (campo "INVOICE #")
+- Selección de cliente carga dirección, email y teléfono automáticamente
+- Un solo ítem por factura (cantidad=1, precio=monto)
+- Vista previa con diseño profesional
 
-### Comportamiento importante
+### Contratos
+- Cliente, fechas inicio/fin, descripción, monto
+- Validación de fechas (fin no puede ser anterior a inicio)
+- Vista previa con tabla informativa y líneas de firma (Customer / Contractor)
+- Botones Imprimir y Exportar PDF
 
-- Si no se envía `year`, el backend usa el último año con recibos registrados; si no hay datos, usa el año actual.
-- El selector permite cambiar el año sin recargar toda la app.
-- El dashboard fuerza el scroll del contenedor principal al inicio al montarse para evitar que abra cortado si el usuario venía de otra página con scroll.
+### PDF Export
+Los PDFs se generan en frontend con `html2canvas` + `jsPDF`. Los nombres de archivo se traducen según el idioma activo (ej: `Factura_X.pdf` / `Invoice_X.pdf`).
 
-## Paginación
+Documentos con PDF: Facturas, Estimados, Propuestas, Hojas de Ruta, Contratos.
 
-Las páginas principales paginan en frontend para mejorar rendimiento visual con listas grandes.
+### Soporte Técnico
+Botón "Soporte Técnico" en el footer de la sidebar (estilo nav-item con chevron). Al hacer clic, abre un modal con tarjeta de presentación: avatar con gradiente, nombre, rol "Desarrollador", línea divisoria decorativa, tres contactos (teléfono, email, ubicación) con hover animado, y tagline al pie.
 
-- Tamaño por página: `20`
-- Componente: `frontend/src/components/Pagination.jsx`
-- Integrado en: Clientes, Recibos, Rutas/Visitas, Facturas, Estimados y Hojas de Ruta
-- La página vuelve a `1` al cambiar búsqueda o filtros
+### Configuración (API Key)
+La API key de OpenRouter se configura desde la UI (icono de engranaje en la barra superior). Se almacena cifrada con AES-256-GCM en la base de datos. Nunca se revela en la interfaz.
 
-## Exportación PDF
-
-La exportación PDF se genera en el frontend con `html2canvas` + `jsPDF`.
-
-### Documentos con PDF
-
-- Facturas: `InvoicePage.jsx`
-- Estimados: `EstimadosPage.jsx`
-- Hojas de Ruta: `RouteSheetPage.jsx`
-- Propuestas: `ProposalsPage/ProposalPreview.jsx`
-
-### Notas de diseño
-
-- Los documentos de vista previa usan fondo blanco fijo para mantener apariencia profesional en modo claro/oscuro.
-- Los botones dentro de `.proposal-toolbar` tienen estilos específicos para evitar texto blanco sobre fondo claro en modo oscuro.
-- La impresión del navegador se mantiene disponible junto al botón `Exportar`.
-
-## Electron
-
-Electron está funcional (no solo "en desarrollo"). Flujo de inicio:
-
-1. `electron/main.js` lanza el backend como proceso hijo: `spawn("node", ["src/server.js"])`
-2. Espera 1.5 segundos a que el backend inicie
-3. Crea una ventana `BrowserWindow` de 1280×800 (mínimo 1024×700)
-4. Carga `http://localhost:5173` (desarrollo) o `file://backend/public/index.html` (producción)
-5. `electron/preload.js` expone `window.electronAPI` con `platform`, `isElectron`, `getAppPath`
-6. Al cerrar la ventana, mata el proceso backend
-
-Para empaquetar: `npm run build:electron` → genera un `.exe` portable.
+### Asistente IA
+Chat integrado accesible desde un FAB (botón flotante). Usa OpenRouter API (requiere API key configurada en Settings). **Las consultas de datos funcionan sin API key** — puedes preguntar por resúmenes, conteos, clientes, estimados, facturas, contratos y actividad reciente. Si no hay key configurada, el chat muestra un mensaje amigable listando las consultas disponibles.
 
 ## Diseño y UX
 
-- La navegación de escritorio usa sidebar fijo.
-- En móvil, el menú se convierte en un desplegable vertical para evitar scroll horizontal.
-- Las tarjetas, modales, inputs y botones usan estilos responsive con tema claro/oscuro.
-- El dashboard usa clases CSS específicas (`dash-*`) para mantener layout estable dentro del shell con sidebar/topbar/statusbar.
-- El gráfico del dashboard debe revisarse en navegador; los datos llegan desde `/api/dashboard` y se renderizan como barras HTML/CSS.
-- Los documentos imprimibles de propuestas, facturas y hojas de ruta mantienen fondo blanco y estilos propios para no heredar el tema oscuro.
-- Las propuestas muestran cliente, dirección, teléfono, email, fechas, descripción libre y monto.
-- Facturas y hojas de ruta imprimen en una ventana/documento aislado para evitar imprimir el modal o la app completa.
-- Facturas, estimados, hojas de ruta y propuestas tienen botón `Exportar` para descargar PDF.
+- Sidebar fija en escritorio, menú desplegable en móvil
+- Tema claro/oscuro con design tokens CSS (`--primary`, `--bg-card`, `--text-main`, etc.)
+- Documentos imprimibles con fondo blanco fijo
+- Toasts de confirmación para acciones CRUD
+- Validación inline no bloqueante (borde rojo + texto de sugerencia)
+- Los PDFs se nombran según el idioma activo
 
-## Verificación Recomendada
-
-Antes de entregar cambios visuales o funcionales:
+## Verificación
 
 ```bash
-cd frontend
-npm run build
+cd frontend && npm run build
+cd ../backend && npm test
+cd ../frontend && npm test
 ```
-
-También se recomienda revisar en navegador:
-
-- Dashboard: gráfico anual, selector de año, KPIs y actividad reciente.
-- Clientes, rutas, recibos, estimados, propuestas, facturas y hojas de ruta.
-- Formularios de crear/editar/eliminar.
-- Paginación en listas con más de 20 elementos.
-- Botones `Imprimir` y `Exportar` en documentos.
-- Vistas previas e impresión.
-- Modo móvil y escritorio.
-
-> **Nota:** `npm run build` es la verificación principal. El lint global puede reportar advertencias/errores heredados en páginas antiguas (por ejemplo `react-hooks/set-state-in-effect`, `react/no-unescaped-entities` y `react-hooks/purity`) que no impiden el build actual.
 
 ## Notas
 
-- La aplicación está diseñada para uso local (no requiere servidor público)
-- Los respaldos se almacenan en `backend/data/backups/`
-- El puerto por defecto del backend es 4000
-- **Sin tests**: No hay pruebas automatizadas en todo el proyecto
-- **BD en .gitignore**: El archivo `backend/data/gestion_local.db` está excluido del repositorio (`.gitignore`). La BD no se versiona.
-- **Datos de empresa hardcodeados**: Facturas y hojas de ruta usan "MAKE IT TO HAPPEN LLC" (tel: 385-601-8129, email: makeittohappen@gmail.com, dirección: PO BOX 18670 Salt Lake City, UT 84118). Las claves de traducción `empresa_*` existen pero están vacías.
-
+- La app es 100% local (sin servidor público)
+- BD en `.gitignore` — no versionada
+- **Tests**: 15 backend (vitest) + 9 frontend (vitest). Ejecutar con `npm test` en cada workspace.
+- Datos de empresa hardcodeados: "MAKE IT TO HAPPEN LLC" (PO Box 18670, SLC, UT 84118)
+- El logo se cambia reemplazando `/logo.png` en `frontend/public/`
 
 ## Licencia
 

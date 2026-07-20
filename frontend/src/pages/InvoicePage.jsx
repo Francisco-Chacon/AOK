@@ -8,72 +8,52 @@ import { SkeletonCard } from "../components/Skeleton";
 import { useToast } from "../components/Toast";
 import { useLanguage } from "../i18n/LanguageContext";
 import { t } from "../i18n/translations";
+import { useDebounce } from "../hooks/useDebounce";
 import { sanitizeHtml } from "../utils/sanitize";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import "./ProposalsPage/ProposalPreview.css";
 
 const InvoicePrintPreview = ({ invoice, lang }) => {
+  const te = (k) => t(lang, k);
   const invoiceItems = invoice.items || [];
   const invoiceTotal = invoiceItems.reduce((sum, item) => sum + (Number(item.precio) || 0) * (Number(item.cantidad) || 1), 0);
-  const rows = invoiceItems.length > 0 ? invoiceItems : Array.from({ length: 5 }, () => ({}));
-  const ti = (k) => t(lang, k);
+  const amount = invoiceTotal.toFixed(2);
+  const effectiveDate = (invoice.fecha || "").slice(0, 10);
+  const customerName = invoice.cliente_nombre || te("cliente_sin_nombre");
+  const jobAddress = invoice.cliente_direccion || te("sin_direccion");
+  const phone = invoice.cliente_telefono || "";
+  const email = invoice.cliente_email || "";
+  const description = invoice.nota || te("sin_descripcion");
+  const invoiceNum = invoice.numero || `INV-${invoice.id}`;
 
   return (
-    <div style={{ fontFamily: "Arial, sans-serif", color: "#111", maxWidth: "100%", margin: "0 auto" }}>
-      <div style={{ textAlign: "center", marginBottom: "8px" }}>
-        <img src="/logo.png" alt="Company logo" style={{ width: "560px", maxWidth: "100%", height: "auto", display: "block", margin: "0 auto" }} />
-      </div>
-      <h2 style={{ textAlign: "center", margin: "10px 0", fontSize: "24px", fontWeight: 500 }}>{ti("print_invoice_title")}</h2>
-      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+    <>
+      <header className="proposal-header">
+        <img src="/logo.png" alt="Company Logo" className="proposal-logo" />
+      </header>
+      <h2 className="proposal-title">{te("print_invoice_title")}</h2>
+      <table className="proposal-info-table">
         <tbody>
-          <tr>                <td style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "13px", width: "110px", fontWeight: "bold", color: "#111" }}>{ti("print_invoice_customer")}</td><td style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "13px", color: "#111" }}>{invoice.cliente_nombre || ""}</td></tr>
-          <tr><td style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "13px", fontWeight: "bold", color: "#111" }}>{ti("print_invoice_address")}</td><td style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "13px", color: "#111" }}>{invoice.cliente_direccion || ""}</td></tr>
-          <tr><td style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "13px", fontWeight: "bold", color: "#111" }}>{ti("print_invoice_email")}</td><td style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "13px", color: "#111" }}>{invoice.cliente_email || ""}</td></tr>
-          <tr><td style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "13px", fontWeight: "bold", color: "#111" }}>{ti("print_invoice_phone")}</td><td style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "13px", color: "#111" }}>{invoice.cliente_telefono || ""}</td></tr>
+          <tr><td><strong>{te("print_invoice_number")}:</strong> {invoiceNum}</td></tr>
+          <tr><td><strong>{te("print_invoice_customer")}:</strong> {customerName}</td></tr>
+          <tr><td><strong>{te("print_invoice_address")}:</strong> {jobAddress}</td></tr>
+          <tr><td><strong>{te("print_invoice_email")}:</strong> {email}</td></tr>
+          <tr><td><strong>{te("print_invoice_phone")}:</strong> {phone}</td></tr>
+          <tr><td><strong>{te("proposals_date")}:</strong> {effectiveDate}</td></tr>
         </tbody>
       </table>
-      <div style={{ border: "1px solid #333", borderTop: "0", textAlign: "center", padding: "8px", fontSize: "12px" }}>{ti("print_invoice_section_label")}</div>
-      <table style={{ width: "100%", borderCollapse: "collapse" }}>
-        <thead>
-          <tr>
-            <th style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "12px", background: "#eee", textAlign: "left", width: "85px", color: "#111" }}>{ti("print_invoice_date")}</th>
-            <th style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "12px", background: "#eee", textAlign: "left", color: "#111" }}>{ti("print_invoice_desc")}</th>
-            <th style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "12px", background: "#eee", textAlign: "right", width: "55px", color: "#111" }}>{ti("print_invoice_qty")}</th>
-            <th style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "12px", background: "#eee", textAlign: "right", width: "95px", color: "#111" }}>{ti("print_invoice_unit")}</th>
-            <th style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "12px", background: "#eee", textAlign: "right", width: "95px", color: "#111" }}>{ti("print_invoice_amount")}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((item, idx) => {
-            const qty = Number(item.cantidad) || (item.descripcion ? 1 : 0);
-            const price = Number(item.precio) || 0;
-            const amount = qty * price;
-            return (
-              <tr key={idx}>
-                <td style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "13px", verticalAlign: "top", color: "#111" }}>{item.fecha || ""}</td>
-                <td style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "13px", verticalAlign: "top", color: "#111" }}>{item.descripcion || ""}</td>
-                <td style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "13px", verticalAlign: "top", textAlign: "right", color: "#111" }}>{qty || ""}</td>
-                <td style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "13px", verticalAlign: "top", textAlign: "right", color: "#111" }}>{item.descripcion ? `$${price.toFixed(2)}` : ""}</td>
-                <td style={{ border: "1px solid #333", padding: "5px 7px", fontSize: "13px", verticalAlign: "top", textAlign: "right", color: "#111" }}>{item.descripcion ? `$${amount.toFixed(2)}` : ""}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-      <div style={{ marginTop: "10px", textAlign: "right", fontSize: "14px", padding: "6px 0", fontWeight: 700 }}>
-        <strong>{ti("print_invoice_total")}</strong> ${invoiceTotal.toFixed(2)}
+      <div className="proposal-body-box">
+        <div className="proposal-description-title">{te("print_invoice_section_label")}</div>
+        <section className="proposal-description">
+          <p>{description}</p>
+        </section>
+        <footer className="proposal-footer">
+          <div><strong>{te("proposals_amount")}:</strong> ${amount}</div>
+          <div><strong>{te("proposals_date")}:</strong> {effectiveDate}</div>
+        </footer>
       </div>
-      {invoice.nota ? (
-        <div style={{ marginTop: "8px", fontSize: "12px", border: "1px solid #333", padding: "6px 8px" }}>
-          <strong>{ti("print_invoice_note")}</strong> {invoice.nota}
-        </div>
-      ) : null}
-      <div style={{ marginTop: "180px", fontSize: "12px", color: "#555" }}>
-        <p style={{ margin: "6px 0" }}>{ti("print_invoice_hour_rate")}</p>
-        <p style={{ margin: "6px 0" }}>{ti("print_invoice_footer")}</p>
-      </div>
-    </div>
+    </>
   );
 };
 
@@ -84,10 +64,11 @@ const InvoicePage = () => {
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedQuery = useDebounce(searchQuery);
   const [filterEstado, setFilterEstado] = useState("todos");
   const LIMIT = 20;
   const [page, setPage] = useState(1);
-  useEffect(() => { setPage(1); }, [searchQuery, filterEstado]);
+  useEffect(() => { setPage(1); }, [debouncedQuery, filterEstado]);
   const [selectedId, setSelectedId] = useState(null);
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -97,11 +78,12 @@ const InvoicePage = () => {
 
   const [form, setForm] = useState({
     cliente_id: "",
-    fecha: "",
+    fecha: new Date().toISOString().slice(0, 10),
+    monto: "",
     estado: "pendiente",
-    nota: "",
+    descripcion_trabajo: "",
+    numero: "",
   });
-  const [items, setItems] = useState([{ fecha: "", descripcion: "", cantidad: 1, precio: "" }]);
 
   const loadData = async () => {
     try {
@@ -127,8 +109,8 @@ const InvoicePage = () => {
 
   const filtradas = facturas.filter(f => {
     if (filterEstado !== "todos" && f.estado !== filterEstado) return false;
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
+    if (!debouncedQuery) return true;
+    const q = debouncedQuery.toLowerCase();
     return (
       (f.cliente_nombre || "").toLowerCase().includes(q) ||
       (f.nota || "").toLowerCase().includes(q)
@@ -142,68 +124,63 @@ const InvoicePage = () => {
 
   const openNewModal = () => {
     setEditingFactura(null);
-    setForm({ cliente_id: "", fecha: new Date().toISOString().slice(0, 10), estado: "pendiente", nota: "" });
-    setItems([{ fecha: new Date().toISOString().slice(0, 10), descripcion: "", cantidad: 1, precio: "" }]);
+    setForm({ cliente_id: "", fecha: new Date().toISOString().slice(0, 10), monto: "", estado: "pendiente", descripcion_trabajo: "", numero: "" });
     setModalOpen(true);
   };
 
   const openEditModal = (f) => {
+    const totalFromItems = f.items?.reduce((s, i) => s + (Number(i.precio) || 0) * (Number(i.cantidad) || 1), 0) || 0;
     setEditingFactura(f);
     setForm({
       cliente_id: f.cliente_id || "",
       fecha: (f.fecha || "").slice(0, 10),
+      monto: String(totalFromItems),
       estado: f.estado || "pendiente",
-      nota: f.nota || "",
+      descripcion_trabajo: f.nota || "",
+      numero: f.numero || "",
     });
-    setItems(f.items?.length > 0 ? f.items.map(i => ({
-      fecha: i.fecha || "",
-      descripcion: i.descripcion || "",
-      cantidad: i.cantidad || 1,
-      precio: i.precio || "",
-    })) : [{ fecha: "", descripcion: "", cantidad: 1, precio: "" }]);
     setModalOpen(true);
   };
+
+  const selectedClient = clientes.find(c => String(c.id) === String(form.cliente_id));
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm(f => ({ ...f, [name]: value }));
   };
 
-  const handleItemChange = (i, field, value) => {
-    setItems(prev => prev.map((item, idx) => idx === i ? { ...item, [field]: value } : item));
-  };
-
-  const addItem = () => {
-    setItems(prev => [...prev, { fecha: form.fecha || new Date().toISOString().slice(0,10), descripcion: "", cantidad: 1, precio: "" }]);
-  };
-
-  const removeItem = (i) => {
-    setItems(prev => prev.filter((_, idx) => idx !== i));
+  const handleClientChange = (e) => {
+    setForm(f => ({ ...f, cliente_id: e.target.value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const payload = {
-      ...form,
-      items: items.map(i => ({
-        ...i,
-        precio: Number(i.precio) || 0,
-        cantidad: Number(i.cantidad) || 1,
-      })),
+      cliente_id: form.cliente_id,
+      fecha: form.fecha,
+      estado: form.estado,
+      nota: form.descripcion_trabajo,
+      numero: form.numero || null,
+      items: [{
+        fecha: form.fecha,
+        descripcion: form.descripcion_trabajo,
+        cantidad: 1,
+        precio: Number(form.monto) || 0,
+      }],
     };
     try {
       if (editingFactura) {
         await api.put(`/facturas/${editingFactura.id}`, payload);
-        toast("Factura actualizada correctamente.", "success");
+        toast(t(lang, "factura_actualizada"), "success");
       } else {
         await api.post("/facturas", payload);
-        toast("Factura creada correctamente.", "success");
+        toast(t(lang, "factura_creada"), "success");
       }
       setModalOpen(false);
       await loadData();
     } catch (err) {
       console.error(err);
-      toast("Error al guardar la factura.", "error");
+      toast(t(lang, "error_guardar_factura"), "error");
     }
   };
 
@@ -212,80 +189,84 @@ const InvoicePage = () => {
     if (!facturaToDelete) return;
     try {
       await api.delete(`/facturas/${facturaToDelete.id}`);
-      toast("Factura eliminada correctamente.", "success");
+      toast(t(lang, "factura_eliminada"), "success");
       await loadData();
     } catch (err) { console.error(err); }
     finally { setConfirmDeleteOpen(false); setFacturaToDelete(null); }
   };
 
-  const total = items.reduce((sum, i) => sum + (Number(i.precio) || 0) * (Number(i.cantidad) || 1), 0);
-
   const printInvoice = (invoice) => {
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
 
+    const s = sanitizeHtml;
+    const te = (k) => t(lang, k);
     const invoiceItems = invoice.items || [];
     const invoiceTotal = invoiceItems.reduce((sum, item) => sum + (Number(item.precio) || 0) * (Number(item.cantidad) || 1), 0);
-    const rows = invoiceItems.length > 0 ? invoiceItems : Array.from({ length: 5 }, () => ({}));
-    const s = sanitizeHtml;
-    const ti = (k) => t(lang, k);
+    const amount = invoiceTotal.toFixed(2);
+    const effectiveDate = (invoice.fecha || "").slice(0, 10);
+    const customerName = invoice.cliente_nombre || te("cliente_sin_nombre");
+    const jobAddress = invoice.cliente_direccion || te("sin_direccion");
+    const phone = invoice.cliente_telefono || "";
+    const email = invoice.cliente_email || "";
+    const description = invoice.nota || te("sin_descripcion");
+  const invoiceNum = invoice.numero || `INV-${invoice.id}`;
 
     printWindow.document.write(`<!DOCTYPE html>
 <html>
 <head>
-  <title>${ti("print_invoice_title")} - ${s(invoice.cliente_nombre || "")}</title>
+  <title>${te("print_invoice_title")} - ${s(customerName)}</title>
   <style>
-    * { box-sizing: border-box; }
-    body { margin: 0; background: #fff; color: #111; font-family: Arial, Helvetica, sans-serif; }
-    .invoice-page { width: 8.5in; min-height: 11in; padding: 0.45in; margin: 0 auto; }
-    .invoice-header { display: flex; justify-content: center; align-items: center; margin-bottom: 8px; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    .invoice-page {
+      width: 8.5in; min-height: 11in; background: #ffffff;
+      padding: 0.5in 0.7in; margin: 0 auto;
+      font-family: Arial, Helvetica, sans-serif; color: #111;
+    }
+    .invoice-header { display: flex; align-items: center; justify-content: center; margin-bottom: 15px; }
     .invoice-logo { width: 560px; max-width: 100%; height: auto; display: block; object-fit: contain; }
-    .invoice-title { text-align: center; margin: 10px 0; font-size: 24px; font-weight: 500; }
-    table { width: 100%; border-collapse: collapse; }
-    td, th { border: 1px solid #333; padding: 5px 7px; font-size: 13px; vertical-align: top; }
-    th { background: #eee; text-align: left; font-size: 12px; }
-    .invoice-info-table td:first-child { width: 110px; font-weight: bold; }
-    .invoice-section-label { border: 1px solid #333; border-top: 0; text-align: center; padding: 8px; font-size: 12px; }
-    .invoice-job-table td { height: 40px; }
-    .invoice-job-table th:nth-child(1), .invoice-job-table td:nth-child(1) { width: 85px; }
-    .invoice-job-table th:nth-child(3), .invoice-job-table td:nth-child(3) { width: 55px; text-align: right; }
-    .invoice-job-table th:nth-child(4), .invoice-job-table td:nth-child(4),
-    .invoice-job-table th:nth-child(5), .invoice-job-table td:nth-child(5) { width: 95px; text-align: right; }
-    .invoice-total-row { margin-top: 10px; text-align: right; font-size: 14px; padding: 6px 0; font-weight: 700; }
-    .invoice-note { margin-top: 8px; font-size: 12px; border: 1px solid #333; padding: 6px 8px; }
-    .invoice-footer-note { margin-top: 180px; font-size: 12px; color: #555; }
-    .invoice-footer-note p { margin: 6px 0; }
+    .invoice-title { text-align: center; font-size: 26px; margin: 10px 0; font-weight: 500; }
+    .invoice-info-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .invoice-info-table td { border: 1px solid #333; padding: 4px 8px; }
+    .invoice-info-table strong { font-weight: bold; }
+    .invoice-body-box { border: 0; }
+    .invoice-description-title { border: 1px solid #333; border-bottom: 0; padding: 5px 8px; text-align: center; font-size: 12px; }
+    .invoice-description { border: 1px solid #333; min-height: 450px; padding: 38px 8px 20px; text-align: left; }
+    .invoice-description p { white-space: pre-line; font-size: 12px; line-height: 1.8; text-align: justify; overflow-wrap: anywhere; }
+    .invoice-footer {
+      display: flex; justify-content: space-between; font-size: 14px;
+      padding: 8px; break-inside: avoid; page-break-inside: avoid;
+      border: 1px solid #333; border-top: 0;
+    }
+    @media print { body { margin: 0; } .invoice-page { min-height: auto; padding: 0.4in 0.5in; } .invoice-description { min-height: auto; } }
     @page { size: letter; margin: 0; }
-    @media print { body { margin: 0; } .invoice-page { margin: 0; } }
   </style>
 </head>
 <body>
   <div class="invoice-page">
-    <div class="invoice-header">
-      <img src="${window.location.origin}/logo.png" alt="Company logo" class="invoice-logo" />
-    </div>
-    <h2 class="invoice-title">${ti("print_invoice_title")}</h2>
-    <table class="invoice-info-table"><tbody>
-      <tr><td><strong>${ti("print_invoice_customer")}</strong></td><td>${s(invoice.cliente_nombre || "")}</td></tr>
-      <tr><td><strong>${ti("print_invoice_address")}</strong></td><td>${s(invoice.cliente_direccion || "")}</td></tr>
-      <tr><td><strong>${ti("print_invoice_email")}</strong></td><td>${s(invoice.cliente_email || "")}</td></tr>
-      <tr><td><strong>${ti("print_invoice_phone")}</strong></td><td>${s(invoice.cliente_telefono || "")}</td></tr>
-    </tbody></table>
-    <div class="invoice-section-label">${ti("print_invoice_section_label")}</div>
-    <table class="invoice-job-table">
-      <thead><tr><th>${ti("print_invoice_date")}</th><th>${ti("print_invoice_desc")}</th><th>${ti("print_invoice_qty")}</th><th>${ti("print_invoice_unit")}</th><th>${ti("print_invoice_amount")}</th></tr></thead>
-      <tbody>${rows.map((item) => {
-        const qty = Number(item.cantidad) || (item.descripcion ? 1 : 0);
-        const price = Number(item.precio) || 0;
-        const amount = qty * price;
-        return `<tr><td>${s(item.fecha || "")}</td><td>${s(item.descripcion || "")}</td><td>${qty || ""}</td><td>${item.descripcion ? `$${price.toFixed(2)}` : ""}</td><td>${item.descripcion ? `$${amount.toFixed(2)}` : ""}</td></tr>`;
-      }).join("")}</tbody>
+    <header class="invoice-header">
+      <img src="${window.location.origin}/logo.png" alt="Logo" class="invoice-logo" />
+    </header>
+    <h2 class="invoice-title">${s(te("print_invoice_title"))}</h2>
+    <table class="invoice-info-table">
+      <tbody>
+        <tr><td><strong>${s(te("print_invoice_number"))}:</strong> ${s(invoiceNum)}</td></tr>
+        <tr><td><strong>${s(te("print_invoice_customer"))}:</strong> ${s(customerName)}</td></tr>
+        <tr><td><strong>${s(te("print_invoice_address"))}:</strong> ${s(jobAddress)}</td></tr>
+        <tr><td><strong>${s(te("print_invoice_email"))}:</strong> ${s(email)}</td></tr>
+        <tr><td><strong>${s(te("print_invoice_phone"))}:</strong> ${s(phone)}</td></tr>
+        <tr><td><strong>${s(te("proposals_date"))}:</strong> ${s(effectiveDate)}</td></tr>
+      </tbody>
     </table>
-    <div class="invoice-total-row"><strong>${ti("print_invoice_total")}</strong> $${invoiceTotal.toFixed(2)}</div>
-    ${invoice.nota ? `<div class="invoice-note"><strong>${ti("print_invoice_note")}</strong> ${s(invoice.nota)}</div>` : ""}
-    <div class="invoice-footer-note">
-      <p>${ti("print_invoice_hour_rate")}</p>
-      <p>${ti("print_invoice_footer")}</p>
+    <div class="invoice-body-box">
+      <div class="invoice-description-title">${s(te("print_invoice_section_label"))}</div>
+      <section class="invoice-description">
+        <p>${s(description)}</p>
+      </section>
+      <footer class="invoice-footer">
+        <div><strong>${s(te("proposals_amount"))}:</strong> $${s(amount)}</div>
+        <div><strong>${s(te("proposals_date"))}:</strong> ${s(effectiveDate)}</div>
+      </footer>
     </div>
   </div>
   <script>window.onload = function() { window.print(); }</script>
@@ -305,11 +286,11 @@ const InvoicePage = () => {
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
       pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
       const name = (invoice.cliente_nombre || "factura").replace(/[^a-zA-Z0-9]/g, "_");
-      pdf.save(`Factura_${name}.pdf`);
-      toast("PDF exportado correctamente.", "success");
+      pdf.save(`${t(lang, "facturas").replace(/[^a-zA-Z0-9]/g, "_")}_${name}.pdf`);
+      toast(t(lang, "pdf_exportado"), "success");
     } catch (err) {
       console.error("Error generando PDF", err);
-      toast("Error al generar el PDF.", "error");
+      toast(t(lang, "error_pdf"), "error");
     }
   };
 
@@ -416,20 +397,62 @@ const InvoicePage = () => {
 
       {/* Modal create/edit */}
       <Modal open={modalOpen} title={editingFactura ? t(lang, "editar_factura_title") : t(lang, "nueva_factura_title")} onClose={() => setModalOpen(false)} wide>
-        <form onSubmit={handleSubmit}>
-          <div className="form-grid grid grid-cols-1 gap-4 md:grid-cols-2">
-            <label className="form-field">
-              <span>{t(lang, "cliente")}</span>
-              <SearchableSelect
-                value={form.cliente_id}
-                onChange={(e) => { setForm(f => ({ ...f, cliente_id: e.target.value })); }}
-                options={clientes.map(c => ({ value: c.id, label: c.nombre }))}
-                placeholder={t(lang, "seleccionar_cliente")}
-              />
-            </label>
+        <form className="items-form flex flex-col gap-5" onSubmit={handleSubmit}>
+          <div className="items-form-section">
+            <h3 className="items-form-title">{t(lang, "print_invoice_title")}</h3>
+            <div className="items-form-grid">
+              <label className="form-field">
+                <span>{t(lang, "invoice_number_label")}</span>
+                <input className="input" name="numero" value={form.numero} onChange={handleChange} placeholder={t(lang, "invoice_number_placeholder")} />
+              </label>
+              <label className="form-field">
+                <span>{t(lang, "cliente")}</span>
+                <SearchableSelect
+                  value={form.cliente_id}
+                  onChange={handleClientChange}
+                  options={clientes.map(c => ({ value: c.id, label: c.nombre }))}
+                  placeholder={t(lang, "seleccionar_cliente")}
+                />
+              </label>
+              <label className="form-field">
+                <span>{t(lang, "direccion")}</span>
+                <input className="input" value={selectedClient?.direccion || ""} readOnly />
+              </label>
+              <label className="form-field">
+                <span>{t(lang, "email")}</span>
+                <input className="input" value={selectedClient?.email || ""} readOnly />
+              </label>
+              <label className="form-field">
+                <span>{t(lang, "telefono")}</span>
+                <input className="input" value={selectedClient?.telefono || ""} readOnly />
+              </label>
+            </div>
+          </div>
+
+          <div className="items-form-section">
+            <h3 className="items-form-title">{t(lang, "descripcion_trabajo")}</h3>
+            <div className="items-form-grid">
+              <label className="form-field form-field--full">
+                <textarea
+                  className="input"
+                  name="descripcion_trabajo"
+                  value={form.descripcion_trabajo}
+                  onChange={handleChange}
+                  rows={6}
+                  placeholder={t(lang, "descripcion_trabajo_placeholder")}
+                />
+              </label>
+            </div>
+          </div>
+
+          <div className="items-form-footer">
             <label className="form-field">
               <span>{t(lang, "fecha")}</span>
               <input className="input" type="date" name="fecha" value={form.fecha} onChange={handleChange} required />
+            </label>
+            <label className="form-field">
+              <span>{t(lang, "monto")}</span>
+              <input className="input" type="number" step="0.01" min="0" name="monto" value={form.monto} onChange={handleChange} placeholder="0.00" required />
             </label>
             <label className="form-field">
               <span>{t(lang, "estado")}</span>
@@ -439,56 +462,6 @@ const InvoicePage = () => {
                 <option value="cancelado">{t(lang, "anulado")}</option>
               </select>
             </label>
-            <label className="form-field form-field--full">
-              <span>{t(lang, "nota")}</span>
-              <textarea className="input" name="nota" value={form.nota} onChange={handleChange} rows={2} />
-            </label>
-          </div>
-
-          <div className="items-form">
-            <div className="items-form-section">
-              <div className="items-form-title">{t(lang, "items_factura")}</div>
-              {items.map((item, i) => (
-                <div key={i} className="items-input-row" style={{ marginBottom: "0.5rem" }}>
-                  <div className="items-input-field">
-                    <span>{t(lang, "fecha")}</span>
-                    <input className="input input-date" type="date" value={item.fecha} onChange={e => handleItemChange(i, "fecha", e.target.value)} />
-                  </div>
-                  <div className="items-input-field items-input-desc">
-                    <span>{t(lang, "descripcion")}</span>
-                    <input className="input" value={item.descripcion} onChange={e => handleItemChange(i, "descripcion", e.target.value)} placeholder={t(lang, "descripcion_trabajo")} />
-                  </div>
-                  <div className="items-input-field">
-                    <span>{t(lang, "cantidad")}</span>
-                    <input className="input input-qty" type="number" min="1" value={item.cantidad} onChange={e => handleItemChange(i, "cantidad", e.target.value)} />
-                  </div>
-                  <div className="items-input-field">
-                    <span>{t(lang, "precio_unit")}</span>
-                    <input className="input input-price" type="number" step="0.01" value={item.precio} onChange={e => handleItemChange(i, "precio", e.target.value)} />
-                  </div>
-                  <button type="button" className="btn-remove-item" onClick={() => removeItem(i)}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M18 6 6 18 M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-              ))}
-              <button type="button" className="btn-add-item" onClick={addItem} style={{ marginTop: "0.5rem" }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 5v14 M5 12h14" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="items-form-footer">
-              <div className="items-form-footer-left">
-                <span style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>{t(lang, "items")}: {items.length}</span>
-              </div>
-              <div className="items-form-footer-right">
-                <span className="items-total-label">{t(lang, "total")}:</span>
-                <span className="items-grand-total">${total.toFixed(2)}</span>
-              </div>
-            </div>
           </div>
 
           <div className="form-actions">

@@ -1,5 +1,6 @@
 // backend/src/controllers/rutas_hojas.controller.js
 const db = require("../db/sqlite");
+const logger = require("../utils/logger");
 
 exports.getAll = (req, res) => {
   try {
@@ -12,15 +13,15 @@ exports.getAll = (req, res) => {
 
     res.json(hojas);
   } catch (err) {
-    console.error("Error get hojas", err);
-    res.status(500).json({ error: err.message });
+    logger.error("Error get hojas", err);
+    res.status(500).json({ message: err.message });
   }
 };
 
 exports.getOne = (req, res) => {
   try {
     const hoja = db.prepare("SELECT * FROM rutas_hojas WHERE id = ?").get(req.params.id);
-    if (!hoja) return res.status(404).json({ error: "No encontrada" });
+    if (!hoja) return res.status(404).json({ message: "Hoja no encontrada" });
 
     const clientes = db.prepare(`
       SELECT rhc.*, c.direccion as cliente_direccion
@@ -32,8 +33,8 @@ exports.getOne = (req, res) => {
 
     res.json({ ...hoja, clientes });
   } catch (err) {
-    console.error("Error get hoja", err);
-    res.status(500).json({ error: err.message });
+    logger.error("Error get hoja", err);
+    res.status(500).json({ message: err.message });
   }
 };
 
@@ -73,8 +74,8 @@ exports.create = (req, res) => {
     const hoja = db.prepare("SELECT * FROM rutas_hojas WHERE id = ?").get(hoja_id);
     res.status(201).json(hoja);
   } catch (err) {
-    console.error("Error create hoja", err);
-    res.status(500).json({ error: err.message });
+    logger.error("Error create hoja", err);
+    res.status(500).json({ message: err.message });
   }
 };
 
@@ -82,11 +83,12 @@ exports.update = (req, res) => {
   try {
     const { fecha, conductor, camion, clientes } = req.body;
     const now = new Date().toISOString();
+    if (!fecha) return res.status(400).json({ message: "La fecha es requerida" });
 
     db.prepare(`
       UPDATE rutas_hojas SET fecha = ?, conductor = ?, camion = ?, updated_at = ?
       WHERE id = ?
-    `).run(fecha || "", conductor || "", camion || "", now, req.params.id);
+    `).run(fecha, conductor || "", camion || "", now, req.params.id);
 
     db.prepare("DELETE FROM rutas_hojas_clientes WHERE hoja_id = ?").run(req.params.id);
 
@@ -113,8 +115,8 @@ exports.update = (req, res) => {
 
     res.json({ id: Number(req.params.id) });
   } catch (err) {
-    console.error("Error update hoja", err);
-    res.status(500).json({ error: err.message });
+    logger.error("Error update hoja", err);
+    res.status(500).json({ message: err.message });
   }
 };
 
@@ -123,7 +125,7 @@ exports.delete = (req, res) => {
     db.prepare("DELETE FROM rutas_hojas WHERE id = ?").run(req.params.id);
     res.json({ ok: true });
   } catch (err) {
-    console.error("Error delete hoja", err);
-    res.status(500).json({ error: err.message });
+    logger.error("Error delete hoja", err);
+    res.status(500).json({ message: err.message });
   }
 };

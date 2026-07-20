@@ -8,6 +8,13 @@ const SEND_ICON = "M22 2 11 13M22 2l-7 20-4-9-9-4z";
 const CLOSE_ICON = "M18 6 6 18M6 6l12 12";
 const WIFI_OFF_ICON = "M2 2l20 20M8.5 16.5a5 5 0 0 1 7 0M3 11a9 9 0 0 1 12.5-1.5M18 11a9 9 0 0 1 1.5 1.5";
 
+const SUGGESTIONS = [
+  "ai_suggest_add_client",
+  "ai_suggest_invoice_fields",
+  "ai_suggest_backup",
+  "ai_suggest_print_proposal",
+];
+
 const renderMarkdown = (text) => {
   let html = text
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
@@ -70,7 +77,7 @@ const AiAssistant = () => {
       if (!res.ok) {
         setMessages((prev) => {
           const copy = [...prev];
-          copy[copy.length - 1] = { role: "assistant", content: "Error al obtener respuesta." };
+          copy[copy.length - 1] = { role: "assistant", content: t(lang, "ai_error_response") };
           return copy;
         });
         return;
@@ -109,7 +116,7 @@ const AiAssistant = () => {
     } catch {
       setMessages((prev) => {
         const copy = [...prev];
-        copy[copy.length - 1] = { role: "assistant", content: "Error de conexion. Verifica tu internet." };
+        copy[copy.length - 1] = { role: "assistant", content: t(lang, "ai_error_connection") };
         return copy;
       });
     } finally {
@@ -169,16 +176,16 @@ const AiAssistant = () => {
               </div>
               <p className="ai-welcome-text">{t(lang, "ai_welcome")}</p>
               <div className="ai-suggestions">
-                {["¿Cómo agrego un cliente?", "¿Qué campos tiene una factura?", "¿Cómo hago un backup?", "¿Cómo imprimo una propuesta?"].map((s) => (
+                {SUGGESTIONS.map((s) => (
                   <button
                     key={s}
                     className="ai-suggestion-btn"
                     onClick={() => {
-                      setInput(s);
+                      setInput(t(lang, s));
                       inputRef.current?.focus();
                     }}
                   >
-                    {s}
+                    {t(lang, s)}
                   </button>
                 ))}
               </div>

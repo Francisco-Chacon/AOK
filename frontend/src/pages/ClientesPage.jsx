@@ -9,6 +9,36 @@ import { SkeletonCard, SkeletonStats } from "../components/Skeleton";
 import { useToast } from "../components/Toast";
 import { useLanguage } from "../i18n/LanguageContext";
 import { t } from "../i18n/translations";
+import { validate } from "../utils/validate";
+
+const PAISES = [
+  { code: "+1", label: "\u{1F1FA}\u{1F1F8} EE.UU. +1" },
+  { code: "+52", label: "\u{1F1F2}\u{1F1FD} M\u00e9xico +52" },
+  { code: "+503", label: "\u{1F1F8}\u{1F1FB} El Salvador +503" },
+  { code: "+502", label: "\u{1F1EC}\u{1F1F9} Guatemala +502" },
+  { code: "+504", label: "\u{1F1ED}\u{1F1F3} Honduras +504" },
+  { code: "+505", label: "\u{1F1F3}\u{1F1F4} Nicaragua +505" },
+  { code: "+506", label: "\u{1F1E8}\u{1F1F7} Costa Rica +506" },
+  { code: "+507", label: "\u{1F1F5}\u{1F1E6} Panam\u00e1 +507" },
+  { code: "+1-809", label: "\u{1F1E9}\u{1F1F4} R. Dominicana +1-809" },
+  { code: "+53", label: "\u{1F1E8}\u{1F1FA} Cuba +53" },
+  { code: "+57", label: "\u{1F1E8}\u{1F1F4} Colombia +57" },
+  { code: "+51", label: "\u{1F1F5}\u{1F1EA} Per\u00fa +51" },
+  { code: "+593", label: "\u{1F1EA}\u{1F1E8} Ecuador +593" },
+  { code: "+58", label: "\u{1F1FB}\u{1F1EA} Venezuela +58" },
+  { code: "+54", label: "\u{1F1E6}\u{1F1F7} Argentina +54" },
+  { code: "+56", label: "\u{1F1E8}\u{1F1F1} Chile +56" },
+  { code: "+34", label: "\u{1F1EA}\u{1F1F8} Espa\u00f1a +34" },
+];
+
+const parsePhone = (phone) => {
+  if (!phone) return { code: "+1", number: "" };
+  for (const p of PAISES) {
+    if (phone.startsWith(p.code + " ")) return { code: p.code, number: phone.slice(p.code.length + 1) };
+  }
+  if (phone.startsWith("+1 ")) return { code: "+1", number: phone.slice(3) };
+  return { code: "+1", number: phone };
+};
 
 const ClientesPage = () => {
   const { lang } = useLanguage();
@@ -29,15 +59,16 @@ const ClientesPage = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingCliente, setEditingCliente] = useState(null);
 
-  // Este form usa SIEMPRE servicio_principal
   const [form, setForm] = useState({
     nombre: "",
     direccion: "",
     telefono: "",
+    pais_code: "+1",
     email: "",
-    servicio_principal: "",
     estado: "activo",
   });
+
+  const [formErrors, setFormErrors] = useState({});
 
   // Confirmación de borrado
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
@@ -69,11 +100,12 @@ const ClientesPage = () => {
   // Abrir modal para nuevo cliente
   const openNewModal = () => {
     setEditingCliente(null);
+    setFormErrors({});
     setForm({
       nombre: "",
       direccion: "",
       telefono: "",
-      servicio_principal: "",
+      pais_code: "+1",
       estado: "activo",
     });
     setModalOpen(true);
@@ -82,16 +114,13 @@ const ClientesPage = () => {
   // Abrir modal para editar
   const openEditModal = (cliente) => {
     setEditingCliente(cliente);
+    const { code, number } = parsePhone(cliente.telefono);
     setForm({
       nombre: cliente.nombre || "",
       direccion: cliente.direccion || "",
-      telefono: cliente.telefono || "",
-      // intentamos leer como servicio_principal, si no, tipo_servicio o servicio
-      servicio_principal:
-        cliente.servicio_principal ||
-        cliente.tipo_servicio ||
-        cliente.servicio ||
-        "",
+      telefono: number,
+      pais_code: code,
+      email: cliente.email || "",
       estado: cliente.estado || "activo",
     });
     setModalOpen(true);
@@ -117,20 +146,37 @@ const ClientesPage = () => {
   // Crear / actualizar
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setFormErrors({});
+    const payload = { ...form, telefono: `${form.pais_code} ${form.telefono}`.trim() };
     try {
       if (editingCliente) {
-        await api.put(`/clientes/${editingCliente.id}`, form);
-        toast("Cliente actualizado correctamente.", "success");
+        await api.put(`/clientes/${editingCliente.id}`, payload);
+        toast(t(lang, "cliente_actualizado"), "success");
       } else {
-        await api.post("/clientes", form);
-        toast("Cliente creado correctamente.", "success");
+        await api.post("/clientes", payload);
+        toast(t(lang, "cliente_creado"), "success");
       }
       setModalOpen(false);
       await loadClientes();
     } catch (err) {
       console.error("Error guardando cliente", err);
-      toast("Error al guardar el cliente.", "error");
+      toast(err.response?.data?.message || t(lang, "error_guardar_cliente"), "error");
     }
+  };
+
+  const validatePhone = (value) => {
+    const errors = validate([{ name: "telefono", value, rules: ["phone"] }], lang);
+    setFormErrors((prev) => ({ ...prev, telefono: errors.telefono }));
+  };
+
+  const validateEmailOnBlur = (value) => {
+    if (!value) { setFormErrors((prev) => { const { email, ...rest } = prev; return rest; }); return; }
+    const errors = validate([{ name: "email", value, rules: ["email"] }], lang);
+    setFormErrors((prev) => ({ ...prev, email: errors.email }));
+  };
+
+  const clearError = (name) => {
+    setFormErrors((prev) => { const { [name]: _, ...rest } = prev; return rest; });
   };
 
   const askDelete = (cliente) => {
@@ -147,11 +193,11 @@ const ClientesPage = () => {
     if (!clienteToDelete) return;
     try {
       await api.delete(`/clientes/${clienteToDelete.id}`);
-      toast("Cliente eliminado correctamente.", "success");
+      toast(t(lang, "cliente_eliminado"), "success");
       await loadClientes();
     } catch (err) {
       console.error("Error eliminando cliente", err);
-      toast("No se pudo eliminar el cliente.", "error");
+      toast(t(lang, "error_eliminar_cliente"), "error");
     } finally {
       setConfirmDeleteOpen(false);
       setClienteToDelete(null);
@@ -166,8 +212,7 @@ const ClientesPage = () => {
     return (
       (c.nombre || "").toLowerCase().includes(s) ||
       (c.direccion || "").toLowerCase().includes(s) ||
-      (c.telefono || "").toLowerCase().includes(s) ||
-      (c.servicio_principal || "").toLowerCase().includes(s)
+      (c.telefono || "").toLowerCase().includes(s)
     );
   });
 
@@ -263,12 +308,6 @@ const ClientesPage = () => {
               </div>
               <div className="card-meta flex min-w-40 flex-col items-end gap-1.5">
                 <div className="badge-row">
-                  <span className="badge badge-soft">
-                    {c.servicio_principal ||
-                      c.tipo_servicio ||
-                      c.servicio ||
-                      t(lang, "sin_servicio")}
-                  </span>
                   <span
                     className={
                       "badge " +
@@ -319,6 +358,7 @@ const ClientesPage = () => {
         open={modalOpen}
         title={editingCliente ? t(lang, "editar_cliente_title") : t(lang, "nuevo_cliente_title")}
         onClose={() => setModalOpen(false)}
+        wide
       >
         <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[var(--primary-soft)]">
@@ -336,6 +376,7 @@ const ClientesPage = () => {
                 {t(lang, "nombre")}
               </span>
               <input className="input" name="nombre" value={form.nombre} onChange={handleChange} required />
+              {formErrors.nombre?.map((msg, i) => (<span key={i} className="field-error">{msg}</span>))}
             </label>
             <label className="form-field">
               <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
@@ -353,7 +394,13 @@ const ClientesPage = () => {
                 </svg>
                 {t(lang, "telefono")}
               </span>
-              <input className="input" name="telefono" value={form.telefono} onChange={handleChange} />
+              <div className="phone-input-row">
+                <select className="input phone-country" name="pais_code" value={form.pais_code} onChange={(e) => { handleChange(e); clearError("telefono"); }}>
+                  {PAISES.map((p) => (<option key={p.code} value={p.code}>{p.label}</option>))}
+                </select>
+                <input className="input phone-number" name="telefono" value={form.telefono} onChange={(e) => { handleChange(e); clearError("telefono"); }} onBlur={(e) => e.target.value && validatePhone(e.target.value)} placeholder={t(lang, "telefono_placeholder")} pattern="[\d\-\+\(\)\s]+" />
+              </div>
+              {formErrors.telefono?.map((msg, i) => (<span key={i} className="field-error">{msg}</span>))}
             </label>
             <label className="form-field">
               <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
@@ -362,16 +409,8 @@ const ClientesPage = () => {
                 </svg>
                 {t(lang, "email")}
               </span>
-              <input className="input" type="email" name="email" value={form.email} onChange={handleChange} />
-            </label>
-            <label className="form-field">
-              <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="16 3 21 3 21 8" /><line x1="4" y1="20" x2="21" y2="3" /><polyline points="21 16 21 21 16 21" /><line x1="15" y1="15" x2="21" y2="21" /><line x1="4" y1="4" x2="9" y2="9" />
-                </svg>
-                {t(lang, "servicio_principal")}
-              </span>
-              <input className="input" name="servicio_principal" value={form.servicio_principal} onChange={handleChange} />
+              <input className="input" type="email" name="email" value={form.email} onChange={(e) => { handleChange(e); clearError("email"); }} onBlur={(e) => validateEmailOnBlur(e.target.value)} />
+              {formErrors.email?.map((msg, i) => (<span key={i} className="field-error">{msg}</span>))}
             </label>
             <label className="form-field">
               <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
@@ -487,20 +526,7 @@ const ClientesPage = () => {
                 </p>
                 <p className="detalle-value">{clienteDetalle.direccion || t(lang, "sin_direccion")}</p>
               </div>
-              <div className="detalle-full">
-                <p className="detalle-label flex items-center gap-1.5">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="16 3 21 3 21 8" /><line x1="4" y1="20" x2="21" y2="3" /><polyline points="21 16 21 21 16 21" /><line x1="15" y1="15" x2="21" y2="21" /><line x1="4" y1="4" x2="9" y2="9" />
-                  </svg>
-                  {t(lang, "servicio_principal")}
-                </p>
-                <p className="detalle-value">
-                  {clienteDetalle.servicio_principal ||
-                    clienteDetalle.tipo_servicio ||
-                    clienteDetalle.servicio ||
-                    t(lang, "sin_servicio")}
-                </p>
-              </div>
+
             </div>
           </div>
         )}

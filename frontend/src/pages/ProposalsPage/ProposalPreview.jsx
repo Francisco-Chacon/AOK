@@ -187,7 +187,7 @@ const ProposalPreview = ({ estimado, onClose }) => {
     </table>
 
     <div class="proposal-body-box">
-      <div class="proposal-description-title">Description of the job that Make It To Happen will be performing</div>
+      <div class="proposal-description-title">${escapeHtml(t(lang, "proposal_section_label"))}</div>
       <section class="proposal-description">
         <p>${escapeHtml(description)}</p>
       </section>
@@ -213,11 +213,11 @@ const ProposalPreview = ({ estimado, onClose }) => {
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
       pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
       const safeName = customerName.replace(/[^a-zA-Z0-9]/g, "_");
-      pdf.save(`Propuesta_${safeName}.pdf`);
-      toast("PDF exportado correctamente.", "success");
+      pdf.save(`${t(lang, "proposals").replace(/[^a-zA-Z0-9]/g, "_")}_${safeName}.pdf`);
+      toast(t(lang, "pdf_exportado"), "success");
     } catch (err) {
       console.error("Error generando PDF", err);
-      toast("Error al generar el PDF.", "error");
+      toast(t(lang, "error_pdf"), "error");
     }
   };
 
@@ -275,7 +275,7 @@ const ProposalPreview = ({ estimado, onClose }) => {
         </table>
 
         <div className="proposal-body-box">
-          <div className="proposal-description-title">Description of the job that Make It To Happen will be performing</div>
+          <div className="proposal-description-title">{t(lang, "proposal_section_label")}</div>
           <section className="proposal-description">
             <p>{description}</p>
           </section>

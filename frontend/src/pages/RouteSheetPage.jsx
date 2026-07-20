@@ -8,6 +8,7 @@ import { SkeletonCard } from "../components/Skeleton";
 import { useToast } from "../components/Toast";
 import { useLanguage } from "../i18n/LanguageContext";
 import { t } from "../i18n/translations";
+import { useDebounce } from "../hooks/useDebounce";
 import { sanitizeHtml } from "../utils/sanitize";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
@@ -69,9 +70,10 @@ const RouteSheetPage = () => {
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedQuery = useDebounce(searchQuery);
   const LIMIT = 20;
   const [page, setPage] = useState(1);
-  useEffect(() => { setPage(1); }, [searchQuery]);
+  useEffect(() => { setPage(1); }, [debouncedQuery]);
   const [selectedId, setSelectedId] = useState(null);
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -121,8 +123,8 @@ const RouteSheetPage = () => {
   }, [selectedId]);
 
   const filtradas = hojas.filter(h => {
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
+    if (!debouncedQuery) return true;
+    const q = debouncedQuery.toLowerCase();
     return (
       (h.conductor || "").toLowerCase().includes(q) ||
       (h.camion || "").toLowerCase().includes(q) ||
@@ -193,16 +195,16 @@ const RouteSheetPage = () => {
     try {
       if (editingHoja) {
         await api.put(`/rutas-hojas/${editingHoja.id}`, payload);
-        toast("Hoja de ruta actualizada correctamente.", "success");
+        toast(t(lang, "ruta_actualizada"), "success");
       } else {
         await api.post("/rutas-hojas", payload);
-        toast("Hoja de ruta creada correctamente.", "success");
+        toast(t(lang, "ruta_creada"), "success");
       }
       setModalOpen(false);
       await loadData();
     } catch (err) {
       console.error(err);
-      toast("Error al guardar la hoja de ruta.", "error");
+      toast(t(lang, "error_guardar_ruta"), "error");
     }
   };
 
@@ -211,7 +213,7 @@ const RouteSheetPage = () => {
     if (!hojaToDelete) return;
     try {
       await api.delete(`/rutas-hojas/${hojaToDelete.id}`);
-      toast("Hoja de ruta eliminada correctamente.", "success");
+      toast(t(lang, "ruta_eliminada"), "success");
       await loadData();
     } catch (err) { console.error(err); }
     finally { setConfirmDeleteOpen(false); setHojaToDelete(null); }
@@ -290,11 +292,11 @@ const RouteSheetPage = () => {
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
       pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
       const name = (routeSheet.fecha || "hoja_ruta").replace(/[^a-zA-Z0-9]/g, "_");
-      pdf.save(`HojaRuta_${name}.pdf`);
-      toast("PDF exportado correctamente.", "success");
+      pdf.save(`${t(lang, "rutas_hojas").replace(/[^a-zA-Z0-9]/g, "_")}_${name}.pdf`);
+      toast(t(lang, "pdf_exportado"), "success");
     } catch (err) {
       console.error("Error generando PDF", err);
-      toast("Error al generar el PDF.", "error");
+      toast(t(lang, "error_pdf"), "error");
     }
   };
 
@@ -397,11 +399,11 @@ const RouteSheetPage = () => {
             </label>
             <label className="form-field">
               <span>{t(lang, "conductor")}</span>
-              <input className="input" name="conductor" value={form.conductor} onChange={handleChange} placeholder="Driver name" />
+              <input className="input" name="conductor" value={form.conductor} onChange={handleChange} placeholder={t(lang, "conductor")} />
             </label>
             <label className="form-field">
               <span>{t(lang, "camion")}</span>
-              <input className="input" name="camion" value={form.camion} onChange={handleChange} placeholder="Truck #" />
+              <input className="input" name="camion" value={form.camion} onChange={handleChange} placeholder={t(lang, "camion")} />
             </label>
           </div>
 

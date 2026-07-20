@@ -8,6 +8,7 @@ import { SkeletonCard } from "../components/Skeleton";
 import { useToast } from "../components/Toast";
 import { useLanguage } from "../i18n/LanguageContext";
 import { t } from "../i18n/translations";
+import { useDebounce } from "../hooks/useDebounce";
 
 const MONEDAS = ["USD", "EUR", "MXN", "PAB", "COP"];
 
@@ -18,6 +19,7 @@ const ProposalsPage = () => {
   const [clientes, setClientes] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedQuery = useDebounce(searchQuery);
   const [filterEstado, setFilterEstado] = useState("todos");
   const [loading, setLoading] = useState(true);
 
@@ -112,13 +114,13 @@ const ProposalsPage = () => {
 
     try {
       await api.delete(`/estimados/${proposalToDelete.id}`);
-      toast("Propuesta eliminada correctamente.", "success");
+      toast(t(lang, "propuesta_eliminada"), "success");
       setConfirmDeleteOpen(false);
       setProposalToDelete(null);
       await loadData();
     } catch (err) {
       console.error("Error eliminando proposal", err);
-      toast("No se pudo eliminar la propuesta.", "error");
+      toast(t(lang, "error_eliminar_propuesta"), "error");
     }
   };
 
@@ -154,10 +156,10 @@ const ProposalsPage = () => {
       let res;
       if (editingProposal) {
         await api.put(`/estimados/${editingProposal.id}`, payload);
-        toast("Propuesta actualizada correctamente.", "success");
+        toast(t(lang, "propuesta_actualizada"), "success");
       } else {
         res = await api.post("/estimados", payload);
-        toast("Propuesta creada correctamente.", "success");
+        toast(t(lang, "propuesta_creada"), "success");
       }
       setModalOpen(false);
       setEditingProposal(null);
@@ -167,14 +169,14 @@ const ProposalsPage = () => {
       }
     } catch (err) {
       console.error("Error guardando proposal", err);
-      toast(err.response?.data?.message || "No se pudo guardar la propuesta.", "error");
+      toast(err.response?.data?.message || t(lang, "error_guardar_propuesta"), "error");
     }
   };
 
   const filteredEstimados = estimados.filter((estimado) => {
     if (filterEstado !== "todos" && estimado.estado !== filterEstado) return false;
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase();
+    if (!debouncedQuery.trim()) return true;
+    const q = debouncedQuery.toLowerCase();
     return (
       (estimado.cliente_nombre || "").toLowerCase().includes(q) ||
       (estimado.direccion_trabajo || "").toLowerCase().includes(q) ||

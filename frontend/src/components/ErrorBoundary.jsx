@@ -1,5 +1,25 @@
 import React from "react";
 
+export function reportError(error, extra = {}) {
+  try {
+    const body = {
+      message: error?.message || String(error),
+      stack: error?.stack,
+      url: window.location.href,
+      userAgent: navigator.userAgent,
+      ...extra,
+    };
+    fetch("/api/log-error", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      keepalive: true,
+    }).catch(() => {});
+  } catch {
+    // silent
+  }
+}
+
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
@@ -12,6 +32,7 @@ class ErrorBoundary extends React.Component {
 
   componentDidCatch(error, errorInfo) {
     console.error("Error capturado por ErrorBoundary:", error, errorInfo);
+    reportError(error, { componentStack: errorInfo?.componentStack });
   }
 
   handleReload = () => {

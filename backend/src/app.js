@@ -1,10 +1,28 @@
 // src/app.js
 const express = require("express");
 const cors = require("cors");
+const helmet = require("helmet");
+const morgan = require("morgan");
 const path = require("path");
 const routes = require("./routes");
+const logger = require("./utils/logger");
 
 const app = express();
+
+// Seguridad: headers HTTP
+app.use(
+  helmet({
+    contentSecurityPolicy: false, // deshabilitado porque el frontend usa estilos/scripts inline de Vite
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  })
+);
+
+// Logging de requests
+app.use(
+  morgan("short", {
+    stream: { write: (msg) => logger.info(msg.trim()) },
+  })
+);
 
 const allowedOrigins = [
   /^http:\/\/localhost:\d+$/,
@@ -37,16 +55,23 @@ app.use("/api", routes);
 // ===== FRONTEND (React build) =====
 const publicPath = path.join(__dirname, "../public");
 
-// Archivos estáticos generados por `npm run build` (index.html, assets, etc.)
 app.use(express.static(publicPath));
 
-// Fallback para cualquier ruta NO /api → sirve index.html
-// (sin usar "*", así evitamos el error de path-to-regexp)
+// Fallback SPA para rutas NO /api
 app.use((req, res, next) => {
   if (req.path.startsWith("/api")) {
     return next();
   }
   res.sendFile(path.join(publicPath, "index.html"));
+});
+
+// Manejador global de errores (evita que se filtren stack traces)
+app.use((err, req, res, _next) => {
+  logger.error("Error no capturado:", err);
+  if (res.headersSent) return;
+  res.status(err.status || 500).json({
+    message: err.expose ? err.message : "Error interno del servidor.",
+  });
 });
 
 module.exports = app;

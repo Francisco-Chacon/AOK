@@ -1,23 +1,32 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense, lazy } from "react";
 import { LanguageProvider, useLanguage } from "./i18n/LanguageContext";
 import Sidebar from "./components/Sidebar";
 import Topbar from "./components/Topbar";
 import StatusBar from "./components/StatusBar";
 import ErrorBoundary from "./components/ErrorBoundary";
+import SettingsModal from "./components/SettingsModal";
 import AiPanel from "./components/AiPanel";
 import { ToastProvider } from "./components/Toast";
 import { cn } from "./utils/cn";
 
-import ClientesPage from "./pages/ClientesPage";
-import EstimadosPage from "./pages/EstimadosPage";
-import ProposalsPage from "./pages/ProposalsPage";
-import BackupsPage from "./pages/BackupsPage";
-import InvoicePage from "./pages/InvoicePage";
-import RouteSheetPage from "./pages/RouteSheetPage";
+const ClientesPage = lazy(() => import("./pages/ClientesPage"));
+const EstimadosPage = lazy(() => import("./pages/EstimadosPage"));
+const ProposalsPage = lazy(() => import("./pages/ProposalsPage"));
+const ContractsPage = lazy(() => import("./pages/ContractsPage"));
+const BackupsPage = lazy(() => import("./pages/BackupsPage"));
+const InvoicePage = lazy(() => import("./pages/InvoicePage"));
+const RouteSheetPage = lazy(() => import("./pages/RouteSheetPage"));
+
+const PageFallback = () => (
+  <div className="flex min-h-[400px] items-center justify-center">
+    <div className="h-8 w-8 animate-spin rounded-full border-4 border-[var(--accent-primary)] border-t-transparent" />
+  </div>
+);
 
 const AppContent = () => {
   const [activePage, setActivePage] = useState("facturas");
   const [aiOpen, setAiOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [online, setOnline] = useState(navigator.onLine);
   const { lang, setLang } = useLanguage();
 
@@ -55,6 +64,7 @@ const AppContent = () => {
       case "rutas-hojas": return <RouteSheetPage />;
       case "estimados": return <EstimadosPage />;
       case "proposals": return <ProposalsPage />;
+      case "contracts": return <ContractsPage />;
       case "backups": return <BackupsPage />;
       default: return <InvoicePage />;
     }
@@ -72,11 +82,15 @@ const AppContent = () => {
           onToggleLang={() => setLang(lang === "es" ? "en" : "es")}
           online={online}
           onOpenAi={() => setAiOpen((v) => !v)}
+          onOpenSettings={() => setSettingsOpen(true)}
         />
-        <main className="app-main min-h-0 flex-1 overflow-y-auto px-6 py-7" style={{ animation: "fadeIn 0.25s ease-out" }}>{renderPage()}</main>
+        <main className="app-main min-h-0 flex-1 overflow-y-auto px-6 py-7" style={{ animation: "fadeIn 0.25s ease-out" }}><Suspense fallback={<PageFallback />}>{renderPage()}</Suspense></main>
         <StatusBar online={online} aiConnected={online} />
       </div>
 
+      {settingsOpen && (
+        <SettingsModal onClose={() => setSettingsOpen(false)} />
+      )}
       {aiOpen && (
         <AiPanel onClose={() => setAiOpen(false)} online={online} />
       )}

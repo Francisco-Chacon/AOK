@@ -37,8 +37,7 @@
         "to": "backend",
         "filter": [
           "**/*",
-          "!data/**",
-          "!.env"
+          "!data/**"
         ]
       }
     ],

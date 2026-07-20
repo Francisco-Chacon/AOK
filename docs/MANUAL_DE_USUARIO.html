@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Manual de Usuario — Sistema de Gestión Local</title>
+<style>
+  @page { margin: 2cm; size: letter; @top-center { content: ""; } }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 11pt;
+    line-height: 1.6;
+    color: #1a1a1a;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2cm 1cm;
+  }
+  h1 { font-size: 24pt; color: #1a56db; border-bottom: 3px solid #1a56db; padding-bottom: 8px; margin-bottom: 4px; }
+  .subtitle { font-size: 12pt; color: #6b7280; margin-bottom: 30px; }
+  h2 { font-size: 16pt; color: #1a56db; margin-top: 30px; margin-bottom: 12px; border-bottom: 1px solid #e5e7eb; padding-bottom: 4px; }
+  h3 { font-size: 13pt; color: #374151; margin-top: 20px; margin-bottom: 8px; }
+  p { margin-bottom: 8px; text-align: justify; }
+  ul, ol { margin: 6px 0 12px 20px; }
+  li { margin-bottom: 4px; }
+  strong { color: #111827; }
+  code { background: #f3f4f6; padding: 1px 5px; border-radius: 3px; font-size: 10pt; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+  th { background: #1a56db; color: white; padding: 6px 10px; text-align: left; font-size: 10pt; }
+  td { padding: 6px 10px; border-bottom: 1px solid #e5e7eb; font-size: 10pt; }
+  tr:nth-child(even) td { background: #f9fafb; }
+  .note { background: #eff6ff; border-left: 4px solid #1a56db; padding: 10px 14px; margin: 12px 0; border-radius: 4px; font-size: 10pt; }
+  .warning { background: #fffbeb; border-left: 4px solid #f59e0b; padding: 10px 14px; margin: 12px 0; border-radius: 4px; font-size: 10pt; }
+  .toc { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px 20px; margin: 20px 0; }
+  .toc h2 { margin-top: 0; border: none; }
+  .toc ol { margin: 6px 0 0 20px; }
+  .toc a { color: #1a56db; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .footer { margin-top: 40px; padding-top: 12px; border-top: 1px solid #e5e7eb; font-size: 9pt; color: #9ca3af; text-align: center; }
+  @media print {
+    body { padding: 0; }
+    .toc { break-after: page; }
+    h2 { break-before: page; }
+    h2:first-of-type { break-before: auto; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Sistema de Gestión Local</h1>
+<div class="subtitle"><strong>MAKE IT TO HAPPEN LLC</strong> &mdash; Manual de Usuario</div>
+
+<div class="toc">
+<h2>Contenido</h2>
+<ol>
+  <li><a href="#intro">Introducción</a></li>
+  <li><a href="#inicio">Inicio del Sistema</a></li>
+  <li><a href="#interfaz">Interfaz Principal</a></li>
+  <li><a href="#clientes">Clientes</a></li>
+  <li><a href="#facturas">Facturas</a></li>
+  <li><a href="#hojas-de-ruta">Hojas de Ruta</a></li>
+  <li><a href="#estimados">Estimados (Presupuestos)</a></li>
+  <li><a href="#propuestas">Propuestas</a></li>
+  <li><a href="#contratos">Contratos</a></li>
+  <li><a href="#backups">Backups (Respaldos)</a></li>
+  <li><a href="#asistente-ia">Asistente IA</a></li>
+  <li><a href="#configuracion">Configuración (API Key)</a></li>
+  <li><a href="#pdf">Exportar PDF</a></li>
+  <li><a href="#soporte">Soporte Técnico</a></li>
+  <li><a href="#solucion">Solución de Problemas</a></li>
+</ol>
+</div>
+
+<!-- ============ 1 ============ -->
+<h2 id="intro">1. Introducción</h2>
+<p>El <strong>Sistema de Gestión Local</strong> es una aplicación de escritorio diseñada para administrar clientes, facturas, estimados, propuestas, hojas de ruta, contratos y respaldos. Funciona completamente <strong>sin conexión a internet</strong> (excepto el Asistente IA, que requiere conexión si se usa).</p>
+<p>Todos los datos se almacenan de forma local en el equipo, sin necesidad de servidores externos ni suscripciones.</p>
+
+<!-- ============ 2 ============ -->
+<h2 id="inicio">2. Inicio del Sistema</h2>
+<h3>Requisitos</h3>
+<ul>
+  <li>Windows 10 o superior</li>
+  <li>No requiere instalación de Node.js ni ningún otro programa</li>
+</ul>
+
+<h3>Cómo abrir el sistema</h3>
+<ol>
+  <li>Localice el archivo <code>SistemaGestion*.exe</code> (entregado por el desarrollador).</li>
+  <li>Haga doble clic para ejecutarlo.</li>
+  <li>Espere unos segundos mientras se inicia el sistema (verá la ventana principal aparecer automáticamente).</li>
+  <li>El sistema está listo para usar.</li>
+</ol>
+
+<div class="note"><strong>Nota:</strong> La primera vez que se ejecuta, el sistema crea automáticamente la base de datos y las tablas necesarias. No requiere ninguna configuración inicial.</div>
+
+<h3>Cómo cerrar el sistema</h3>
+<ul>
+  <li>Cierre la ventana normalmente, o presione <code>Alt + F4</code>.</li>
+  <li>El sistema guarda todo automáticamente antes de cerrarse.</li>
+</ul>
+
+<!-- ============ 3 ============ -->
+<h2 id="interfaz">3. Interfaz Principal</h2>
+<p>La ventana principal se divide en tres áreas:</p>
+<ul>
+  <li><strong>Barra lateral izquierda (Sidebar):</strong> Navegación entre módulos.</li>
+  <li><strong>Barra superior (Topbar):</strong> Botones para cambiar idioma, tema (claro/oscuro) y configuración.</li>
+  <li><strong>Área central:</strong> Contenido del módulo seleccionado.</li>
+</ul>
+
+<h3>Barra lateral</h3>
+<p>Los módulos disponibles son:</p>
+<ol>
+  <li><strong>Clientes</strong> &mdash; Gestión de contactos</li>
+  <li><strong>Facturas</strong> &mdash; Emisión de facturas</li>
+  <li><strong>Hojas de Ruta</strong> &mdash; Planificación de visitas</li>
+  <li><strong>Estimados</strong> &mdash; Presupuestos y cotizaciones</li>
+  <li><strong>Propuestas</strong> &mdash; Documentos formales imprimibles</li>
+  <li><strong>Contratos</strong> &mdash; Gestión de contratos</li>
+  <li><strong>Backups</strong> &mdash; Respaldos de seguridad</li>
+</ol>
+<p>Al pie de la barra lateral se encuentra el botón <strong>Soporte Técnico</strong> con los datos del desarrollador.</p>
+
+<h3>Barra superior</h3>
+<table>
+  <tr><th>Icono</th><th>Función</th></tr>
+  <tr><td>🌐</td><td>Alterna entre Español e Inglés</td></tr>
+  <tr><td>☀️ / 🌙</td><td>Alterna entre tema claro y oscuro</td></tr>
+  <tr><td>⚙️</td><td>Abre la configuración de la API key del Asistente IA</td></tr>
+</table>
+
+<!-- ============ 4 ============ -->
+<h2 id="clientes">4. Clientes</h2>
+<h3>Lista de clientes</h3>
+<p>Al entrar en Clientes, se muestra una lista con todos los clientes registrados. Puede buscar por nombre usando la barra de búsqueda. La lista se actualiza automáticamente al crear, editar o eliminar un cliente.</p>
+
+<h3>Crear un cliente</h3>
+<ol>
+  <li>Haga clic en <strong>"Nuevo Cliente"</strong>.</li>
+  <li>Complete los campos:
+    <ul>
+      <li><strong>Nombre:</strong> Nombre del cliente (obligatorio).</li>
+      <li><strong>Dirección:</strong> Dirección física.</li>
+      <li><strong>Teléfono:</strong> Seleccione el código de país y escriba el número. El código de país tiene banderas para 17 países.</li>
+      <li><strong>Email:</strong> Correo electrónico.</li>
+      <li><strong>Estado:</strong> Activo, Pendiente o Inactivo.</li>
+    </ul>
+  </li>
+  <li>Haga clic en <strong>"Guardar"</strong>.</li>
+</ol>
+<div class="note"><strong>Nota:</strong> Los campos de teléfono y email tienen validación inline: si el formato no es correcto, se mostrará un mensaje en rojo, pero no impide guardar.</div>
+
+<h3>Editar un cliente</h3>
+<ol>
+  <li>Haga clic en el botón <strong>editar</strong> (icono de lápiz) en la tarjeta del cliente.</li>
+  <li>Modifique los campos necesarios.</li>
+  <li>Haga clic en <strong>"Guardar"</strong>.</li>
+</ol>
+
+<h3>Eliminar un cliente</h3>
+<ol>
+  <li>Haga clic en el botón <strong>eliminar</strong> (icono de papelera).</li>
+  <li>Confirme la eliminación en el modal que aparece.</li>
+</ol>
+
+<h3>Ver detalle</h3>
+<p>Haga clic en la tarjeta del cliente para ver un modal con la información completa, incluyendo un avatar y el badge de estado.</p>
+
+<!-- ============ 5 ============ -->
+<h2 id="facturas">5. Facturas</h2>
+<h3>Lista de facturas</h3>
+<p>Muestra todas las facturas creadas. Puede filtrar por estado (Pendiente, Pagado, Anulado) usando el selector en la parte superior. También puede buscar por cliente.</p>
+
+<h3>Crear una factura</h3>
+<ol>
+  <li>Haga clic en <strong>"Nueva Factura"</strong>.</li>
+  <li>Complete los campos:
+    <ul>
+      <li><strong>INVOICE #:</strong> Número de factura (personalizable, por defecto "INV-{id}").</li>
+      <li><strong>Cliente:</strong> Seleccione de la lista desplegable con búsqueda. Al seleccionar, se cargan automáticamente dirección, email y teléfono.</li>
+      <li><strong>Descripción:</strong> Detalle del servicio o producto.</li>
+      <li><strong>Monto:</strong> Valor de la factura.</li>
+      <li><strong>Fecha:</strong> Fecha de emisión.</li>
+      <li><strong>Estado:</strong> Pendiente, Pagado o Anulado.</li>
+    </ul>
+  </li>
+  <li>Haga clic en <strong>"Guardar"</strong>.</li>
+</ol>
+
+<h3>Editar / Eliminar</h3>
+<p>Use los botones de acción en cada fila de la tabla (editar y eliminar).</p>
+
+<h3>Vista previa e impresión</h3>
+<ol>
+  <li>Haga clic en el botón <strong>"Vista Previa"</strong> en la fila de la factura.</li>
+  <li>Se abrirá un panel con el diseño de la factura estilo profesional.</li>
+  <li>Desde la vista previa puede hacer clic en <strong>"Imprimir"</strong> o <strong>"Exportar PDF"</strong>.</li>
+</ol>
+
+<!-- ============ 6 ============ -->
+<h2 id="hojas-de-ruta">6. Hojas de Ruta</h2>
+<h3>Lista de hojas de ruta</h3>
+<p>Muestra todas las hojas de ruta registradas. Puede buscar por fecha y ordenar los resultados.</p>
+
+<h3>Crear una hoja de ruta</h3>
+<ol>
+  <li>Haga clic en <strong>"Nueva Hoja de Ruta"</strong>.</li>
+  <li>Complete los datos generales:
+    <ul>
+      <li><strong>Fecha:</strong> Día de la ruta.</li>
+      <li><strong>Conductor:</strong> Nombre del conductor.</li>
+      <li><strong>Camión:</strong> Identificación del vehículo.</li>
+    </ul>
+  </li>
+  <li>Agregue clientes a la ruta:
+    <ul>
+      <li>Seleccione un cliente de la lista desplegable.</li>
+      <li>Ingrese <strong>hora de entrada</strong> y <strong>hora de salida</strong>.</li>
+      <li>Agregue una <strong>descripción</strong> de la visita.</li>
+      <li>Haga clic en <strong>"Agregar"</strong> para incluir al cliente en la tabla de la ruta.</li>
+    </ul>
+  </li>
+  <li>Puede agregar múltiples clientes a una misma ruta. Cada cliente aparece en una tabla con sus horarios.</li>
+  <li>Para eliminar un cliente de la ruta, use el botón de eliminar en la fila correspondiente.</li>
+  <li>Haga clic en <strong>"Guardar"</strong>.</li>
+</ol>
+
+<h3>Editar / Eliminar</h3>
+<p>Use los botones de acción en cada fila de la tabla de hojas de ruta.</p>
+
+<h3>Vista previa e impresión</h3>
+<p>Desde la vista previa puede ver el documento completo con todos los clientes y horarios, listo para Imprimir o Exportar PDF.</p>
+
+<!-- ============ 7 ============ -->
+<h2 id="estimados">7. Estimados (Presupuestos)</h2>
+<h3>Lista de estimados</h3>
+<p>Muestra todos los presupuestos creados. Puede filtrar por estado (Borrador, Enviado, Aceptado, Rechazado) y buscar por cliente.</p>
+
+<h3>Crear un estimado</h3>
+<ol>
+  <li>Haga clic en <strong>"Nuevo Estimado"</strong>.</li>
+  <li>Complete los datos generales:
+    <ul>
+      <li><strong>Cliente:</strong> Seleccione de la lista desplegable.</li>
+      <li><strong>Dirección de trabajo:</strong> Dirección donde se realizará el trabajo.</li>
+      <li><strong>Fecha:</strong> Fecha del presupuesto.</li>
+      <li><strong>Moneda:</strong> USD, EUR, MXN, PAB o COP.</li>
+      <li><strong>Tasa de impuesto:</strong> Seleccione 7%, 15% o 25%.</li>
+      <li><strong>Estado:</strong> Borrador, Enviado, Aceptado o Rechazado.</li>
+    </ul>
+  </li>
+  <li>Agregue materiales o servicios (ítems):
+    <ol>
+      <li><strong>Descripción:</strong> Detalle del ítem (ej: "Mano de obra", "Material eléctrico").</li>
+      <li><strong>Cantidad:</strong> Número de unidades (por defecto 1).</li>
+      <li><strong>Precio unitario:</strong> Valor por unidad.</li>
+      <li>Haga clic en <strong>"Agregar"</strong> para incluir el ítem en la tabla.</li>
+    </ol>
+  </li>
+  <li>El sistema calcula automáticamente:
+    <ul>
+      <li><strong>Subtotal:</strong> Suma de (cantidad × precio unitario) de todos los ítems.</li>
+      <li><strong>Impuesto:</strong> Subtotal × tasa de impuesto seleccionada.</li>
+      <li><strong>Total:</strong> Subtotal + impuesto.</li>
+    </ul>
+  </li>
+  <li>Haga clic en <strong>"Guardar"</strong>.</li>
+</ol>
+
+<h3>Editar / Eliminar</h3>
+<p>Use los botones de acción en cada fila de la tabla de estimados.</p>
+
+<h3>Vista previa e impresión</h3>
+<p>La vista previa se muestra en un panel dividido: a la izquierda los datos del estimado, a la derecha el documento renderizado. Puede Imprimir o Exportar PDF.</p>
+
+<!-- ============ 8 ============ -->
+<h2 id="propuestas">8. Propuestas</h2>
+<h3>Lista de propuestas</h3>
+<p>Muestra todos los estimados que pueden convertirse en propuestas formales. Puede filtrar por estado y buscar por cliente.</p>
+
+<h3>Crear una propuesta</h3>
+<ol>
+  <li>Haga clic en <strong>"Nueva Propuesta"</strong>.</li>
+  <li>Complete los campos: cliente, dirección de trabajo, fecha, moneda, descripción, monto y estado.</li>
+  <li>Haga clic en <strong>"Guardar"</strong>.</li>
+  <li>Al guardar, la propuesta se muestra automáticamente en el panel de vista previa del lado derecho.</li>
+</ol>
+
+<h3>Vista previa</h3>
+<p>La propuesta se renderiza como un documento formal imprimible con:</p>
+<ul>
+  <li>Logo de la empresa</li>
+  <li>Datos del cliente (nombre, dirección, email, teléfono)</li>
+  <li>Dirección de trabajo</li>
+  <li>Descripción detallada del trabajo</li>
+  <li>Monto y moneda</li>
+  <li>Diseño profesional listo para imprimir</li>
+</ul>
+
+<h3>Exportar PDF</h3>
+<p>Desde la vista previa, haga clic en <strong>"Exportar PDF"</strong>. El archivo se guardará con el nombre traducido según el idioma activo.</p>
+
+<!-- ============ 9 ============ -->
+<h2 id="contratos">9. Contratos</h2>
+<h3>Lista de contratos</h3>
+<p>Muestra todos los contratos registrados. Puede buscar por cliente usando la barra de búsqueda. Cada fila muestra el cliente, fechas y monto.</p>
+
+<h3>Crear un contrato</h3>
+<ol>
+  <li>Haga clic en <strong>"Nuevo Contrato"</strong>.</li>
+  <li>Complete los campos:
+    <ul>
+      <li><strong>Cliente:</strong> Seleccione de la lista desplegable con búsqueda.</li>
+      <li><strong>Fecha de inicio:</strong> Fecha en que comienza el contrato.</li>
+      <li><strong>Fecha de fin:</strong> Fecha de finalización del contrato.</li>
+      <li><strong>Descripción:</strong> Detalle del contrato (alcance, términos, etc.).</li>
+      <li><strong>Monto:</strong> Valor total del contrato.</li>
+    </ul>
+  </li>
+  <li>Haga clic en <strong>"Guardar"</strong>.</li>
+</ol>
+
+<div class="warning"><strong>Validación:</strong> Si la fecha de fin es anterior a la fecha de inicio, se muestra un error en rojo en el campo de fecha. Corrija las fechas antes de guardar.</div>
+
+<h3>Vista previa</h3>
+<p>La vista previa del contrato incluye:</p>
+<ul>
+  <li>Tabla con datos del cliente (nombre, dirección, email, teléfono)</li>
+  <li>Fechas de inicio y fin</li>
+  <li>Descripción del contrato en un recuadro</li>
+  <li>Monto del contrato</li>
+  <li>Líneas de firma: <strong>Firma del Cliente</strong> y <strong>Firma del Contratista</strong></li>
+</ul>
+
+<h3>Imprimir / Exportar PDF</h3>
+<p>Use los botones correspondientes desde la vista previa. El nombre del archivo incluye la traducción del módulo según el idioma activo.</p>
+
+<!-- ============ 10 ============ -->
+<h2 id="backups">10. Backups (Respaldos)</h2>
+<div class="warning"><strong>Importante:</strong> Hacer backups regularmente es la mejor forma de proteger sus datos. Se recomienda crear un backup al menos una vez por semana y guardar una copia en un USB o en la nube.</div>
+
+<h3>Crear un backup</h3>
+<ol>
+  <li>Vaya a la sección <strong>Backups</strong> en la barra lateral.</li>
+  <li>Haga clic en <strong>"Crear backup"</strong>.</li>
+  <li>Aparecerá un mensaje de confirmación. Haga clic en <strong>"Sí, crear backup"</strong>.</li>
+  <li>Espere unos segundos mientras se crea el respaldo.</li>
+  <li>El backup aparecerá en la lista con la fecha y hora de creación.</li>
+</ol>
+
+<h3>Descargar un backup</h3>
+<p>Haga clic en <strong>"Descargar"</strong> junto al backup que desea guardar. El archivo <code>.db</code> se descargará en su computadora.</p>
+
+<h3>Subir un backup</h3>
+<ol>
+  <li>En la sección <strong>"Subir backup desde archivo"</strong>, haga clic en el botón de selección de archivo.</li>
+  <li>Seleccione un archivo <code>.db</code> desde su computadora (USB, disco duro, etc.).</li>
+  <li>Haga clic en <strong>"Subir backup"</strong>.</li>
+  <li>El archivo aparecerá en la lista de backups disponible para restaurar.</li>
+</ol>
+
+<h3>Restaurar un backup</h3>
+<ol>
+  <li>Haga clic en <strong>"Restaurar"</strong> junto al backup que desea recuperar.</li>
+  <li>Aparecerá un mensaje de advertencia: <em>"Esta acción no se puede deshacer"</em>.</li>
+  <li>Confirme la operación.</li>
+  <li>El sistema reemplazará todos los datos actuales con los del backup.</li>
+  <li><strong>Reinicie el sistema</strong> para asegurar que todos los cambios se apliquen correctamente.</li>
+</ol>
+
+<h3>Eliminar un backup</h3>
+<ol>
+  <li>Haga clic en el botón de eliminar (icono de papelera) junto al backup.</li>
+  <li>Confirme la eliminación en el modal que aparece.</li>
+  <li>El archivo se borrará permanentemente.</li>
+</ol>
+
+<!-- ============ 11 ============ -->
+<h2 id="asistente-ia">11. Asistente IA</h2>
+<p>El Asistente IA es un chat integrado que puede ayudar a usar el sistema. Tiene dos modos de funcionamiento.</p>
+
+<h3>Cómo abrirlo</h3>
+<p>Haga clic en el <strong>botón flotante</strong> (icono de robot 🤖) en la esquina inferior derecha de la pantalla. Se abrirá un panel de chat.</p>
+
+<h3>Consultas de datos (sin internet)</h3>
+<p>El asistente puede responder preguntas sobre los datos del sistema <strong>sin conexión a internet</strong>. Ejemplos:</p>
+<ul>
+  <li>"¿Cuántos clientes tengo?"</li>
+  <li>"Resumen general del sistema"</li>
+  <li>"¿Qué facturas están pendientes?"</li>
+  <li>"Mostrar contratos activos"</li>
+  <li>"Actividad reciente"</li>
+  <li>"Buscar [nombre del cliente]"</li>
+  <li>"¿Cuántos estimados tengo?"</li>
+</ul>
+
+<h3>Conversación con IA (requiere internet + API key)</h3>
+<p>Para hacer preguntas como "¿Cómo creo una factura?" o "¿Qué es una hoja de ruta?", se necesita:</p>
+<ol>
+  <li>Tener conexión a internet.</li>
+  <li>Configurar una API key de OpenRouter (ver <a href="#configuracion">Configuración</a>).</li>
+</ol>
+
+<div class="note"><strong>Nota:</strong> Si no hay API key configurada, el asistente mostrará un mensaje amigable indicando qué consultas de datos están disponibles y apuntando al icono de engranaje ⚙️ para configurarla.</div>
+
+<!-- ============ 12 ============ -->
+<h2 id="configuracion">12. Configuración (API Key)</h2>
+<p>La API key permite que el Asistente IA responda preguntas sobre el uso del sistema usando inteligencia artificial.</p>
+
+<h3>Cómo configurarla</h3>
+<ol>
+  <li>Haga clic en el <strong>icono de engranaje</strong> ⚙️ en la barra superior.</li>
+  <li>Se abrirá un modal con un campo para ingresar la API key.</li>
+  <li>Escriba su API key de OpenRouter (comienza con <code>sk-or-v1-</code>).</li>
+  <li>Haga clic en <strong>"Guardar"</strong>.</li>
+  <li>Aparecerá un checkmark verde ✅ indicando que la key está configurada correctamente.</li>
+</ol>
+
+<div class="note"><strong>Seguridad:</strong> La API key se almacena <strong>cifrada</strong> en la base de datos local usando AES-256-GCM. Nunca se muestra en la interfaz: si ya hay una key configurada, el campo aparece vacío por seguridad.</div>
+
+<h3>Cómo eliminar la API key</h3>
+<ol>
+  <li>Abra la configuración (icono de engranaje ⚙️).</li>
+  <li>Haga clic en <strong>"Eliminar"</strong>.</li>
+  <li>La key se borrará permanentemente de la base de datos.</li>
+</ol>
+
+<!-- ============ 13 ============ -->
+<h2 id="pdf">13. Exportar PDF</h2>
+<p>Los siguientes documentos se pueden exportar a PDF desde su vista previa:</p>
+<table>
+  <tr><th>Módulo</th><th>Cómo exportar</th></tr>
+  <tr><td>Facturas</td><td>Vista Previa → "Exportar PDF"</td></tr>
+  <tr><td>Estimados</td><td>Vista Previa → "Exportar PDF"</td></tr>
+  <tr><td>Propuestas</td><td>Vista Previa → "Exportar PDF"</td></tr>
+  <tr><td>Hojas de Ruta</td><td>Vista Previa → "Exportar PDF"</td></tr>
+  <tr><td>Contratos</td><td>Vista Previa → "Exportar PDF"</td></tr>
+</table>
+
+<h3>Nombres de archivo</h3>
+<p>Los nombres de los archivos PDF se generan automáticamente según el idioma activo:</p>
+<ul>
+  <li><strong>Español:</strong> <code>Factura_Cliente.pdf</code>, <code>Estimado_Cliente.pdf</code>, <code>Contrato_Cliente.pdf</code>, etc.</li>
+  <li><strong>English:</strong> <code>Invoice_Client.pdf</code>, <code>Estimate_Client.pdf</code>, <code>Contract_Client.pdf</code>, etc.</li>
+</ul>
+
+<!-- ============ 14 ============ -->
+<h2 id="soporte">14. Soporte Técnico</h2>
+<p>Para contactar al desarrollador directamente desde el sistema:</p>
+<ol>
+  <li>Haga clic en <strong>"Soporte Técnico"</strong> al pie de la barra lateral izquierda.</li>
+  <li>Se abrirá un modal con una tarjeta de presentación que incluye:
+    <ul>
+      <li><strong>Desarrollador:</strong> Francisco Chacón</li>
+      <li><strong>Rol:</strong> Desarrollador</li>
+      <li><strong>Teléfono:</strong> +503 7204-4924</li>
+      <li><strong>Email:</strong> francochacon155@gmail.com</li>
+      <li><strong>Ubicación:</strong> El Salvador</li>
+    </ul>
+  </li>
+  <li>Cada contacto tiene un efecto hover para facilitar la interacción.</li>
+</ol>
+
+<!-- ============ 15 ============ -->
+<h2 id="solucion">15. Solución de Problemas</h2>
+
+<h3>El sistema no se abre</h3>
+<ul>
+  <li>Asegúrese de tener <strong>Windows 10 o superior</strong>.</li>
+  <li>Ejecute el <code>.exe</code> como Administrador (clic derecho → "Ejecutar como administrador").</li>
+  <li>Revise que su antivirus no haya bloqueado el programa. Si es necesario, agregue el .exe a las exclusiones del antivirus.</li>
+</ul>
+
+<h3>No aparecen los datos después de restaurar un backup</h3>
+<ul>
+  <li>Reinicie el sistema después de restaurar.</li>
+  <li>Si el problema persiste, contacte a Soporte Técnico.</li>
+</ul>
+
+<h3>El Asistente IA no responde</h3>
+<ul>
+  <li><strong>Sin internet:</strong> Use solo consultas de datos (pregunte por clientes, facturas, contratos, etc.).</li>
+  <li><strong>Con internet pero no responde:</strong> Verifique que la API key esté configurada en Configuración (⚙️).</li>
+  <li><strong>La API key es incorrecta:</strong> Elimine la key actual en Configuración e ingrese una nueva.</li>
+</ul>
+
+<h3>Error al exportar PDF</h3>
+<ul>
+  <li>Cierre la ventana de vista previa y vuelva a abrirla.</li>
+  <li>Si el error persiste, reinicie el sistema e intente nuevamente.</li>
+  <li>Verifique que tenga espacio en disco para guardar el archivo.</li>
+</ul>
+
+<h3>Los textos aparecen en otro idioma</h3>
+<ul>
+  <li>Use el botón de idioma 🌐 en la barra superior para alternar entre Español e Inglés.</li>
+</ul>
+
+<h3>No encuentro un cliente en la lista</h3>
+<ul>
+  <li>Use la <strong>barra de búsqueda</strong> en la parte superior de la lista de clientes.</li>
+  <li>Revise los <strong>filtros de estado</strong> si están activos.</li>
+  <li>La lista muestra 20 clientes por página. Use la paginación en la parte inferior para ver más páginas.</li>
+</ul>
+
+<h3>Olvidé mi API key de OpenRouter</h3>
+<ul>
+  <li>No se puede recuperar la key desde el sistema por razones de seguridad.</li>
+  <li>Elimine la key actual en Configuración (⚙️ → "Eliminar") e ingrese una nueva.</li>
+  <li>Si no tiene una key, regístrese en <a href="https://openrouter.ai">openrouter.ai</a> para obtener una.</li>
+</ul>
+
+<div class="footer">
+  <p>&copy; 2026 MAKE IT TO HAPPEN LLC. Todos los derechos reservados.</p>
+  <p>Documento generado el <span id="date"></span></p>
+</div>
+
+<script>document.getElementById('date').textContent = new Date().toLocaleDateString('es-SV', { year: 'numeric', month: 'long', day: 'numeric' });</script>
+
+</body>
+</html>

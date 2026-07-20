@@ -1,7 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
 import { cn } from "../utils/cn";
+import { useLanguage } from "../i18n/LanguageContext";
+import { t } from "../i18n/translations";
 
-const SearchableSelect = ({ value, onChange, options, placeholder = "Seleccione...", debounceMs = 250 }) => {
+const SearchableSelect = ({ value, onChange, options, placeholder, debounceMs = 250 }) => {
+  const { lang } = useLanguage();
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -53,7 +56,7 @@ const SearchableSelect = ({ value, onChange, options, placeholder = "Seleccione.
           onChange={handleInputChange}
           onFocus={() => setOpen(true)}
           onBlur={handleBlur}
-          placeholder={selected?.label || placeholder}
+          placeholder={selected?.label || placeholder || t(lang, "seleccione")}
           autoComplete="off"
         />
         <input type="hidden" name="cliente_id" value={value} />
@@ -62,7 +65,7 @@ const SearchableSelect = ({ value, onChange, options, placeholder = "Seleccione.
           className="searchable-select-arrow absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-xs text-[var(--text-muted)] transition hover:bg-[var(--bg-hover)] hover:text-[var(--text-main)]"
           onClick={() => { inputRef.current?.focus(); setOpen((p) => !p); }}
           tabIndex={-1}
-          aria-label="Abrir lista"
+          aria-label={t(lang, "abrir_lista")}
         >
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M6 9l6 6 6-6" />
@@ -72,7 +75,7 @@ const SearchableSelect = ({ value, onChange, options, placeholder = "Seleccione.
       {open && (
         <ul className="searchable-select-list absolute z-40 mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-[var(--record-border)] bg-[var(--bg-modal)] p-1 shadow-xl backdrop-blur">
           {filtered.length === 0 ? (
-            <li className="searchable-select-empty px-3 py-2 text-sm text-[var(--text-muted)]">Sin resultados</li>
+            <li className="searchable-select-empty px-3 py-2 text-sm text-[var(--text-muted)]">{t(lang, "sin_resultados")}</li>
           ) : (
             filtered.map((o) => (
               <li

@@ -42,6 +42,7 @@ const EstimadosPage = () => {
     fecha: new Date().toISOString().slice(0, 10),
     monto: "",
     moneda: "USD",
+    tasa_impuesto: "0.07",
     descripcion_trabajo: "",
     estado: "borrador",
   });
@@ -88,6 +89,7 @@ const EstimadosPage = () => {
       fecha: new Date().toISOString().slice(0, 10),
       monto: "",
       moneda: "USD",
+      tasa_impuesto: "0.07",
       descripcion_trabajo: "",
       estado: "borrador",
     });
@@ -104,6 +106,7 @@ const EstimadosPage = () => {
       fecha: (e.fecha || "").slice(0, 10),
       monto: e.monto || "",
       moneda: e.moneda || "USD",
+      tasa_impuesto: String(e.tasa_impuesto || "0.07"),
       descripcion_trabajo: e.notas_adicionales || "",
       estado: e.estado || "borrador",
     });
@@ -128,7 +131,7 @@ const EstimadosPage = () => {
 
   const addItem = () => {
     if (!newItem.descripcion || !newItem.precio_unitario) {
-      toast("Completá descripción y precio unitario", "warning");
+      toast(t(lang, "warning_completar_item"), "warning");
       return;
     }
     const item = {
@@ -149,7 +152,8 @@ const EstimadosPage = () => {
 
   const calculateTotal = () => {
     const subtotal = calculateSubtotal();
-    return subtotal + subtotal * 0.07;
+    const tasa = Number(form.tasa_impuesto) || 0;
+    return subtotal + subtotal * tasa;
   };
 
   const handleSubmit = async (ev) => {
@@ -163,6 +167,7 @@ const EstimadosPage = () => {
       fecha: form.fecha,
       monto: total,
       moneda: form.moneda,
+      tasa_impuesto: Number(form.tasa_impuesto) || 0.07,
       descripcion_trabajo: descripcionItems,
       notas_adicionales: notasAdicionales,
       estado: form.estado,
@@ -171,16 +176,16 @@ const EstimadosPage = () => {
     try {
       if (editingEstimado) {
         await api.put(`/estimados/${editingEstimado.id}`, payload);
-        toast("Estimado actualizado correctamente.", "success");
+        toast(t(lang, "estimado_actualizado"), "success");
       } else {
         await api.post("/estimados", payload);
-        toast("Estimado creado correctamente.", "success");
+        toast(t(lang, "estimado_creado"), "success");
       }
       setModalOpen(false);
       await loadData();
     } catch (err) {
       console.error("Error guardando estimado", err);
-      toast("No se pudo guardar el estimado.", "error");
+      toast(t(lang, "error_guardar_estimado"), "error");
     }
   };
 
@@ -198,11 +203,11 @@ const EstimadosPage = () => {
     if (!estimadoToDelete) return;
     try {
       await api.delete(`/estimados/${estimadoToDelete.id}`);
-      toast("Estimado eliminado correctamente.", "success");
+      toast(t(lang, "estimado_eliminado"), "success");
       await loadData();
     } catch (err) {
       console.error("Error eliminando estimado", err);
-      toast("No se pudo eliminar el estimado.", "error");
+      toast(t(lang, "error_eliminar_estimado"), "error");
     } finally {
       setConfirmDeleteOpen(false);
       setEstimadoToDelete(null);
@@ -232,15 +237,17 @@ const EstimadosPage = () => {
   const printStatement = (estimado) => {
     const items = getItemsFromDescripcion(estimado.descripcion_trabajo, estimado.monto, estimado.moneda);
     const storedTotal = Number(estimado.monto || 0);
+    const tasa = Number(estimado.tasa_impuesto) || 0.07;
     const itemsSubtotal = items.reduce((sum, item) => sum + (Number(item.cantidad) || 1) * (Number(item.precio_unitario) || 0), 0);
-    const subtotal = itemsSubtotal || (storedTotal ? storedTotal / 1.07 : 0);
-    const tax = subtotal * 0.07;
+    const subtotal = itemsSubtotal || (storedTotal ? storedTotal / (1 + tasa) : 0);
+    const tax = subtotal * tasa;
     const statementTotal = storedTotal || subtotal + tax;
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
 
     const s = sanitizeHtml;
-    const ivaLabel = t(lang, "impuesto_nombre") || "ITBMS (7%)";
+    const pctLabel = `(${Math.round(tasa * 100)}%)`;
+    const ivaLabel = `${t(lang, "impuesto_nombre")} ${pctLabel}`;
     const validUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10); // eslint-disable-line react-hooks/purity
 
     printWindow.document.write(`<!DOCTYPE html>
@@ -367,11 +374,11 @@ const EstimadosPage = () => {
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
       pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
       const name = (estimado.cliente_nombre || "estimado").replace(/[^a-zA-Z0-9]/g, "_");
-      pdf.save(`Estimado_${name}.pdf`);
-      toast("PDF exportado correctamente.", "success");
+      pdf.save(`${t(lang, "estimados").replace(/[^a-zA-Z0-9]/g, "_")}_${name}.pdf`);
+      toast(t(lang, "pdf_exportado"), "success");
     } catch (err) {
       console.error("Error generando PDF", err);
-      toast("Error al generar el PDF.", "error");
+      toast(t(lang, "error_pdf"), "error");
     }
   };
 
@@ -515,7 +522,7 @@ const EstimadosPage = () => {
               </label>
               <label className="form-field">
                 <span>{t(lang, "fecha")}</span>
-                <input className="input" type="date" name="fecha" value={form.fecha} onChange={handleChange} required />
+                <input className="input" type="date" name="fecha" value={form.fecha} onChange={handleChange} onBlur={(e) => { if (e.target.value && isNaN(new Date(e.target.value).getTime())) { toast(t(lang, "fecha_invalida"), "warning"); }}} required />
               </label>
             </div>
           </div>
@@ -568,7 +575,7 @@ const EstimadosPage = () => {
                 </tbody>
                 <tfoot>
                   <tr><td colSpan={3} className="items-total-label">{t(lang, "subtotal")}</td><td className="items-total-value">${calculateSubtotal().toFixed(2)}</td><td></td></tr>
-                  <tr><td colSpan={3} className="items-total-label">{t(lang, "impuesto")} (7%)</td><td className="items-total-value">${(calculateSubtotal() * 0.07).toFixed(2)}</td><td></td></tr>
+                  <tr><td colSpan={3} className="items-total-label">{t(lang, "impuesto")} (${Math.round(Number(form.tasa_impuesto || 0) * 100)}%)</td><td className="items-total-value">${(calculateSubtotal() * (Number(form.tasa_impuesto) || 0)).toFixed(2)}</td><td></td></tr>
                   <tr><td colSpan={3} className="items-total-label">{t(lang, "total")}</td><td className="items-total-value">${calculateTotal().toFixed(2)}</td><td></td></tr>
                 </tfoot>
               </table>
@@ -602,11 +609,19 @@ const EstimadosPage = () => {
                   {MONEDAS.map((m) => (<option key={m} value={m}>{m}</option>))}
                 </select>
               </label>
+              <label className="form-field">
+                <span>{t(lang, "impuesto")}</span>
+                <select className="input" name="tasa_impuesto" value={form.tasa_impuesto} onChange={handleChange}>
+                  <option value="0.07">7%</option>
+                  <option value="0.15">15%</option>
+                  <option value="0.25">25%</option>
+                </select>
+              </label>
             </div>
             <div className="items-form-footer-right">
               <div style={{ textAlign: "right" }}>
                 <div className="muted" style={{ fontSize: "0.8rem" }}>{t(lang, "subtotal")}: ${calculateSubtotal().toFixed(2)} {form.moneda}</div>
-                <div className="muted" style={{ fontSize: "0.8rem" }}>{t(lang, "impuesto")} (7%): ${(calculateSubtotal() * 0.07).toFixed(2)} {form.moneda}</div>
+                <div className="muted" style={{ fontSize: "0.8rem" }}>{t(lang, "impuesto")} (${Math.round(Number(form.tasa_impuesto || 0) * 100)}%): ${(calculateSubtotal() * (Number(form.tasa_impuesto) || 0)).toFixed(2)} {form.moneda}</div>
                 <span className="items-grand-total">{t(lang, "total")}: ${calculateTotal().toFixed(2)} {form.moneda}</span>
               </div>
             </div>
@@ -660,12 +675,14 @@ const getItems = (descripcion, monto) => {
 const EstimadoPDF = ({ estimado, lang }) => {
   const items = getItems(estimado.descripcion_trabajo, estimado.monto);
   const storedTotal = Number(estimado.monto || 0);
+  const tasa = Number(estimado.tasa_impuesto) || 0.07;
   const itemsSubtotal = items.reduce((sum, item) => sum + item.cantidad * item.precio_unitario, 0);
-  const subtotal = itemsSubtotal || (storedTotal ? storedTotal / 1.07 : 0);
-  const tax = subtotal * 0.07;
+  const subtotal = itemsSubtotal || (storedTotal ? storedTotal / (1 + tasa) : 0);
+  const tax = subtotal * tasa;
   const total = storedTotal || subtotal + tax;
   const validUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
   const te = (k) => t(lang, k);
+  const pctLabel = `(${Math.round(tasa * 100)}%)`;
 
   return (
     <div style={{ fontFamily: "Arial, sans-serif", color: "#333", maxWidth: "100%", margin: "0 auto" }}>
@@ -725,7 +742,7 @@ const EstimadoPDF = ({ estimado, lang }) => {
               <td style={{ padding: "6px 10px", textAlign: "right", border: "none", fontSize: "13px", color: "#111" }}>{estimado.moneda} {subtotal.toFixed(2)}</td>
             </tr>
             <tr>
-              <td style={{ padding: "6px 10px", textAlign: "right", fontWeight: "bold", border: "none", fontSize: "13px", color: "#111" }}>{te("impuesto_nombre")}:</td>
+              <td style={{ padding: "6px 10px", textAlign: "right", fontWeight: "bold", border: "none", fontSize: "13px", color: "#111" }}>{te("impuesto_nombre")} {pctLabel}:</td>
               <td style={{ padding: "6px 10px", textAlign: "right", border: "none", fontSize: "13px", color: "#111" }}>{estimado.moneda} {tax.toFixed(2)}</td>
             </tr>
             <tr>

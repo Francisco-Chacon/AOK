@@ -50,11 +50,11 @@ const BackupsPage = () => {
       if (data.ok) {
         setBackups(data.files || []);
       } else {
-        showError(data.message || "Error al cargar backups.");
+        showError(data.message || t(lang, "error_cargar_backups"));
       }
     } catch (err) {
       console.error(err);
-      showError("Error al cargar la lista de backups.");
+      showError(t(lang, "error_cargar_backups"));
     } finally {
       setLoadingList(false);
     }
@@ -84,14 +84,14 @@ const BackupsPage = () => {
       setLoadingCreate(true);
       const { data } = await api.post("/backups/create");
       if (data.ok) {
-        showSuccess(data.message || "Backup creado correctamente.");
+        showSuccess(data.message || t(lang, "backup_creado"));
         fetchBackups();
       } else {
-        showError(data.message || "Error al crear backup.");
+        showError(data.message || t(lang, "error_crear_backup"));
       }
     } catch (err) {
       console.error(err);
-      showError("Error al crear backup.");
+      showError(t(lang, "error_crear_backup"));
     } finally {
       setLoadingCreate(false);
       setConfirmCreateOpen(false);
@@ -130,15 +130,14 @@ const BackupsPage = () => {
       });
       if (data.ok) {
         showSuccess(
-          data.message ||
-            "Backup restaurado correctamente. Reinicia el backend para asegurar que todo se actualice."
+          data.message || t(lang, "restaurar_correcto")
         );
       } else {
-        showError(data.message || "Error al restaurar el backup.");
+        showError(data.message || t(lang, "error_restaurar"));
       }
     } catch (err) {
       console.error(err);
-      showError("Error al restaurar el backup.");
+      showError(t(lang, "error_restaurar"));
     } finally {
       setLoadingRestore(false);
       setConfirmRestoreOpen(false);
@@ -168,14 +167,14 @@ const BackupsPage = () => {
         `/backups/${encodeURIComponent(backupToDelete)}`
       );
       if (data.ok) {
-        showSuccess(data.message || "Backup eliminado correctamente.");
+        showSuccess(data.message || t(lang, "eliminar_correcto"));
         fetchBackups();
       } else {
-        showError(data.message || "Error al eliminar el backup.");
+        showError(data.message || t(lang, "error_eliminar"));
       }
     } catch (err) {
       console.error(err);
-      showError("Error al eliminar el backup.");
+      showError(t(lang, "error_eliminar"));
     } finally {
       setLoadingDelete(false);
       setConfirmDeleteOpen(false);
@@ -197,7 +196,7 @@ const BackupsPage = () => {
 
   const handleUploadBackup = async () => {
     if (!backupFile) {
-      showError("Selecciona un archivo .db primero.");
+      showError(t(lang, "seleccionar_db"));
       return;
     }
 
@@ -208,16 +207,16 @@ const BackupsPage = () => {
 
       const { data } = await api.post("/backups/upload", formData);
       if (data.ok) {
-        showSuccess(data.message || "Backup subido correctamente.");
+        showSuccess(data.message || t(lang, "backup_subido"));
         setBackupFile(null);
         // refrescamos la lista para que aparezca el nuevo archivo
         fetchBackups();
       } else {
-        showError(data.message || "Error al subir el backup.");
+        showError(data.message || t(lang, "error_subir_backup"));
       }
     } catch (err) {
       console.error(err);
-      showError("Error al subir el backup.");
+      showError(t(lang, "error_subir_backup"));
     } finally {
       setUploading(false);
     }

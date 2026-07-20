@@ -10,7 +10,7 @@ const StatusBar = ({ aiConnected }) => {
       <div className="statusbar-left flex items-center gap-4">
         <div className="statusbar-item flex items-center gap-1.5">
           <span className="statusbar-dot statusbar-dot--success h-2 w-2 rounded-full bg-[rgb(var(--success))]" />
-          <span>Local ready</span>
+          <span>{t(lang, "local_ready")}</span>
         </div>
         <div className="statusbar-item flex items-center gap-1.5">
           <span>{t(lang, "guardar")}</span>
