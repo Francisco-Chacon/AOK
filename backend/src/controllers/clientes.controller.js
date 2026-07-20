@@ -211,6 +211,20 @@ function deleteCliente(req, res) {
     const validId = validateId(id, res);
     if (!validId) return;
 
+    const hasRelations = db.prepare(`
+      SELECT
+        (SELECT COUNT(*) FROM facturas WHERE cliente_id = ?) AS facturas,
+        (SELECT COUNT(*) FROM estimados WHERE cliente_id = ?) AS estimados,
+        (SELECT COUNT(*) FROM contracts WHERE cliente_id = ?) AS contracts,
+        (SELECT COUNT(*) FROM rutas_hojas_clientes WHERE cliente_id = ?) AS rutas
+    `).get(validId, validId, validId, validId);
+
+    if (hasRelations.facturas > 0 || hasRelations.estimados > 0 || hasRelations.contracts > 0 || hasRelations.rutas > 0) {
+      return res.status(409).json({
+        message: "No se puede eliminar el cliente porque tiene registros asociados. Elimine primero sus facturas, estimados, contratos y rutas.",
+      });
+    }
+
     const stmt = db.prepare("DELETE FROM clientes WHERE id = ?");
     const result = stmt.run(validId);
 
