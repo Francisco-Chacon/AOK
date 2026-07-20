@@ -27,6 +27,7 @@ app.use(
 const allowedOrigins = [
   /^http:\/\/localhost:\d+$/,
   /^http:\/\/127\.0\.0\.1:\d+$/,
+  /^https?:\/\/.*\.onrender\.com$/,
   "file://",
 ];
 
