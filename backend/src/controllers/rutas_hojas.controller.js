@@ -43,34 +43,39 @@ exports.create = (req, res) => {
     const { fecha, conductor, camion, clientes } = req.body;
     const now = new Date().toISOString();
 
-    const result = db.prepare(`
-      INSERT INTO rutas_hojas (fecha, conductor, camion, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(fecha || now.slice(0,10), conductor || "", camion || "", now, now);
+    const createTx = db.transaction(() => {
+      const result = db.prepare(`
+        INSERT INTO rutas_hojas (fecha, conductor, camion, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?)
+      `).run(fecha || now.slice(0,10), conductor || "", camion || "", now, now);
 
-    const hoja_id = result.lastInsertRowid;
+      const hoja_id = result.lastInsertRowid;
 
-    if (Array.isArray(clientes)) {
-      const insertCliente = db.prepare(`
-        INSERT INTO rutas_hojas_clientes
-          (hoja_id, cliente_id, cliente_nombre, cliente_direccion, hora_entrada, hora_salida, descripcion, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `);
-      for (const c of clientes) {
-        insertCliente.run(
-          hoja_id,
-          c.cliente_id || null,
-          c.cliente_nombre || "",
-          c.cliente_direccion || "",
-          c.hora_entrada || "",
-          c.hora_salida || "",
-          c.descripcion || "",
-          now,
-          now
-        );
+      if (Array.isArray(clientes)) {
+        const insertCliente = db.prepare(`
+          INSERT INTO rutas_hojas_clientes
+            (hoja_id, cliente_id, cliente_nombre, cliente_direccion, hora_entrada, hora_salida, descripcion, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        for (const c of clientes) {
+          insertCliente.run(
+            hoja_id,
+            c.cliente_id || null,
+            c.cliente_nombre || "",
+            c.cliente_direccion || "",
+            c.hora_entrada || "",
+            c.hora_salida || "",
+            c.descripcion || "",
+            now,
+            now
+          );
+        }
       }
-    }
 
+      return hoja_id;
+    });
+
+    const hoja_id = createTx();
     const hoja = db.prepare("SELECT * FROM rutas_hojas WHERE id = ?").get(hoja_id);
     res.status(201).json(hoja);
   } catch (err) {
@@ -85,33 +90,35 @@ exports.update = (req, res) => {
     const now = new Date().toISOString();
     if (!fecha) return res.status(400).json({ message: "La fecha es requerida" });
 
-    db.prepare(`
-      UPDATE rutas_hojas SET fecha = ?, conductor = ?, camion = ?, updated_at = ?
-      WHERE id = ?
-    `).run(fecha, conductor || "", camion || "", now, req.params.id);
+    db.transaction(() => {
+      db.prepare(`
+        UPDATE rutas_hojas SET fecha = ?, conductor = ?, camion = ?, updated_at = ?
+        WHERE id = ?
+      `).run(fecha, conductor || "", camion || "", now, req.params.id);
 
-    db.prepare("DELETE FROM rutas_hojas_clientes WHERE hoja_id = ?").run(req.params.id);
+      db.prepare("DELETE FROM rutas_hojas_clientes WHERE hoja_id = ?").run(req.params.id);
 
-    if (Array.isArray(clientes)) {
-      const insertCliente = db.prepare(`
-        INSERT INTO rutas_hojas_clientes
-          (hoja_id, cliente_id, cliente_nombre, cliente_direccion, hora_entrada, hora_salida, descripcion, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `);
-      for (const c of clientes) {
-        insertCliente.run(
-          req.params.id,
-          c.cliente_id || null,
-          c.cliente_nombre || "",
-          c.cliente_direccion || "",
-          c.hora_entrada || "",
-          c.hora_salida || "",
-          c.descripcion || "",
-          now,
-          now
-        );
+      if (Array.isArray(clientes)) {
+        const insertCliente = db.prepare(`
+          INSERT INTO rutas_hojas_clientes
+            (hoja_id, cliente_id, cliente_nombre, cliente_direccion, hora_entrada, hora_salida, descripcion, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        for (const c of clientes) {
+          insertCliente.run(
+            req.params.id,
+            c.cliente_id || null,
+            c.cliente_nombre || "",
+            c.cliente_direccion || "",
+            c.hora_entrada || "",
+            c.hora_salida || "",
+            c.descripcion || "",
+            now,
+            now
+          );
+        }
       }
-    }
+    })();
 
     res.json({ id: Number(req.params.id) });
   } catch (err) {

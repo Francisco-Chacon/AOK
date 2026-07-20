@@ -88,38 +88,40 @@ const RouteSheetPage = () => {
     { cliente_id: "", cliente_nombre: "", cliente_direccion: "", hora_entrada: "", hora_salida: "", descripcion: "" }
   ]);
 
-  const loadData = async () => {
+  const loadData = async (signal) => {
     try {
       setLoading(true);
       const [resHojas, resClientes] = await Promise.all([
-        api.get("/rutas-hojas"),
-        api.get("/clientes"),
+        api.get("/rutas-hojas", { signal }),
+        api.get("/clientes", { signal }),
       ]);
       const data = resHojas.data || [];
       setHojas(data);
       setClientes(resClientes.data || []);
       setSelectedId((current) => data.some((h) => h.id === current) ? current : data[0]?.id || null);
     } catch (err) {
-      console.error(err);
+      if (err?.name !== "CanceledError") console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadData();
+    const controller = new AbortController();
+    loadData(controller.signal);
+    return () => controller.abort();
   }, []);
 
   // Fetch full detail when selectedId changes
   useEffect(() => {
     if (!selectedId) { setPreviewData(null); return; }
-    let cancelled = false;
+    const controller = new AbortController();
     setPreviewLoading(true);
-    api.get(`/rutas-hojas/${selectedId}`)
-      .then((res) => { if (!cancelled) setPreviewData(res.data); })
-      .catch(console.error)
-      .finally(() => { if (!cancelled) setPreviewLoading(false); });
-    return () => { cancelled = true; };
+    api.get(`/rutas-hojas/${selectedId}`, { signal: controller.signal })
+      .then((res) => setPreviewData(res.data))
+      .catch((err) => { if (err?.name !== "CanceledError") console.error(err); })
+      .finally(() => setPreviewLoading(false));
+    return () => controller.abort();
   }, [selectedId]);
 
   const filtradas = hojas.filter(h => {

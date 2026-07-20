@@ -19,11 +19,13 @@ const SettingsModal = ({ onClose }) => {
   const inputRef = useRef(null);
 
   useEffect(() => {
-    fetch("/api/config/openrouter-key")
+    const controller = new AbortController();
+    fetch("/api/config/openrouter-key", { signal: controller.signal })
       .then((r) => r.json())
       .then((data) => setHasKey(data.hasKey))
-      .catch(() => setHasKey(false));
+      .catch(() => { if (!controller.signal.aborted) setHasKey(false); });
     setTimeout(() => inputRef.current?.focus(), 150);
+    return () => controller.abort();
   }, []);
 
   const handleSave = async () => {

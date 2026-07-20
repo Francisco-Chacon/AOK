@@ -54,6 +54,8 @@ const AiAssistant = () => {
     }
   }, [open, messages, scrollToBottom]);
 
+  const abortRef = useRef(null);
+
   const sendMessage = async () => {
     const text = input.trim();
     if (!text || loading || !online) return;
@@ -67,11 +69,15 @@ const AiAssistant = () => {
 
     setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
 
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     try {
       const res = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: text, history, stream: true }),
+        signal: controller.signal,
       });
 
       if (!res.ok) {
@@ -113,13 +119,15 @@ const AiAssistant = () => {
           } catch { /* skip */ }
         }
       }
-    } catch {
+    } catch (err) {
+      if (err?.name === "AbortError") return;
       setMessages((prev) => {
         const copy = [...prev];
         copy[copy.length - 1] = { role: "assistant", content: t(lang, "ai_error_connection") };
         return copy;
       });
     } finally {
+      if (abortRef.current === controller) abortRef.current = null;
       setLoading(false);
     }
   };

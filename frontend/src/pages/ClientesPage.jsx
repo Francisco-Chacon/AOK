@@ -79,10 +79,12 @@ const ClientesPage = () => {
   const [clienteDetalle, setClienteDetalle] = useState(null);
 
   useEffect(() => {
-    api.get("/clientes")
+    const controller = new AbortController();
+    api.get("/clientes", { signal: controller.signal })
       .then((res) => setClientes(res.data || []))
-      .catch((err) => console.error("Error cargando clientes", err))
+      .catch((err) => { if (err?.name !== "CanceledError") console.error("Error cargando clientes", err); })
       .finally(() => setLoading(false));
+    return () => controller.abort();
   }, []);
 
   const loadClientes = async () => {

@@ -58,12 +58,20 @@ const EstimadosPage = () => {
   const [estimadoToDelete, setEstimadoToDelete] = useState(null);
 
   useEffect(() => {
-    api.get("/clientes").then((res) => setClientes(res.data || [])).catch(() => {});
-    api.get("/estimados").then((res) => {
-      const data = res.data || [];
+    const controller = new AbortController();
+    const signal = controller.signal;
+    Promise.all([
+      api.get("/clientes", { signal }),
+      api.get("/estimados", { signal }),
+    ]).then(([resClientes, resEstimados]) => {
+      setClientes(resClientes.data || []);
+      const data = resEstimados.data || [];
       setEstimados(data);
       setSelectedId((current) => data.some((e) => e.id === current) ? current : data[0]?.id || null);
-    }).catch(() => {}).finally(() => setLoading(false));
+    }).catch((err) => {
+      if (err?.name !== "CanceledError") console.error("Error cargando datos", err);
+    }).finally(() => setLoading(false));
+    return () => controller.abort();
   }, []);
 
   const loadData = async () => {

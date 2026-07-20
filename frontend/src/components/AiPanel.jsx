@@ -26,6 +26,7 @@ const AiPanel = ({ onClose, online }) => {
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const abortRef = useRef(null);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -51,11 +52,15 @@ const AiPanel = ({ onClose, online }) => {
 
     const history = messages.map(({ role, content }) => ({ role, content }));
 
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     try {
       const res = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: text, history, stream: true }),
+        signal: controller.signal,
       });
 
       if (!res.ok) {
@@ -97,13 +102,15 @@ const AiPanel = ({ onClose, online }) => {
           } catch { /* skip */ }
         }
       }
-    } catch {
+    } catch (err) {
+      if (err?.name === "AbortError") return;
       setMessages((prev) => {
         const copy = [...prev];
         copy[copy.length - 1] = { role: "assistant", content: t(lang, "ai_error_connection") };
         return copy;
       });
     } finally {
+      if (abortRef.current === controller) abortRef.current = null;
       setLoading(false);
     }
   };

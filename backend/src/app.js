@@ -56,7 +56,7 @@ app.use("/api", routes);
 // ===== FRONTEND (React build) =====
 const publicPath = path.join(__dirname, "../public");
 
-app.use(express.static(publicPath));
+app.use(express.static(publicPath, { maxAge: "30d", immutable: true }));
 
 // Fallback SPA para rutas NO /api
 app.use((req, res, next) => {

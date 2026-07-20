@@ -87,25 +87,29 @@ const ContractsPage = () => {
     monto: "",
   });
 
-  const loadData = async () => {
+  const loadData = async (signal) => {
     try {
       setLoading(true);
       const [resContracts, resClientes] = await Promise.all([
-        api.get("/contracts"),
-        api.get("/clientes"),
+        api.get("/contracts", { signal }),
+        api.get("/clientes", { signal }),
       ]);
       const data = resContracts.data || [];
       setContracts(data);
       setClientes(resClientes.data || []);
       setSelectedId((current) => data.some((c) => c.id === current) ? current : data[0]?.id || null);
     } catch (err) {
-      console.error(err);
+      if (err?.name !== "CanceledError") console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    const controller = new AbortController();
+    loadData(controller.signal);
+    return () => controller.abort();
+  }, []);
 
   const filtradas = contracts.filter((c) => {
     if (!debouncedQuery) return true;

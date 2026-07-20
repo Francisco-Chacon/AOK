@@ -229,7 +229,7 @@ function parseQueryIntent(message) {
   return null;
 }
 
-async function executeQuery(intent) {
+function executeQuery(intent) {
   switch (intent.action) {
     case "stats": {
       const s = queryTools.getStats();
@@ -401,7 +401,7 @@ exports.chat = async (req, res) => {
   try {
     const intent = parseQueryIntent(message);
     if (intent) {
-      const reply = await executeQuery(intent);
+      const reply = executeQuery(intent);
       if (reply) {
         const fullReply = `📌 *Datos consultados directamente del sistema de gestión.*\n\n${reply}`;
         if (stream) {
@@ -476,6 +476,7 @@ exports.chat = async (req, res) => {
     const decoder = new TextDecoder();
     let buffer = "";
 
+    streamLoop:
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
@@ -488,7 +489,7 @@ exports.chat = async (req, res) => {
         const trimmed = line.trim();
         if (!trimmed || !trimmed.startsWith("data: ")) continue;
         const jsonStr = trimmed.slice(6);
-        if (jsonStr === "[DONE]") break;
+        if (jsonStr === "[DONE]") break streamLoop;
 
         try {
           const chunk = JSON.parse(jsonStr);
@@ -507,10 +508,19 @@ exports.chat = async (req, res) => {
   } catch (err) {
     logger.error("AI chat error:", err);
     if (!stream) {
-      return res.status(502).json({ message: "Error de conexión con el asistente. Verifica tu conexión a internet." });
+      if (!res.headersSent) {
+        return res.status(502).json({ message: "Error de conexión con el asistente. Verifica tu conexión a internet." });
+      }
+      return;
     }
-    res.write(`data: ${JSON.stringify({ error: "Error de conexión." })}\n\n`);
-    res.end();
+    try {
+      if (!res.destroyed) {
+        res.write(`data: ${JSON.stringify({ error: "Error de conexión." })}\n\n`);
+        res.end();
+      }
+    } catch (writeErr) {
+      logger.error("Error sending SSE error frame:", writeErr);
+    }
   }
 };
 
@@ -520,6 +530,7 @@ async function collectStream(body) {
   let buffer = "";
   let full = "";
 
+  streamLoop:
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
@@ -530,7 +541,7 @@ async function collectStream(body) {
       const trimmed = line.trim();
       if (!trimmed || !trimmed.startsWith("data: ")) continue;
       const jsonStr = trimmed.slice(6);
-      if (jsonStr === "[DONE]") break;
+      if (jsonStr === "[DONE]") break streamLoop;
       try {
         const chunk = JSON.parse(jsonStr);
         const content = chunk.choices?.[0]?.delta?.content;

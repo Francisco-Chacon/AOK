@@ -85,26 +85,28 @@ const InvoicePage = () => {
     numero: "",
   });
 
-  const loadData = async () => {
+  const loadData = async (signal) => {
     try {
       setLoading(true);
       const [resFacturas, resClientes] = await Promise.all([
-        api.get("/facturas"),
-        api.get("/clientes"),
+        api.get("/facturas", { signal }),
+        api.get("/clientes", { signal }),
       ]);
       const data = resFacturas.data || [];
       setFacturas(data);
       setClientes(resClientes.data || []);
       setSelectedId((current) => data.some((f) => f.id === current) ? current : data[0]?.id || null);
     } catch (err) {
-      console.error(err);
+      if (err?.name !== "CanceledError") console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadData();
+    const controller = new AbortController();
+    loadData(controller.signal);
+    return () => controller.abort();
   }, []);
 
   const filtradas = facturas.filter(f => {

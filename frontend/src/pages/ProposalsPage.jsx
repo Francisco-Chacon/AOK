@@ -37,31 +37,28 @@ const ProposalsPage = () => {
     estado: "borrador",
   });
 
-  const loadData = async () => {
+  const loadData = async (signal) => {
     setLoading(true);
     try {
       const [resClientes, resEstimados] = await Promise.all([
-        api.get("/clientes"),
-        api.get("/estimados"),
+        api.get("/clientes", { signal }),
+        api.get("/estimados", { signal }),
       ]);
       setClientes(resClientes.data || []);
       const data = resEstimados.data || [];
       setEstimados(data);
       setSelectedId((current) => data.some((item) => item.id === current) ? current : data[0]?.id || null);
     } catch (err) {
-      console.error("Error cargando proposals", err);
+      if (err?.name !== "CanceledError") console.error("Error cargando proposals", err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    Promise.all([api.get("/clientes"), api.get("/estimados")]).then(([resClientes, resEstimados]) => {
-      setClientes(resClientes.data || []);
-      const data = resEstimados.data || [];
-      setEstimados(data);
-      setSelectedId((current) => data.some((item) => item.id === current) ? current : data[0]?.id || null);
-    }).catch((err) => console.error("Error cargando proposals", err)).finally(() => setLoading(false));
+    const controller = new AbortController();
+    loadData(controller.signal);
+    return () => controller.abort();
   }, []);
 
   const openNewModal = () => {

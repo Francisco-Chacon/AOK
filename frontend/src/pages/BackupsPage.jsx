@@ -43,29 +43,29 @@ const BackupsPage = () => {
   const showSuccess = (text) => setFeedback({ type: "success", text });
   const showError = (text) => setFeedback({ type: "error", text });
 
-  const fetchBackups = async () => {
+  const fetchBackups = async (signal) => {
     try {
       setLoadingList(true);
-      const { data } = await api.get("/backups/list");
+      const { data } = await api.get("/backups/list", { signal });
       if (data.ok) {
         setBackups(data.files || []);
       } else {
         showError(data.message || t(lang, "error_cargar_backups"));
       }
     } catch (err) {
-      console.error(err);
-      showError(t(lang, "error_cargar_backups"));
+      if (err?.name !== "CanceledError") {
+        console.error(err);
+        showError(t(lang, "error_cargar_backups"));
+      }
     } finally {
       setLoadingList(false);
     }
   };
 
   useEffect(() => {
-    api.get("/backups/list").then(({ data }) => {
-      if (data.ok) setBackups(data.files || []);
-    }).catch((err) => {
-      console.error(err);
-    });
+    const controller = new AbortController();
+    fetchBackups(controller.signal);
+    return () => controller.abort();
   }, []);
 
   // ---------- CREAR BACKUP ----------
